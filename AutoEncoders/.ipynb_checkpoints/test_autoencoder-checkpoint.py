@@ -21,7 +21,7 @@ class AutoEncoder_Tester:
         self.dataset = dataset
         self.device = torch.device("cpu")
         if useGPU and torch.cuda.is_available():
-            self.device = torch.device("cuda:0")
+            self.device = torch.device("cuda")
             
         self.model.to(self.device)
         self.model.eval()

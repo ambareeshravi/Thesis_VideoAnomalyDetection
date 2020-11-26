@@ -1,6 +1,7 @@
 import sys
 sys.path.append("..")
 from general import *
+from general.model_utils import HalfPrecision, DataParallel
 
 class AutoEncoderModel:
     def __init__(self,
@@ -8,12 +9,18 @@ class AutoEncoderModel:
                  save_path,
                  loss_criterion,
                  optimizer,
-                 device = torch.device("cuda:0"),
+                 device = torch.device("cuda"),
                  lr_scheduler_params = {"factor": 0.75, "patience": 5, "threshold": 1e-4},
+                 useHalfPrecision = False,
                  debug = True
                 ):
-        
+        self.isHalfPrecision = useHalfPrecision
         self.model = model
+        if self.isHalfPrecision:
+            HalfPrecision(self.model)
+            
+        self.model = DataParallel(self.model)
+            
         self.device = device
         self.lr_scheduler_params = lr_scheduler_params
         self.debug = debug
@@ -119,6 +126,7 @@ class AutoEncoderModel:
         self.model.to(self.device)
         self.model.train()
         self.model.zero_grad()
+        if self.isHalfPrecision: images = images.half()
         loss = self.step(images)
         loss.backward()
         self.optimizer.step()
@@ -128,6 +136,7 @@ class AutoEncoderModel:
     def val_step(self, images):
         self.model.to(self.device)
         self.model.eval()
+        if self.isHalfPrecision: images = images.half()
         with torch.no_grad():
             loss = self.step(images)
         self.model.to('cpu')
@@ -148,13 +157,14 @@ class AutoEncoder_Trainer:
                  epochs = 100,
                  status_rate = 1,
                  lr_scheduler_params = {"factor": 0.9, "patience": 5, "threshold": 5e-4},
+                 useHalfPrecision = False,
                  useGPU = True,
                  debug = True):
         
         self.epochs = epochs
         self.status_rate = status_rate
         self.device = torch.device("cpu")
-        if useGPU and torch.cuda.is_available(): self.device = torch.device("cuda:0")
+        if useGPU and torch.cuda.is_available(): self.device = torch.device("cuda")
         self.debug = debug
         
         self.train_loader = train_loader
@@ -175,6 +185,7 @@ class AutoEncoder_Trainer:
                      optimizer[idx],
                      device = self.device,
                      lr_scheduler_params = lr_scheduler_params,
+                     useHalfPrecision = useHalfPrecision,
                      debug = debug
                     )                            
             self.autoencoder_models.append(model)

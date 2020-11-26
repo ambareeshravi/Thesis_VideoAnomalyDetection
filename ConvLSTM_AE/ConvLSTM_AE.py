@@ -239,7 +239,7 @@ class AllInOne(nn.Module):
     def __init__(self, channels = 3, image_size = 128, filters_count = [32, 64, 64, 64, 64], useGPU = True):
         super(AllInOne, self).__init__()
         self.device = torch.device("cpu")
-        if useGPU and torch.cuda.is_available: self.device = torch.device("cuda:0")
+        if useGPU and torch.cuda.is_available: self.device = torch.device("cuda")
         self.channels = channels
         self.image_size = image_size
         self.filters_count = filters_count

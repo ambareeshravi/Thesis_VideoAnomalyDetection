@@ -21,6 +21,18 @@ activations_dict = {
 
 # ------------------------------------------------------- #
 
+def HalfPrecision(model):
+    model.half()
+    for layer in model.modules():
+        if isinstance(layer, nn.BatchNorm2d) or isinstance(layer, nn.BatchNorm3d):
+            layer.float()
+    
+def DataParallel(model):
+    if torch.cuda.device_count() > 1:
+        INFO("Using %d GPUs"%(torch.cuda.device_count()))
+        return nn.DataParallel(model)
+    return model
+
 # util functions
 def getConvOutputShape(input_size, kernel_size, stride = 1, padding = 0):
     return ((input_size - kernel_size + (2 * padding)) // stride) + 1
@@ -278,7 +290,7 @@ class Conv2DLSTMCell_v1(nn.Module):
         '''
         super(Conv2DLSTMCell_v1, self).__init__()
         self.device = torch.device("cpu")
-        if useGPU and torch.cuda.is_available: self.device = torch.device("cuda:0")
+        if useGPU and torch.cuda.is_available: self.device = torch.device("cuda")
         self.image_size = image_size
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
@@ -362,7 +374,7 @@ class ConvTranspose2DLSTMCell_v1(nn.Module):
         '''
         super(ConvTranspose2DLSTMCell_v1, self).__init__()
         self.device = torch.device("cpu")
-        if useGPU and torch.cuda.is_available: self.device = torch.device("cuda:0")
+        if useGPU and torch.cuda.is_available: self.device = torch.device("cuda")
         self.image_size = image_size
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
@@ -451,7 +463,7 @@ class Conv2DLSTMCell_v2(nn.Module):
         '''
         super(Conv2DLSTMCell_v2, self).__init__()
         self.device = torch.device("cpu")
-        if useGPU and torch.cuda.is_available: self.device = torch.device("cuda:0")
+        if useGPU and torch.cuda.is_available: self.device = torch.device("cuda")
         self.image_size = image_size
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
@@ -538,7 +550,7 @@ class ConvTranspose2DLSTMCell_v2(nn.Module):
         '''
         super(ConvTranspose2DLSTMCell_v2, self).__init__()
         self.device = torch.device("cpu")
-        if useGPU and torch.cuda.is_available: self.device = torch.device("cuda:0")
+        if useGPU and torch.cuda.is_available: self.device = torch.device("cuda")
         self.image_size = image_size
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
