@@ -1,0 +1,617 @@
+from .all_imports import *
+
+'''
+Conv2D types:
+    1. nn.Conv2d
+    2. Conv2d_Factorized
+    3. Conv2d_Depthwise
+    
+Conv3D types:
+    1. nn.Conv3d
+    2. Conv3d_Factorized
+    3. Conv3d_Depthwise
+'''
+
+activations_dict = {
+    "relu": nn.ReLU(),
+    "leaky_relu": nn.LeakyReLU(),
+    "sigmoid": nn.Sigmoid(),
+    "tanh": nn.Tanh()
+}
+
+# ------------------------------------------------------- #
+
+def DataParallel(model):
+    if torch.cuda.device_count() > 1:
+        INFO("Using %d GPUs"%(torch.cuda.device_count()))
+        return nn.DataParallel(model)
+    return model
+
+# util functions
+def getConvOutputShape(input_size, kernel_size, stride = 1, padding = 0):
+    return ((input_size - kernel_size + (2 * padding)) // stride) + 1
+
+def getConvTransposeOutputShape(input_size, kernel_size, stride = 1, padding = 0, output_padding = 0):
+    return ((input_size - 1)*stride - (2 * padding) + kernel_size + output_padding)
+
+def BN_A(n, activation_type = "leaky_relu", is3d = True):
+    layers = list()
+    if is3d: layers.append(nn.BatchNorm3d(n))
+    else: layers.append(nn.BatchNorm2d(n))
+    layers.append(activations_dict[activation_type])
+    return nn.Sequential(*layers)
+
+# ------------------------------------------------------- #
+
+# Conv Elements
+# C2D
+class C2D_FC(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, stride = 1, padding = 0, dilation = 1):
+        super(C2D_FC, self).__init__()
+        self.h = nn.Conv2d(in_channels, out_channels, kernel_size=(1, kernel_size), stride = (1,stride), padding=(0, padding), dilation = dilation, padding_mode = "replicate")
+        self.v = nn.Conv2d(out_channels, out_channels, kernel_size=(kernel_size, 1), stride = (stride,1), padding=(padding, 0), dilation = dilation, padding_mode = "replicate")
+
+    def forward(self, x):
+        return self.v(self.h(x))
+    
+class C2D_DS(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, stride = 1, padding = 1, dilation = 1):
+        super(C2D_DS, self).__init__()
+        self.depthwise = nn.Conv2d(in_channels, in_channels, kernel_size=kernel_size, stride = stride, padding=padding, groups=in_channels, dilation = dilation, padding_mode = "replicate")
+        self.pointwise = nn.Conv2d(in_channels, out_channels, kernel_size=1, dilation = dilation, padding_mode = "replicate")
+
+    def forward(self, x):
+        return self.pointwise(self.depthwise(x))
+
+# C3D
+class C3D_FC(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, stride = 1, padding = 0, dilation = 1):
+        super(C3D_FC, self).__init__()
+        self.h = nn.Conv3d(in_channels, out_channels, kernel_size=(1, kernel_size, 1), stride = (1,stride,1), padding=(0,padding,0), dilation = dilation, padding_mode = "replicate")
+        self.v = nn.Conv3d(out_channels, out_channels, kernel_size=(kernel_size, 1, 1), stride = (stride,1,1), padding=(padding,0,0), dilation = dilation, padding_mode = "replicate")
+        self.d = nn.Conv3d(out_channels, out_channels, kernel_size=(1,1,kernel_size), stride = (1,1,stride), padding=(0,0,padding), dilation = dilation, padding_mode = "replicate")
+
+    def forward(self, x):
+        return self.d(self.v(self.h(x)))
+    
+class C3D_DS(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, stride, padding = (0,0,0), dilation = 1):
+        super(C3D_DS, self).__init__()
+        if not isinstance(kernel_size, int): kd, kw, kh = kernel_size
+        else: kd, kw, kh = [kernel_size]*3
+        if not isinstance(stride, int): sd, sw, sh = stride
+        else: sd, sw, sh = [stride]*3
+        if not isinstance(padding, int): pd, pw, ph = padding
+        else: pd, pw, ph = [padding]*3
+        self.main_conv = nn.Conv3d(in_channels, in_channels, (1, kw, kh), (1, sw, sh), (0, pw, ph), dilation = dilation, padding_mode = "replicate")
+        self.pointwise_conv = nn.Conv3d(in_channels, out_channels, (kd, 1, 1), (sd, 1, 1), (pd, 0, 0), dilation = dilation, padding_mode = "replicate")
+    
+    def forward(self, x):
+        return self.pointwise_conv(self.main_conv(x))
+
+class C3D_FDS(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, stride, padding = (0,0,0), dilation = 1):
+        super(C3D_FDS, self).__init__()
+        if not isinstance(kernel_size, int): kd, kw, kh = kernel_size
+        else: kd, kw, kh = [kernel_size]*3
+        if not isinstance(stride, int): sd, sw, sh = stride
+        else: sd, sw, sh = [stride]*3
+        if not isinstance(padding, int): pd, pw, ph = padding
+        else: pd, pw, ph = [padding]*3
+        self.width_conv = nn.Conv3d(in_channels, in_channels, (1, kw, 1), (1, sw, sh), (0, kw//2, 0), dilation = dilation, padding_mode = "replicate")
+        self.height_conv = nn.Conv3d(in_channels, in_channels, (1, 1, kh), (1, sw, sh), (0, 0, kh//2), dilation = dilation, padding_mode = "replicate")
+        self.depth_conv = nn.Conv3d(in_channels, out_channels, (kd, 1, 1), (sd, 1, 1), (pd, 0, 0), dilation = dilation, padding_mode = "replicate")
+    
+    def forward(self, x):
+        return self.depth_conv(self.width_conv(x) + self.height_conv(x))
+
+# ------------------------------------------------------- #
+conv2d_dict = {
+    "conv2d": nn.Conv2d,
+    "conv2d_fc": C2D_FC,
+#     "conv2d_acb": C2D_ACB,
+    "conv2d_ds": C2D_DS
+}
+
+conv3d_dict = {
+    "conv3d": nn.Conv3d,
+    "conv3d_fc": C3D_FC,
+#     "conv3d_acb": C3D_ACB,
+    "conv3d_ds": C3D_DS,
+    "conv3d_fds": C3D_FDS,
+}
+
+conv2d_transpose_dict = {
+    "conv2d_transpose": nn.ConvTranspose2d
+}
+
+conv3d_transpose_dict = {
+    "conv3d_transpose": nn.ConvTranspose3d
+}
+# ------------------------------------------------------- #
+
+# Conv Blocks
+# C2D blocks
+
+def C2D_BN_A(in_channels, out_channels, kernel_size, stride = 1, padding = 0, dilation = 1, activation_type = "leaky_relu", conv_type = "conv2d"):
+    conv_layer = conv2d_dict[conv_type]
+    layers = [
+        conv_layer(in_channels, out_channels, kernel_size, stride, padding = padding, dilation = dilation),
+        nn.BatchNorm2d(out_channels),
+    ]
+    if activation_type: layers += [activations_dict[activation_type]]
+        
+    return nn.Sequential(*layers)
+
+class C2D_Res(nn.Module):
+    def __init__(self, channels, kernel_size, activation_type = "leaky_relu", conv_type = "conv2d"):
+        super(C2D_Res, self).__init__()
+        self.conv_block = C2D_BN_A(channels, channels, kernel_size, stride = 1, padding = kernel_size//2, conv_type = conv_type)
+        layers = [nn.BatchNorm2d(channels)]
+        if activation_type: layers += [activations_dict[activation_type]]
+        self.BA = nn.Sequential(*layers)
+        
+    def forward(self, x):
+        return self.BA(x + self.conv_block(x))
+
+class C2D_ACB(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, stride = 1, padding = 0 , dilation = 1, useBatchNorm = True, activation_type = "leaky_relu", conv_type = "conv2d"):
+        super(C2D_ACB, self).__init__()
+        conv_layer = conv2d_dict[conv_type]
+        self.s = conv_layer(in_channels = in_channels, out_channels = out_channels, kernel_size = kernel_size,
+                      stride = stride, padding = (kernel_size//2, kernel_size//2), dilation = dilation)
+        self.h = conv_layer(in_channels = in_channels, out_channels = out_channels, kernel_size = (1, kernel_size),
+                      stride = stride, padding = (0, kernel_size//2), dilation = dilation)
+        self.v = conv_layer(in_channels = in_channels, out_channels = out_channels, kernel_size = (kernel_size, 1),
+                      stride = stride, padding = (kernel_size // 2, 0), dilation = dilation)         
+        
+        layers = [nn.BatchNorm2d(out_channels)]
+        if activation_type: layers += [activations_dict[activation_type]]
+        self.BA = nn.Sequential(*layers)
+
+    def forward(self, x):
+        return self.BA(self.s(x) + self.h(x) + self.v(x))
+    
+# CT2D blocks
+
+def CT2D_BN_A(in_channels, out_channels, kernel_size, stride = 1, padding = 0, output_padding = 0, dilation = 1, activation_type = "leaky_relu", conv_type = "conv2d_transpose"):
+    conv_layer = conv2d_transpose_dict[conv_type]
+    layers = [
+        conv_layer(in_channels, out_channels, kernel_size, stride, padding = padding, dilation = dilation, output_padding = output_padding),
+        nn.BatchNorm2d(out_channels),
+    ]
+    if activation_type: layers += [activations_dict[activation_type]]
+        
+    return nn.Sequential(*layers)
+
+class CT2D_Res(nn.Module):
+    def __init__(self, channels, kernel_size, activation_type = "leaky_relu", conv_type = "conv2d_transpose"):
+        super(CT2D_Res, self).__init__()
+        self.conv_t_block = CT2D_BN_A(channels, channels, kernel_size, stride = 1, padding = kernel_size//2, conv_type = conv_type)
+        
+        layers = [nn.BatchNorm2d(channels)]
+        if activation_type: layers += [activations_dict[activation_type]]
+        self.BA = nn.Sequential(*layers)
+        
+    def forward(self, x):
+        return self.BA(x + self.conv_t_block(x))
+
+class CT2D_ADB(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, stride = 1, padding = 0, dilation = 1, output_padding = 0,  useBatchNorm = True, activation_type = "leaky_relu", conv_type = "conv2d_transpose"):
+        super(CT2D_ADB, self).__init__()
+        conv_layer = conv2d_transpose_dict[conv_type]
+        
+        self.s = conv_layer(in_channels = in_channels, out_channels = out_channels, kernel_size = kernel_size, stride = stride, padding = padding, dilation = dilation, output_padding = output_padding)
+        self.h = conv_layer(in_channels = in_channels, out_channels = out_channels, kernel_size = (1, kernel_size), stride = stride, padding = padding, dilation = (kernel_size, 1), output_padding = (kernel_size-1, 0))
+        self.v = conv_layer(in_channels = in_channels, out_channels = out_channels, kernel_size = (kernel_size, 1), stride = stride, padding = padding, dilation = (1, kernel_size), output_padding = (0, kernel_size-1))
+        
+        layers = [nn.BatchNorm2d(out_channels)]
+        if activation_type: layers += [activations_dict[activation_type]]
+        self.BA = nn.Sequential(*layers)
+
+    def forward(self, x):
+        return self.BA(self.s(x) + self.h(x) + self.v(x))
+
+# C3D blocks
+def C3D_BN_A(in_channels, out_channels, kernel_size, stride = 1, padding = 0, dilation = 1, activation_type = "leaky_relu", conv_type = "conv3d"):
+    conv_layer = conv3d_dict[conv_type]
+    layers = [
+        conv_layer(in_channels, out_channels, kernel_size, stride, padding = padding, dilation = dilation),
+        nn.BatchNorm3d(out_channels),
+    ]
+    if activation_type: layers += [activations_dict[activation_type]]
+        
+    return nn.Sequential(*layers)
+
+class C3D_Res(nn.Module):
+    def __init__(self, channels, kernel_size = 3, stride = 1, activation_type = "leaky_relu", conv_type = "conv3d"):
+        super(C3D_Res, self).__init__()
+        if not (isinstance(kernel_size, list) or isinstance(kernel_size, tuple)):
+            kernel_size = [kernel_size] * 3
+        self.conv_block = C3D_BN_A(channels, channels, kernel_size, stride, padding = (kernel_size[0]//2, kernel_size[1]//2, kernel_size[2]//2), conv_type = conv_type)
+        
+        layers = [nn.BatchNorm3d(channels)]
+        if activation_type: layers += [activations_dict[activation_type]]
+        self.BA = nn.Sequential(*layers)
+        
+    def forward(self, x):
+        return self.BA(self.conv_block(x) + x)
+    
+# CT3D blocks
+def CT3D_BN_A(in_channels, out_channels, kernel_size, stride = 1, padding = 0, output_padding = 0, dilation = 1, activation_type = "leaky_relu", conv_type = "conv3d_transpose"):
+    conv_layer = conv3d_transpose_dict[conv_type]
+    layers = [
+        conv_layer(in_channels, out_channels, kernel_size, stride, padding = padding, dilation = dilation, output_padding = output_padding),
+        nn.BatchNorm3d(out_channels),
+    ]
+    if activation_type: layers += [activations_dict[activation_type]]
+        
+    return nn.Sequential(*layers)
+
+class CT3D_Res(nn.Module):
+    def __init__(self, channels, kernel_size = 3, stride = 1, activation_type = "leaky_relu", conv_type = "conv3d_transpose"):
+        super(CT3D_Res, self).__init__()
+        if not (isinstance(kernel_size, list) or isinstance(kernel_size, tuple)):
+            kernel_size = [kernel_size] * 3
+        self.conv_t_block = CT3D_BN_A(channels, channels, kernel_size, stride, padding = (kernel_size[0]//2, kernel_size[1]//2, kernel_size[2]//2), conv_type = conv_type)
+        
+        layers = [nn.BatchNorm3d(channels)]
+        if activation_type: layers += [activations_dict[activation_type]]
+        self.BA = nn.Sequential(*layers)
+        
+    def forward(self, x):
+        return self.BA(self.conv_t_block(x) + x)
+
+# ---------------------------------------- # 
+# Other modules
+
+class Conv2DLSTMCell_v1(nn.Module):
+    def __init__(self, image_size, input_dim, hidden_dim, kernel_size, stride, padding, bias = False, useGPU = True):
+        '''
+        Using channels first n,c,w,h for images
+                    
+        i = sigma(W_xi * X_t + W_hi * H_t-1 + W_ci.C_t-1 + b_i)
+        f_t = sigma(W_xf * X_t + W_hf * H_t-1 + W_cf.C_t-1 + b_f)
+        C_t = f_t.C_t-1 + i_t.tanh(W_xc*X_t + W_hc*H_t-1 + b_c)
+        o_t = sigma(W_xo * X_t + W_ho * H_t-1 + W_co.C_t + b_o)
+        H_t = o_t.tanh(C_t) 
+        
+        return_sequence - True:
+            (samples, time_steps, filters, rows, cols)
+        return_sequence - False:
+            (samples, filters, rows, cols)
+
+        '''
+        super(Conv2DLSTMCell_v1, self).__init__()
+        self.device = torch.device("cpu")
+        if useGPU and torch.cuda.is_available: self.device = torch.device("cuda:0")
+        self.image_size = image_size
+        self.input_dim = input_dim
+        self.hidden_dim = hidden_dim
+        
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.padding = padding
+        self.bias = bias
+        
+        inp_conv_kwargs = {
+            "in_channels": self.input_dim,
+            "out_channels": self.hidden_dim * 4,
+            "kernel_size": self.kernel_size,
+            "stride": self.stride, 
+            "padding": self.padding,
+        }
+        
+        self.hidden_kernel_size = (self.kernel_size - 1) if (self.kernel_size%2==0) else self.kernel_size
+        
+        self.conv_output = (
+            getConvOutputShape(self.image_size, self.kernel_size, self.stride, padding = self.padding), # kernel_size//2),
+            getConvOutputShape(self.image_size, self.kernel_size, self.stride, padding = self.padding) # kernel_size//2)
+                           )
+        hid_conv_kwargs = {
+            "in_channels": self.hidden_dim,
+            "out_channels": self.hidden_dim * 4,
+            "kernel_size": self.hidden_kernel_size,
+            "stride": 1, 
+            "padding": self.hidden_kernel_size // 2,
+        }
+        
+        self.conv_Wx = nn.Conv2d(**inp_conv_kwargs).to(self.device)
+        self.conv_Wh = nn.Conv2d(**hid_conv_kwargs).to(self.device)
+        
+        self.weights_shape = tuple([3, 1, self.hidden_dim] + list(self.conv_output))
+        self.W = torch.autograd.Variable(torch.randn(*self.weights_shape), requires_grad = True).to(self.device)
+        
+        self.sigmoid = nn.Sigmoid()
+        self.tanh = nn.Tanh()
+        
+    def init_states(self, batch_size):
+        state_shape = [batch_size, self.hidden_dim] + list(self.conv_output)
+        return (
+            torch.randn(*state_shape, device = self.device),
+            torch.randn(*state_shape, device = self.device)
+        )
+            
+    def forward(self, x, states):
+        h, c = states
+        # i,f,c,o
+        conv_x_out = self.conv_Wx(x)
+        conv_h_out = self.conv_Wh(h)
+        (Wci, Wcf, Wco) = self.W * c
+        
+        conv_Wxi, conv_Wxf, conv_Wxc, conv_Wxo = conv_x_out.split(self.hidden_dim, dim = 1)
+        conv_Whi, conv_Whf, conv_Whc, conv_Who = conv_h_out.split(self.hidden_dim, dim = 1)
+        
+        i = self.sigmoid(conv_Wxi + conv_Whi + Wci)
+        f = self.sigmoid(conv_Wxf + conv_Whf + Wcf)
+        c_n = f * c + i * self.tanh(conv_Wxc + conv_Whc)
+        o = self.sigmoid(conv_Wxo + conv_Who + Wco)
+        h_n = o * self.tanh(c_n) 
+        return h_n, c_n
+
+class ConvTranspose2DLSTMCell_v1(nn.Module):
+    def __init__(self, image_size, input_dim, hidden_dim, kernel_size, stride, padding = 0, output_padding = 0, bias = False, useGPU = True):
+        '''
+        Using channels first n,c,w,h for images
+                    
+        i = sigma(W_xi * X_t + W_hi * H_t-1 + W_ci.C_t-1 + b_i)
+        f_t = sigma(W_xf * X_t + W_hf * H_t-1 + W_cf.C_t-1 + b_f)
+        C_t = f_t.C_t-1 + i_t.tanh(W_xc*X_t + W_hc*H_t-1 + b_c)
+        o_t = sigma(W_xo * X_t + W_ho * H_t-1 + W_co.C_t + b_o)
+        H_t = o_t.tanh(C_t) 
+        
+        return_sequence - True:
+            (samples, time_steps, filters, rows, cols)
+        return_sequence - False:
+            (samples, filters, rows, cols)
+
+        '''
+        super(ConvTranspose2DLSTMCell_v1, self).__init__()
+        self.device = torch.device("cpu")
+        if useGPU and torch.cuda.is_available: self.device = torch.device("cuda:0")
+        self.image_size = image_size
+        self.input_dim = input_dim
+        self.hidden_dim = hidden_dim
+        
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.padding = padding
+        self.output_padding = output_padding
+        self.bias = bias
+        
+        inp_conv_kwargs = {
+            "in_channels": self.input_dim,
+            "out_channels": self.hidden_dim * 4,
+            "kernel_size": self.kernel_size,
+            "stride": self.stride, 
+            "padding": self.padding,
+            "output_padding": self.output_padding,
+        }
+        
+        self.hidden_kernel_size = (self.kernel_size - 1) if (self.kernel_size%2==0) else self.kernel_size
+        
+        self.conv_output = (
+            getConvTransposeOutputShape(self.image_size, self.kernel_size, self.stride, padding = self.padding, output_padding = self.output_padding),
+            getConvTransposeOutputShape(self.image_size, self.kernel_size, self.stride, padding = self.padding, output_padding = self.output_padding)
+                           )
+        
+        hid_conv_kwargs = {
+            "in_channels": self.hidden_dim,
+            "out_channels": self.hidden_dim * 4,
+            "kernel_size": self.hidden_kernel_size,
+            "stride": 1, 
+            "padding": self.hidden_kernel_size // 2,
+            "output_padding": self.output_padding,
+        }
+        
+        self.conv_Wx = nn.ConvTranspose2d(**inp_conv_kwargs).to(self.device)        
+        self.conv_Wh = nn.ConvTranspose2d(**hid_conv_kwargs).to(self.device)
+        
+        self.weights_shape = tuple([3, 1, self.hidden_dim] + list(self.conv_output))
+        self.W = torch.autograd.Variable(torch.randn(*self.weights_shape), requires_grad = True).to(self.device)
+        
+        self.sigmoid = nn.Sigmoid()
+        self.tanh = nn.Tanh()
+        
+    def init_states(self, batch_size):
+        state_shape = [batch_size, self.hidden_dim] + list(self.conv_output)
+        return (
+            torch.randn(*state_shape, device = self.device),
+            torch.randn(*state_shape, device = self.device)
+        )
+            
+    def forward(self, x, states):
+        h, c = states
+        # i,f,c,o
+        conv_x_out = self.conv_Wx(x)
+        conv_h_out = self.conv_Wh(h)
+        (Wci, Wcf, Wco) = self.W * c
+        
+        conv_Wxi, conv_Wxf, conv_Wxc, conv_Wxo = conv_x_out.split(self.hidden_dim, dim = 1)
+        conv_Whi, conv_Whf, conv_Whc, conv_Who = conv_h_out.split(self.hidden_dim, dim = 1)
+        
+        i = self.sigmoid(conv_Wxi + conv_Whi + Wci)
+        f = self.sigmoid(conv_Wxf + conv_Whf + Wcf)
+        c_n = f * c + i * self.tanh(conv_Wxc + conv_Whc)
+        o = self.sigmoid(conv_Wxo + conv_Who + Wco)
+        h_n = o * self.tanh(c_n) 
+        return h_n, c_n
+
+
+class Conv2DLSTMCell_v2(nn.Module):
+    def __init__(self, image_size, input_dim, hidden_dim, kernel_size, stride, padding, bias = False, useGPU = True):
+        '''
+        Using channels first n,c,w,h for images
+                    
+        i = sigma(W_xi * X_t + W_hi * H_t-1 + W_ci.C_t-1 + b_i)
+        f_t = sigma(W_xf * X_t + W_hf * H_t-1 + W_cf.C_t-1 + b_f)
+        C_t = f_t.C_t-1 + i_t.tanh(W_xc*X_t + W_hc*H_t-1 + b_c)
+        o_t = sigma(W_xo * X_t + W_ho * H_t-1 + W_co.C_t + b_o)
+        H_t = o_t.tanh(C_t) 
+        
+        return_sequence - True:
+            (samples, time_steps, filters, rows, cols)
+        return_sequence - False:
+            (samples, filters, rows, cols)
+
+        '''
+        super(Conv2DLSTMCell_v2, self).__init__()
+        self.device = torch.device("cpu")
+        if useGPU and torch.cuda.is_available: self.device = torch.device("cuda:0")
+        self.image_size = image_size
+        self.input_dim = input_dim
+        self.hidden_dim = hidden_dim
+        
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.padding = padding
+        self.bias = bias
+        
+        inp_conv_kwargs = {
+            "in_channels": self.input_dim,
+            "out_channels": self.hidden_dim * 4,
+            "kernel_size": self.kernel_size,
+            "stride": self.stride, 
+            "padding": self.padding,
+            "activation_type": False,
+        }
+        
+        self.hidden_kernel_size = (self.kernel_size - 1) if (self.kernel_size%2==0) else self.kernel_size
+        
+        self.conv_output = (
+            getConvOutputShape(self.image_size, self.kernel_size, self.stride, padding = self.kernel_size//2),
+            getConvOutputShape(self.image_size, self.kernel_size, self.stride, padding = self.kernel_size//2)
+                           )
+        hid_conv_kwargs = {
+            "in_channels": self.hidden_dim,
+            "out_channels": self.hidden_dim * 4,
+            "kernel_size": self.hidden_kernel_size,
+            "stride": 1, 
+            "padding": self.hidden_kernel_size // 2,
+            "activation_type": False,
+            "conv_type": 'conv2d',
+        }
+        
+        self.conv_Wx = C2D_ACB(**inp_conv_kwargs).to(self.device)
+        self.conv_Wh = C2D_BN_A(**hid_conv_kwargs).to(self.device)
+        
+        self.weights_shape = tuple([3, 1, self.hidden_dim] + list(self.conv_output))
+        self.W = torch.autograd.Variable(torch.randn(*self.weights_shape), requires_grad = True).to(self.device)
+        
+        self.sigmoid = nn.Sigmoid()
+        self.tanh = nn.Tanh()
+        
+    def init_states(self, batch_size):
+        state_shape = [batch_size, self.hidden_dim] + list(self.conv_output)
+        return (
+            torch.randn(*state_shape, device = self.device),
+            torch.randn(*state_shape, device = self.device)
+        )
+            
+    def forward(self, x, states):
+        h, c = states
+        # i,f,c,o
+        conv_x_out = self.conv_Wx(x)
+        conv_h_out = self.conv_Wh(h)
+        (Wci, Wcf, Wco) = self.W * c
+        
+        conv_Wxi, conv_Wxf, conv_Wxc, conv_Wxo = conv_x_out.split(self.hidden_dim, dim = 1)
+        conv_Whi, conv_Whf, conv_Whc, conv_Who = conv_h_out.split(self.hidden_dim, dim = 1)
+        
+        i = self.sigmoid(conv_Wxi + conv_Whi + Wci)
+        f = self.sigmoid(conv_Wxf + conv_Whf + Wcf)
+        c_n = f * c + i * self.tanh(conv_Wxc + conv_Whc)
+        o = self.sigmoid(conv_Wxo + conv_Who + Wco)
+        h_n = o * self.tanh(c_n) 
+        return h_n, c_n
+    
+class ConvTranspose2DLSTMCell_v2(nn.Module):
+    def __init__(self, image_size, input_dim, hidden_dim, kernel_size, stride, padding = 0, output_padding = 0, bias = False, useGPU = True):
+        '''
+        Using channels first n,c,w,h for images
+                    
+        i = sigma(W_xi * X_t + W_hi * H_t-1 + W_ci.C_t-1 + b_i)
+        f_t = sigma(W_xf * X_t + W_hf * H_t-1 + W_cf.C_t-1 + b_f)
+        C_t = f_t.C_t-1 + i_t.tanh(W_xc*X_t + W_hc*H_t-1 + b_c)
+        o_t = sigma(W_xo * X_t + W_ho * H_t-1 + W_co.C_t + b_o)
+        H_t = o_t.tanh(C_t) 
+        
+        return_sequence - True:
+            (samples, time_steps, filters, rows, cols)
+        return_sequence - False:
+            (samples, filters, rows, cols)
+
+        '''
+        super(ConvTranspose2DLSTMCell_v2, self).__init__()
+        self.device = torch.device("cpu")
+        if useGPU and torch.cuda.is_available: self.device = torch.device("cuda:0")
+        self.image_size = image_size
+        self.input_dim = input_dim
+        self.hidden_dim = hidden_dim
+        
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.padding = padding
+        self.output_padding = output_padding
+        self.bias = bias
+        
+        inp_conv_kwargs = {
+            "in_channels": self.input_dim,
+            "out_channels": self.hidden_dim * 4,
+            "kernel_size": self.kernel_size,
+            "stride": self.stride, 
+            "padding": self.padding,
+            "output_padding": self.output_padding,
+            "activation_type": False,
+        }
+        
+        self.hidden_kernel_size = (self.kernel_size - 1) if (self.kernel_size%2==0) else self.kernel_size
+        
+        self.conv_output = (
+            getConvTransposeOutputShape(self.image_size, self.kernel_size, self.stride, padding = self.padding, output_padding = self.output_padding),
+            getConvTransposeOutputShape(self.image_size, self.kernel_size, self.stride, padding = self.padding, output_padding = self.output_padding)
+                           )
+        
+        hid_conv_kwargs = {
+            "in_channels": self.hidden_dim,
+            "out_channels": self.hidden_dim * 4,
+            "kernel_size": self.hidden_kernel_size,
+            "stride": 1, 
+            "padding": self.hidden_kernel_size // 2,
+            "output_padding": self.output_padding,
+            "activation_type": False,
+            "conv_type": 'conv2d_transpose',
+        }
+        
+        self.conv_Wx = CT2D_ADB(**inp_conv_kwargs).to(self.device)        
+        self.conv_Wh = CT2D_BN_A(**hid_conv_kwargs).to(self.device)
+        
+        self.weights_shape = tuple([3, 1, self.hidden_dim] + list(self.conv_output))
+        self.W = torch.autograd.Variable(torch.randn(*self.weights_shape), requires_grad = True).to(self.device)
+        
+        self.sigmoid = nn.Sigmoid()
+        self.tanh = nn.Tanh()
+        
+    def init_states(self, batch_size):
+        state_shape = [batch_size, self.hidden_dim] + list(self.conv_output)
+        return (
+            torch.randn(*state_shape, device = self.device),
+            torch.randn(*state_shape, device = self.device)
+        )
+            
+    def forward(self, x, states):
+        h, c = states
+        # i,f,c,o
+        conv_x_out = self.conv_Wx(x)
+        conv_h_out = self.conv_Wh(h)
+        (Wci, Wcf, Wco) = self.W * c
+        
+        conv_Wxi, conv_Wxf, conv_Wxc, conv_Wxo = conv_x_out.split(self.hidden_dim, dim = 1)
+        conv_Whi, conv_Whf, conv_Whc, conv_Who = conv_h_out.split(self.hidden_dim, dim = 1)
+        
+        i = self.sigmoid(conv_Wxi + conv_Whi + Wci)
+        f = self.sigmoid(conv_Wxf + conv_Whf + Wcf)
+        c_n = f * c + i * self.tanh(conv_Wxc + conv_Whc)
+        o = self.sigmoid(conv_Wxo + conv_Who + Wco)
+        h_n = o * self.tanh(c_n) 
+        return h_n, c_n

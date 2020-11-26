@@ -1,2 +1,2 @@
 # Thesis_VideoAnomalyDetection
-Thesis work on Video Anomaly Detection
+My Thesis work related to video anomaly detection
