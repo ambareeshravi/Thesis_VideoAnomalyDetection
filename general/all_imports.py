@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import pickle as pkl
 import torch
+import gc
 
 from datetime import datetime, timedelta
 from time import time

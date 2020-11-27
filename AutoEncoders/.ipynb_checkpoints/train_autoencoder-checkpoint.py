@@ -158,6 +158,7 @@ class AutoEncoder_Trainer:
                  status_rate = 1,
                  lr_scheduler_params = {"factor": 0.9, "patience": 5, "threshold": 5e-4},
                  useHalfPrecision = False,
+                 destructAll = True,
                  useGPU = True,
                  debug = True):
         
@@ -232,9 +233,10 @@ class AutoEncoder_Trainer:
         
         # Clear memory
         try:
-            # for model in self.autoencoder_models:
-            #     model.self_destruct()
-            # del self.autoencoder_models
+            if destructAll:
+                for model in self.autoencoder_models:
+                    model.self_destruct()
+                del self.autoencoder_models
             torch.cuda.empty_cache()
             gc.collect()
         except Exception as e:

@@ -61,6 +61,8 @@ def plot_stat(history, title, save_path):
         plt.title(title)
         plt.savefig(os.path.join(save_path, "training_stats.png"), dpi = 100, bbox_inches='tight')
         plt.clf()
+        try: plt.close()
+        except: pass
     except Exception as e:
         print(e)
         
