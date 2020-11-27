@@ -24,6 +24,7 @@ class Generic_C2D_AE(nn.Module):
                  image_size = 224
                 ):
         super(Generic_C2D_AE, self).__init__()
+        self.__name__ = "C2D_Generic"
         self.channels = channels
         
         encoder_layers = list()
@@ -68,6 +69,7 @@ class C2D_AE_128_3x3(nn.Module):
         conv_type = "conv2d"
     ):
         super(C2D_AE_128_3x3, self).__init__()
+        self.__name__ = "C2D_128_3x3"
         self.channels = channels
         self.filters_count = filters_count
         
@@ -102,6 +104,7 @@ class C2D_AE_128_5x5(nn.Module):
         conv_type = "conv2d"
     ):
         super(C2D_AE_128_5x5, self).__init__()
+        self.__name__ = "C2D_128_5x5"
         self.channels = channels
         self.filters_count = filters_count
         
@@ -125,7 +128,7 @@ class C2D_AE_128_5x5(nn.Module):
         encodings = self.encoder(x)
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
-        
+    
 class C2D_AE_128_3x3_VAE(C2D_AE_128_3x3):
     def __init__(
         self,
@@ -136,6 +139,7 @@ class C2D_AE_128_3x3_VAE(C2D_AE_128_3x3):
         conv_type = "conv2d"
     ):
         C2D_AE_128_3x3.__init__(self, channels = channels, filters_count = filters_count, conv_type = conv_type)
+        self.__name__ = "C2D_128_3x3_VAE"
         self.embedding_dim = np.product(embedding_dim)
         self.view_shape = tuple([-1] + embedding_dim[1:])
         self.isTrain = isTrain
@@ -171,7 +175,7 @@ class C2D_AE_128_3x3_VAE(C2D_AE_128_3x3):
         latent = self.latent_sample(mu, logvar)
         reconstructions = self.decoder(latent.view(*self.view_shape))
         return reconstructions, mu, logvar
-
+    
 class C2D_AE_128_5x5_VAE(C2D_AE_128_5x5):
     def __init__(
         self,
@@ -182,6 +186,7 @@ class C2D_AE_128_5x5_VAE(C2D_AE_128_5x5):
         conv_type = "conv2d"
     ):
         C2D_AE_128_5x5.__init__(self, channels = channels, filters_count = filters_count, conv_type = conv_type)
+        self.__name__ = "C2D_128_5x5_VAE"
         self.embedding_dim = np.product(embedding_dim)
         self.view_shape = tuple([1] + embedding_dim[1:])
         self.isTrain = isTrain
@@ -217,7 +222,7 @@ class C2D_AE_128_5x5_VAE(C2D_AE_128_5x5):
         latent = self.latent_sample(mu, logvar)
         reconstructions = self.decoder(latent.view(*self.view_shape))
         return reconstructions, mu, logvar
-    
+
 class C2D_AE_3x3_Res(nn.Module):
     def __init__(
         self,
@@ -226,6 +231,7 @@ class C2D_AE_3x3_Res(nn.Module):
         conv_type = "conv2d"
     ):
         super(C2D_AE_3x3_Res, self).__init__()
+        self.__name__ = "C2D_128_3x3_RES"
         self.channels = channels
         self.filters_count = filters_count
         
@@ -268,6 +274,7 @@ class C2D_AE_ACB_128_3x3(nn.Module):
         conv_type = "conv2d"
     ):
         super(C2D_AE_ACB_128_3x3, self).__init__()
+        self.__name__ = "C2D_128_3x3_ACB"
         self.channels = channels
         self.filters_count = filters_count
         
@@ -302,6 +309,7 @@ class C2D_AE_ACB_128_5x5(nn.Module):
         conv_type = "conv2d"
     ):
         super(C2D_AE_ACB_128_5x5, self).__init__()
+        self.__name__ = "C2D_128_5x5_ACB"
         self.channels = channels
         self.filters_count = filters_count
         
@@ -325,8 +333,7 @@ class C2D_AE_ACB_128_5x5(nn.Module):
         encodings = self.encoder(x)
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
-    
-    
+
 class C2D_AE_144_3x3(nn.Module):
     def __init__(
         self,
@@ -335,6 +342,7 @@ class C2D_AE_144_3x3(nn.Module):
         conv_type = "conv2d"
     ):
         super(C2D_AE_144_3x3, self).__init__()
+        self.__name__ = "C2D_144_3x3"
         self.channels = channels
         self.filters_count = filters_count
         
@@ -362,3 +370,33 @@ class C2D_AE_144_3x3(nn.Module):
         encodings = self.encoder(x)
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
+
+C2D_MODELS_DICT = {
+    128: {
+        "vanilla": {
+            "3x3": C2D_AE_128_3x3,
+            "5x5": C2D_AE_128_5x5
+        },
+        "acb": {
+            "3x3": C2D_AE_ACB_128_3x3,
+            "5x5": C2D_AE_ACB_128_5x5
+        },
+        "vae": {
+            "3x3": C2D_AE_128_3x3_VAE,
+            "5x5": C2D_AE_128_5x5_VAE
+        },
+        "res": {
+            "3x3": C2D_AE_3x3_Res
+        }
+    },
+    
+    144: {
+        "vanilla": {
+            "3x3": C2D_AE_144_3x3
+        }
+    },
+    
+    224: {
+        "generic": Generic_C2D_AE
+    }
+}
