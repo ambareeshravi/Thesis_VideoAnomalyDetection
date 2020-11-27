@@ -1,6 +1,0 @@
-16-11-2020
-1. optimizer.zero_grad() -> model.zero_grad()
-2. added support for stacked grayscale training
-3. Model class -> AutoEncoderModel class
-4. test results to txt file
-5. added optimizers and L2 Regularity
