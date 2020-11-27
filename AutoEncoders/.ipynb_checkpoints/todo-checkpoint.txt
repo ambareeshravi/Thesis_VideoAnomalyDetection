@@ -1,4 +1,0 @@
-1. Noose AE
-2. Check pandora again
-3. Better reconstructions
-4. Better separability of embeddings
