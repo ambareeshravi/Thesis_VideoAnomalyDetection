@@ -11,3 +11,10 @@ def ADAGRAD(model, lr = 1e-2, lr_decay = 0, weight_decay = 1e-5):
     
 def RMSProp(model, lr = 1e-2, weight_decay = 1e-5):
     return torch.optim.RMSprop(model.parameters(), lr = lr, weight_decay = weight_decay)
+
+select_optimizer = {
+    "adam": ADAM,
+    "sgd": SGD,
+    "adagrad": ADAGRAD,
+    "rmsprop": RMSProp
+}

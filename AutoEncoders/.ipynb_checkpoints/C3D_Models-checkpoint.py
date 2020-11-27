@@ -27,6 +27,7 @@ class Generic_C3D_AE(nn.Module):
                  n_frames = 16,
                  debug = False):
         super(Generic_C3D_AE, self).__init__()
+        self.__name__ = "C3D_Generic"
         self.channels = channels
         self.debug = debug
         
@@ -72,6 +73,7 @@ class C3D_AE_3x3(nn.Module):
         conv_type = "conv3d"
     ):
         super(C3D_AE_3x3, self).__init__()
+        self.__name__ = "C3D_128_3x3"
         self.channels = channels
         self.filter_count = filter_count
         
@@ -107,6 +109,7 @@ class C3D_AE_Res_3x3(nn.Module):
         conv_type = "conv3d"
     ):
         super(C3D_AE_Res_3x3, self).__init__()
+        self.__name__ = "C3D_128_3x3_RES"
         self.channels = channels
         self.filter_count = filter_count
         
@@ -138,7 +141,7 @@ class C3D_AE_Res_3x3(nn.Module):
         encodings = self.encoder(x)
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
-    
+
 class C3D2D_AE_3x3(nn.Module):
     def __init__(
         self,
@@ -147,6 +150,7 @@ class C3D2D_AE_3x3(nn.Module):
         conv_type = "conv3d"
     ):
         super(C3D2D_AE_3x3, self).__init__()
+        self.__name__ = "C3D2D_128_3x3"
         self.channels = channels
         self.filter_count = filter_count
         
@@ -179,3 +183,16 @@ class C3D2D_AE_3x3(nn.Module):
         prilim_out = prilim_out.unsqueeze(dim=2)
         reconstructions = self.decoder2(prilim_out)
         return reconstructions, encodings
+
+C3D_MODELS_DICT = {
+    128: {
+        "generic": Generic_C3D_AE,
+        "vanilla": {
+            "3x3": C3D_AE_3x3
+        },
+        "res": {
+            "3x3": C3D_AE_Res_3x3
+        },
+        "3D2D": C3D2D_AE_3x3
+    }
+}

@@ -110,3 +110,13 @@ class MANIFOLD_LOSS:
     
     def __call__(self, original, reconstruction, encoding):
         return (self.weights[0] * self.main_loss(original, reconstruction)) + (self.weights[1] * self.mahalanobis_loss(encoding))
+    
+    
+select_loss = {
+    "mse": MSE_LOSS(),
+    "bce": BCE_LOSS(),
+    "psnr": PSNR_LOSS(),
+    "weighted": WEIGHTED_SIMILARITY(),
+    "quality": QUALITY_LOSS(),
+    "manifold": MANIFOLD_LOSS()
+}

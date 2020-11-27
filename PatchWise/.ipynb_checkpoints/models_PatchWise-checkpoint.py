@@ -11,6 +11,7 @@ class PatchWise_C2D(nn.Module):
         filters_count = [64,64,128,256,128]
     ):
         super(PatchWise_C2D, self).__init__()
+        self.__name__ = "C2D_64_PatchWise"
         self.channels = channels
         self.filters_count = filters_count
 
@@ -42,6 +43,7 @@ class PatchWise_C3D(nn.Module):
         filters_count = [64,64,128,256,128]
     ):
         super(PatchWise_C3D, self).__init__()
+        self.__name__ = "C3D_64_PatchWise"
         self.channels = channels
         self.filters_count = filters_count
 
@@ -63,3 +65,11 @@ class PatchWise_C3D(nn.Module):
         encodings = self.encoder(x)
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
+    
+    
+PATCHWISE_MODELS_DICT = {
+    64: {
+        "C2D": PatchWise_C2D,
+        "C3D": PatchWise_C3D
+    }
+}

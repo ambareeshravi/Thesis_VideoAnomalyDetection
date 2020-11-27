@@ -167,6 +167,7 @@ class AutoEncoder_Trainer:
         self.device = torch.device("cpu")
         if useGPU and torch.cuda.is_available(): self.device = torch.device("cuda")
         self.debug = debug
+        self.destructAll = destructAll
         
         self.train_loader = train_loader
         self.val_loader = val_loader
@@ -233,7 +234,7 @@ class AutoEncoder_Trainer:
         
         # Clear memory
         try:
-            if destructAll:
+            if self.destructAll:
                 for model in self.autoencoder_models:
                     model.self_destruct()
                 del self.autoencoder_models

@@ -6,6 +6,7 @@ def getConvOutputShape(input_size, kernel_size, stride = 1, padding = 0):
 class ConvLSTM_AE(nn.Module):
     def __init__(self, channels = 3, image_size = 128, hidden_dim = 64):
         super(ConvLSTM_AE, self).__init__()
+        self.__name__ = "CLSTM_128_v0"
         self.channels = channels
         self.image_size = image_size
         self.hidden_dim = hidden_dim
@@ -87,10 +88,11 @@ class ConvLSTM_AE(nn.Module):
         hidden_list = [hs_1, cs_1, hs_2, cs_2, hs_3, cs_3, hs_4, cs_4]
         # autoencoder forward
         return self.autoencoder(x, ts, hidden_list)
-    
+
 class ConvLSTM_C3D_C2D_AE(nn.Module):
     def __init__(self, channels = 3, image_size = 128, hidden_dim = 64):
         super(ConvLSTM_C3D_C2D_AE, self).__init__()
+        self.__name__ = "CLSTMC3DC2D_128"
         self.channels = channels
         self.image_size = image_size
         self.hidden_dim = hidden_dim
@@ -222,7 +224,6 @@ class ConvLSTM_C3D_C2D_AE(nn.Module):
         # autoencoder forward
         return self.autoencoder(x, ts, hidden_list)
     
-    
 class AllInOne(nn.Module):
     '''
     Encoding - SVM
@@ -238,6 +239,7 @@ class AllInOne(nn.Module):
     '''
     def __init__(self, channels = 3, image_size = 128, filters_count = [32, 64, 64, 64, 64], useGPU = True):
         super(AllInOne, self).__init__()
+        self.__name__ = "ALLINONE_128"
         self.device = torch.device("cpu")
         if useGPU and torch.cuda.is_available: self.device = torch.device("cuda")
         self.channels = channels
@@ -358,7 +360,7 @@ class AllInOne(nn.Module):
         hidden_list = [hs_1, cs_1, hs_2, cs_2, hs_3, cs_3, hs_4, cs_4]
         # autoencoder forward
         return self.autoencoder(x, ts, hidden_list)
-    
+
 class CLSTM_AE_CTD(nn.Module):
     def __init__(
         self,
@@ -368,6 +370,7 @@ class CLSTM_AE_CTD(nn.Module):
         useGPU = True
     ):
         super(CLSTM_AE_CTD, self).__init__()
+        self.__name__ = "CLSTMCTD_128"
         self.image_size = image_size
         self.channels = channels
         self.filters_count = filters_count
@@ -413,7 +416,7 @@ class CLSTM_AE_CTD(nn.Module):
         encodings = torch.stack(outputs).transpose(0,1).transpose(1,2)
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
-    
+
 class CLSTM_AE(nn.Module):
     def __init__(
         self,
@@ -423,6 +426,7 @@ class CLSTM_AE(nn.Module):
         useGPU = True
     ):
         super(CLSTM_AE, self).__init__()
+        self.__name__ = "CLSTM_v1"
         self.image_size = image_size
         self.channels = channels
         self.filters_count = filters_count
@@ -485,3 +489,14 @@ class CLSTM_AE(nn.Module):
         encodings = torch.stack(encodings).permute(1,2,0,3,4)
         reconstructions = torch.stack(outputs).permute(1,2,0,3,4)
         return reconstructions, encodings
+    
+    
+CONV2D_LSTM_DICT = {
+    128: {
+        "v0": ConvLSTM_AE,
+        "C3D2D": ConvLSTM_C3D_C2D_AE,
+        "allinone": AllInOne,
+        "CTD": CLSTM_AE_CTD,
+        "v1": CLSTM_AE
+    }
+}

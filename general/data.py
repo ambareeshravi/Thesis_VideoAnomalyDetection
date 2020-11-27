@@ -140,7 +140,7 @@ class UCSD(ImagesHandler, VideosHandler, Attributes):
                  asImages = True,
                  image_size = 128,
                  image_type = "normal",
-                 n_frames = 8,
+                 n_frames = 16,
                  frame_strides = [1,2,4,8,16],
                  sample_stride = 1,
                  useCorrectedAnnotations = True
@@ -244,7 +244,7 @@ class StreetScene(ImagesHandler, VideosHandler, Attributes):
                  asImages = True,
                  image_size = 128,
                  image_type = "normal",
-                 n_frames = 8,
+                 n_frames = 16,
                  frame_strides = [1,2,4,8,16],
                  sample_stride = 1,
                 ):
@@ -333,7 +333,7 @@ class Avenue(ImagesHandler, VideosHandler, Attributes):
                  asImages = True,
                  image_size = 128,
                  image_type = "normal",
-                 n_frames = 8,
+                 n_frames = 16,
                  frame_strides = [1,2,4,8,16],
                  sample_stride = 1,
                 ):
@@ -431,7 +431,7 @@ def select_dataset(
     asImages = True,
     image_size = 128,
     image_type = "normal",
-    n_frames = 8,
+    n_frames = 16,
     frame_strides = [1,2,4,8,16],
     sample_stride = 1,
 ):
@@ -448,12 +448,15 @@ def select_dataset(
         "frame_strides": frame_strides,
         "sample_stride": sample_stride,
     }
+    
     dataset = dataset.lower()
+    flow_channels = 0
+    if image_type == "flow": flow_channels += 3
     if "ucsd1" in dataset:
-        return UCSD(dataset_type = 1, **kwargs)
+        return UCSD(dataset_type = 1, **kwargs), 1 + flow_channels
     elif "ucsd2" in dataset:
-        return UCSD(dataset_type = 2, **kwargs)
+        return UCSD(dataset_type = 2, **kwargs), 1 + flow_channels
     elif "street" in dataset:
-        return StreetScene(**kwargs)
+        return StreetScene(**kwargs), 3 + flow_channels
     elif "avenue" in dataset:
-        return Avenue(**kwargs)
+        return Avenue(**kwargs), 3 + flow_channels
