@@ -21,11 +21,14 @@ activations_dict = {
 
 # ------------------------------------------------------- #
 
-def HalfPrecision(model):
-    model.half()
-    for layer in model.modules():
-        if isinstance(layer, nn.BatchNorm2d) or isinstance(layer, nn.BatchNorm3d):
-            layer.float()
+def HalfPrecision(model, first = True):
+    if first: model.half()
+    
+    if isinstance(model, torch.nn.modules.batchnorm._BatchNorm):
+        model.float()
+    for child in model.children():
+        HalfPrecision(child, False)
+    return model
     
 def DataParallel(model):
     if torch.cuda.device_count() > 1:
