@@ -1,7 +1,6 @@
+opencv-python
 matplotlib==3.2.1
 ml-metrics==0.1.4
-numpy==1.18.4
-opencv-python==4.2.0.34
 pandas==1.0.3
 Pillow==7.1.2
 pytorch-msssim==0.2.1
