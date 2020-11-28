@@ -10,8 +10,6 @@ from test_autoencoder import *
 
 # Import all available models
 from C2D_Models import *
-from C3D_Models import *
-from ConvLSTM_AE.ConvLSTM_AE import *
 from PatchWise.models_PatchWise import *
 
 if __name__ == '__main__':

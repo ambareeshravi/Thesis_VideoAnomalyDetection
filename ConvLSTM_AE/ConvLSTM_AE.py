@@ -136,10 +136,7 @@ class CLSTM_AE(nn.Module):
     
 CONV2D_LSTM_DICT = {
     128: {
-        "v0": ConvLSTM_AE,
-        "C3D2D": ConvLSTM_C3D_C2D_AE,
-        "allinone": AllInOne,
-        "CTD": CLSTM_AE_CTD,
-        "v1": CLSTM_AE
+        "CLSTM_CTD": CLSTM_AE_CTD,
+        "CLSTM": CLSTM_AE
     }
 }
