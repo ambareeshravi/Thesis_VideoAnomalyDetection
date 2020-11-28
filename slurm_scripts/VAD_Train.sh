@@ -8,11 +8,10 @@
 #SBATCH --cpus-per-task=16  # Cores proportional to GPUs: 6 on Cedar, 16 on Graham. [--ntasks-per-node=32]
 #SBATCH --mem=63500M        # Memory proportional to GPUs: 31500 Cedar, 63500 Graham. [--mem=127G ]
 
-#SBATCH --time=0-02:00      # time (DD-HH:MM)
+#SBATCH --time=0-05:00      # time (DD-HH:MM)
 
 #SBATCH --mail-user=ambareesh.ravi@uwaterloo.ca
 #SBATCH --mail-type=ALL
-#SBATCH --output=~/projects/def-karray/a24ravi/trained_models/slurm-%j.out
 
 free -g
 nvidia-smi
@@ -34,6 +33,3 @@ echo "[STATUS] Script completed at `date`"
 cp run_config.py $SLURM_TMPDIR/Models/
 tar cf ~/projects/def-karray/a24ravi/trained_models/`date +%d_%m_%Y_%H.tar` $SLURM_TMPDIR/Models/*
 echo "[STATUS] Models copied safely"
-
-# cp slurm-${SLURM_JOB_ID}.out ~/projects/def-karray/a24ravi/trained_models/`date +%d_%m_%Y_%H.out`
-# rm slurm-${SLURM_JOB_ID}.out
