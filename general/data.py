@@ -1,7 +1,7 @@
 from .all_imports import *
 from .utils import *
 from .optical_flow import OpticalFlow
-from .paths import *
+from .paths import DATA_PATH
 
 from skimage import filters
 
@@ -158,7 +158,7 @@ class UCSD(ImagesHandler, VideosHandler, Attributes):
         
         ImagesHandler.__init__(self)
         VideosHandler.__init__(self)
-        self.data_path = UCSD_PATH + "UCSDped%s/"%(str(dataset_type))
+        self.data_path = os.path.join(DATA_PATH, "UCSD/UCSDped%s/"%(str(dataset_type)))
         
         if self.isTrain:
             self.parent_directory = join_paths([self.data_path, "Train"])
@@ -261,7 +261,7 @@ class StreetScene(ImagesHandler, VideosHandler, Attributes):
             
         ImagesHandler.__init__(self)
         VideosHandler.__init__(self)
-        self.data_path = STREET_SCENE_PATH
+        self.data_path = ""
         
         if self.isTrain:
             self.parent_directory = join_paths([self.data_path, "Train"])
@@ -350,7 +350,7 @@ class Avenue(ImagesHandler, VideosHandler, Attributes):
             
         ImagesHandler.__init__(self)
         VideosHandler.__init__(self)
-        self.data_path = AVENUE_PATH
+        self.data_path = os.path.join(DATA_PATH, "Avenue")
         
         if self.isTrain:
             self.parent_directory = join_paths([self.data_path, "Train"])
