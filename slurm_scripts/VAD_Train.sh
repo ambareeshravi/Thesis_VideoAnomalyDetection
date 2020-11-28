@@ -16,11 +16,14 @@
 #SBATCH --job-name=example
 #SBATCH --output=$SCRATCH/output/date+%d_%m_%Y_%H:%M_%j.txt
 
-
+free -g
 nvidia-smi
 
-tar xvf ~/projects/def-karray/a24ravi/VAD_Datasets.tar -C $SLURM_TMPDIR/
+tar xf ~/projects/def-karray/a24ravi/VAD_Datasets.tar -C $SLURM_TMPDIR/
 echo "[STATUS] Created data directory"
+
+ls $SLURM_TMPDIR -a
+ls $SLURM_TMPDIR/VAD_dataset/ -l | wc -l
 
 module load python/3.7.4
 source /home/$USER/ENV/bin/activate
@@ -29,10 +32,10 @@ echo "[STATUS] Python environment ready"
 mkdir $SLURM_TMPDIR/Models
 cd ~/workspace/Thesis_VideoAnomalyDetection/AutoEncoders/
 
-echo "[STATUS] Starting script at 'date'"
+echo "[STATUS] Starting script at `date`"
 python run_config.py --model_path $SLURM_TMPDIR/Models/ --data_path $SLURM_TMPDIR/VAD_dataset/
-echo "[STATUS] Script completed at 'date'" 
+echo "[STATUS] Script completed at `date`" 
 
 cp run_config.py $SLURM_TMPDIR/Models/
-tar cvf ~/projects/def-karray/a24ravi/trained_models/date+%d_%m_%Y_%H:%M.tar $SLURM_TMPDIR/Models/*
+tar cf ~/projects/def-karray/a24ravi/trained_models/date+%d_%m_%Y_%H:%M.tar $SLURM_TMPDIR/Models/*
 echo "[STATUS] Models copied safely"
