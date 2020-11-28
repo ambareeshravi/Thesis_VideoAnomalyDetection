@@ -1,1 +1,0 @@
-DATA_PATH = "../../../datasets/VAD_Datasets/"

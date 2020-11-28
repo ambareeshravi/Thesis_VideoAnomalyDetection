@@ -1,7 +1,6 @@
 from .all_imports import *
 from .utils import *
 from .optical_flow import OpticalFlow
-from .paths import DATA_PATH
 
 from skimage import filters
 
@@ -135,6 +134,7 @@ class Attributes:
 # UCSD Data
 class UCSD(ImagesHandler, VideosHandler, Attributes):
     def __init__(self,
+                 parent_path = "../../../datasets/VAD_Datasets/",
                  dataset_type = 1,
                  isTrain = True,
                  asImages = True,
@@ -158,7 +158,7 @@ class UCSD(ImagesHandler, VideosHandler, Attributes):
         
         ImagesHandler.__init__(self)
         VideosHandler.__init__(self)
-        self.data_path = os.path.join(DATA_PATH, "UCSD/UCSDped%s/"%(str(dataset_type)))
+        self.data_path = os.path.join(parent_path, "UCSD/UCSDped%s/"%(str(dataset_type)))
         
         if self.isTrain:
             self.parent_directory = join_paths([self.data_path, "Train"])
@@ -240,6 +240,7 @@ class UCSD(ImagesHandler, VideosHandler, Attributes):
 # Street Scene data
 class StreetScene(ImagesHandler, VideosHandler, Attributes):
     def __init__(self,
+                 parent_path = "/media/ambreesh/datasets/",
                  isTrain = True,
                  asImages = True,
                  image_size = 128,
@@ -261,7 +262,7 @@ class StreetScene(ImagesHandler, VideosHandler, Attributes):
             
         ImagesHandler.__init__(self)
         VideosHandler.__init__(self)
-        self.data_path = ""
+        self.data_path = os.path.join(parent_path, "StreetScene")
         
         if self.isTrain:
             self.parent_directory = join_paths([self.data_path, "Train"])
@@ -329,6 +330,7 @@ class StreetScene(ImagesHandler, VideosHandler, Attributes):
                     
 class Avenue(ImagesHandler, VideosHandler, Attributes):
     def __init__(self,
+                 parent_path = "../../../datasets/VAD_Datasets/",
                  isTrain = True,
                  asImages = True,
                  image_size = 128,
@@ -350,7 +352,7 @@ class Avenue(ImagesHandler, VideosHandler, Attributes):
             
         ImagesHandler.__init__(self)
         VideosHandler.__init__(self)
-        self.data_path = os.path.join(DATA_PATH, "Avenue")
+        self.data_path = os.path.join(parent_path, "Avenue")
         
         if self.isTrain:
             self.parent_directory = join_paths([self.data_path, "Train"])
@@ -427,6 +429,7 @@ class Avenue(ImagesHandler, VideosHandler, Attributes):
                     
 def select_dataset(
     dataset,
+    parent_path = "../../../datasets/VAD_Datasets/",
     isTrain = True,
     asImages = True,
     image_size = 128,
@@ -440,6 +443,7 @@ def select_dataset(
         sample_stride = 1
         
     kwargs = {
+        "parent_path": parent_path,
         "isTrain": isTrain,
         "asImages": asImages,
         "image_size": image_size,
