@@ -23,16 +23,16 @@ if __name__ == '__main__':
     # Editable
     IMAGE_SIZE = 128
     EPOCHS = 300
-    BATCH_SIZE = 256
+    BATCH_SIZE = 32
     IMAGE_TYPE = "normal"
     MODEL_PATH = args.model_path
     if not os.path.exists(MODEL_PATH): os.mkdir(MODEL_PATH)
     DATA_PATH = os.path.join(args.data_path, "VAD_Datasets")
     OPTIMIZER_TYPE = "adam"
     LOSS_TYPE = "mse"
-    DENOISING = True
+    DENOISING = False
     
-    isVideo = False
+    isVideo = True
     stackFrames = 1
     asImages = True
     if isVideo:
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     INFO("TRAINING DATA READY")
     
     MODELS_LIST = [
-        C2D_AE_128_3x3(channels = CHANNELS)
+        C3D_AE_3x3(channels = CHANNELS)
     ]
     
     model_files = [
