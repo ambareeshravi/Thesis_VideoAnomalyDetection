@@ -191,6 +191,19 @@ class AutoEncoder_Trainer:
                      debug = debug
                     )                            
             self.autoencoder_models.append(model)
+    
+    def clear_memory(self):
+        # Clear memory
+        try:
+            if self.destructAll:
+                for model in self.autoencoder_models:
+                    model.self_destruct()
+                del self.autoencoder_models
+            torch.cuda.empty_cache()
+            gc.collect()
+        except Exception as e:
+            print("Could not clear the memory. Kill the process manually.")
+            print(e)
             
     def train(self):
         for epoch in range(1, self.epochs + 1):
@@ -230,18 +243,6 @@ class AutoEncoder_Trainer:
         model_paths = list()
         for model in self.autoencoder_models:
             model.save_final()
-            model_paths.append(model.save_path)
-        
-        # Clear memory
-        try:
-            if self.destructAll:
-                for model in self.autoencoder_models:
-                    model.self_destruct()
-                del self.autoencoder_models
-            torch.cuda.empty_cache()
-            gc.collect()
-        except Exception as e:
-            print("Could not clear the memory. Kill the process manually.")
-            print(e)
+            model_paths.append(model.save_path)    
             
         return model_paths

@@ -2,7 +2,7 @@ import argparse
 import sys
 sys.path.append("..")
 
-from general.utils import INFO
+# from general.utils import INFO
 
 # Import AutoEncoder trainer and tester scripts
 from train_autoencoder import *
@@ -16,15 +16,18 @@ from PatchWise.models_PatchWise import *
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser("Parameters to run the training")
+    parser.add_argument("--data_path", type = str, help="Path to read data from")
     parser.add_argument("--model_path", type = str, help="Path to store the models")
     args = parser.parse_args()
     
     # Editable
     IMAGE_SIZE = 128
-    EPOCHS = 300
+    EPOCHS = 3 #00
     BATCH_SIZE = 128
     IMAGE_TYPE = "normal"
     MODEL_PATH = args.model_path
+    if not os.path.exists(MODEL_PATH): os.mkdir(MODEL_PATH)
+    DATA_PATH = os.path.join(args.data_path, "VAD_Datasets")
     OPTIMIZER_TYPE = "adam"
     LOSS_TYPE = "mse"
     DENOISING = True
@@ -42,6 +45,7 @@ if __name__ == '__main__':
     # 1. Training
     train_data, CHANNELS = select_dataset(
         dataset = DATA_TYPE,
+        parent_path = DATA_PATH,
         isTrain = True,
         asImages = asImages,
         image_size = IMAGE_SIZE,
@@ -91,6 +95,7 @@ if __name__ == '__main__':
     # 2. Testing
     test_data, CHANNELS = select_dataset(
         dataset = DATA_TYPE,
+        parent_path = DATA_PATH,
         isTrain = False,
         asImages = True,
         image_size = IMAGE_SIZE,
@@ -118,5 +123,7 @@ if __name__ == '__main__':
         )
         print("-"*40)
         del tester
-        
+    
+    trainer.clear_memory()
+    del trainer
     INFO("** Sucessfully Completed Execution **")
