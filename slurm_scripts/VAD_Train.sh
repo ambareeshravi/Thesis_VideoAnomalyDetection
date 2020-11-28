@@ -8,13 +8,12 @@
 #SBATCH --cpus-per-task=16  # Cores proportional to GPUs: 6 on Cedar, 16 on Graham. [--ntasks-per-node=32]
 #SBATCH --mem=63500M        # Memory proportional to GPUs: 31500 Cedar, 63500 Graham. [--mem=127G ]
 
-#SBATCH --time=0-05:00      # time (DD-HH:MM)
+#SBATCH --time=0-02:00      # time (DD-HH:MM)
 
 #SBATCH --mail-user=ambareesh.ravi@uwaterloo.ca
 #SBATCH --mail-type=ALL
 
-#SBATCH --job-name=example
-#SBATCH --output=$SCRATCH/output/date+%d_%m_%Y_%H:%M_%j.txt
+#SBATCH --output=~/projects/def-karray/a24ravi/trained_models/date+%d_%m_%Y_%H:%M_%j.txt
 
 free -g
 nvidia-smi
