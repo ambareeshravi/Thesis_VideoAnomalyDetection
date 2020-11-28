@@ -12,7 +12,7 @@
 
 #SBATCH --mail-user=ambareesh.ravi@uwaterloo.ca
 #SBATCH --mail-type=ALL
-#SBATCH --output=~/projects/def-karray/a24ravi/trained_models/`date +%d_%m_%Y_%H:%M.out`
+#SBATCH --output=~/projects/def-karray/a24ravi/trained_models/slurm-%j.out
 
 free -g
 nvidia-smi
@@ -32,5 +32,8 @@ python run_config.py --model_path $SLURM_TMPDIR/Models/ --data_path $SLURM_TMPDI
 echo "[STATUS] Script completed at `date`" 
 
 cp run_config.py $SLURM_TMPDIR/Models/
-tar cf ~/projects/def-karray/a24ravi/trained_models/`date +%d_%m_%Y_%H:%M.tar` $SLURM_TMPDIR/Models/*
+tar cf ~/projects/def-karray/a24ravi/trained_models/`date +%d_%m_%Y_%H.tar` $SLURM_TMPDIR/Models/*
 echo "[STATUS] Models copied safely"
+
+# cp slurm-${SLURM_JOB_ID}.out ~/projects/def-karray/a24ravi/trained_models/`date +%d_%m_%Y_%H.out`
+# rm slurm-${SLURM_JOB_ID}.out
