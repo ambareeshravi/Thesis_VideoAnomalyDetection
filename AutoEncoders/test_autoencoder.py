@@ -75,6 +75,8 @@ class AutoEncoder_Tester:
         plt.legend()
         plt.savefig(file_name)
         plt.clf()
+        try: plt.close()
+        except: pass
         
     def OC_SVM(self, features, y_true, tag = ""):
         assert len(features) == len(y_true), "OC_SVM: Number of features and targets are different"

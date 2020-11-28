@@ -94,7 +94,7 @@ class AutoEncoderModel:
     
     def save_final(self,):
         self.save()
-#         plot_stat(self.history, os.path.split(self.model_file)[-1], self.save_path)
+        plot_stat(self.history, os.path.split(self.model_file)[-1], self.save_path)
         with open(os.path.join(self.save_path, "train_stats.pkl"), "wb") as f:
             pkl.dump(self.history, f)             
     
