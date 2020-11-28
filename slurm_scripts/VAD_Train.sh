@@ -33,3 +33,6 @@ echo "[STATUS] Script completed at `date`"
 cp run_config.py $SLURM_TMPDIR/Models/
 tar cf ~/projects/def-karray/a24ravi/trained_models/`date +%d_%m_%Y_%H.tar` $SLURM_TMPDIR/Models/*
 echo "[STATUS] Models copied safely"
+
+deactivate
+echo "[STATUS] Deactivate python environment"
