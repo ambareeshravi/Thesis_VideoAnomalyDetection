@@ -32,7 +32,7 @@ def HalfPrecision(model, first = True):
     
 def DataParallel(model):
     if torch.cuda.device_count() > 1:
-        INFO("Using %d GPUs"%(torch.cuda.device_count()))
+#         INFO("Using %d GPUs"%(torch.cuda.device_count()))
         return nn.DataParallel(model)
     return model
 
