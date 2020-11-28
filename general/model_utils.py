@@ -273,6 +273,8 @@ class CT3D_Res(nn.Module):
 
 # ---------------------------------------- # 
 # Other modules
+# Use Conv2DLSTMCell_v1 / ConvTranspose2DLSTMCell_v1 for normal conv ops
+# Use V2 for ACB operations
 
 class Conv2DLSTMCell_v1(nn.Module):
     def __init__(self, image_size, input_dim, hidden_dim, kernel_size, stride, padding, bias = False, useGPU = True):

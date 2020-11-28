@@ -27,7 +27,7 @@ mkdir $SLURM_TMPDIR/Models
 cd ~/workspace/Thesis_VideoAnomalyDetection/AutoEncoders/
 
 echo "[STATUS] Starting script at `date`"
-python run_config.py --model_path $SLURM_TMPDIR/Models/ --data_path $SLURM_TMPDIR/
+python run_config_c2d.py --model_path $SLURM_TMPDIR/Models/ --data_path $SLURM_TMPDIR/
 echo "[STATUS] Script completed at `date`" 
 
 cp run_config.py $SLURM_TMPDIR/Models/

@@ -23,7 +23,7 @@ if __name__ == '__main__':
     # Editable
     IMAGE_SIZE = 128
     EPOCHS = 300
-    BATCH_SIZE = 44
+    BATCH_SIZE = 256
     IMAGE_TYPE = "normal"
     MODEL_PATH = args.model_path
     if not os.path.exists(MODEL_PATH): os.mkdir(MODEL_PATH)
@@ -32,7 +32,7 @@ if __name__ == '__main__':
     LOSS_TYPE = "mse"
     DENOISING = False
     
-    isVideo = True
+    isVideo = False
     stackFrames = 1
     asImages = True
     if isVideo:
@@ -59,7 +59,11 @@ if __name__ == '__main__':
     INFO("TRAINING DATA READY")
     
     MODELS_LIST = [
-        C3D_AE_3x3(channels = CHANNELS)
+        C2D_AE_128_3x3(channels = CHANNELS),
+        C2D_AE_128_5x5(channels = CHANNELS),
+        C2D_AE_ACB_128_3x3(channels = CHANNELS),
+        C2D_AE_ACB_128_5x5(channels = CHANNELS),
+        C2D_AE_3x3_Res(channels = CHANNELS),
     ]
     
     model_files = [
