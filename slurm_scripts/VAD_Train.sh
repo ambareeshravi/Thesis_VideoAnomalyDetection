@@ -20,7 +20,7 @@ tar xf ~/projects/def-karray/a24ravi/VAD_Datasets.tar -C $SLURM_TMPDIR/
 echo "[STATUS] Created data directory"
 
 ls $SLURM_TMPDIR -a
-ls $SLURM_TMPDIR/VAD_dataset/ -l | wc -l
+ls $SLURM_TMPDIR/VAD_datasets/ -l | wc -l
 
 module load python/3.7.4
 source /home/$USER/ENV/bin/activate
@@ -30,7 +30,7 @@ mkdir $SLURM_TMPDIR/Models
 cd ~/workspace/Thesis_VideoAnomalyDetection/AutoEncoders/
 
 echo "[STATUS] Starting script at `date`"
-python run_config.py --model_path $SLURM_TMPDIR/Models/ --data_path $SLURM_TMPDIR/VAD_dataset/
+python run_config.py --model_path $SLURM_TMPDIR/Models/ --data_path $SLURM_TMPDIR/VAD_datasets/
 echo "[STATUS] Script completed at `date`" 
 
 cp run_config.py $SLURM_TMPDIR/Models/
