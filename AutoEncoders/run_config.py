@@ -22,8 +22,8 @@ if __name__ == '__main__':
     
     # Editable
     IMAGE_SIZE = 128
-    EPOCHS = 3 #00
-    BATCH_SIZE = 128
+    EPOCHS = 300
+    BATCH_SIZE = 256
     IMAGE_TYPE = "normal"
     MODEL_PATH = args.model_path
     if not os.path.exists(MODEL_PATH): os.mkdir(MODEL_PATH)

@@ -12,15 +12,13 @@
 
 #SBATCH --mail-user=ambareesh.ravi@uwaterloo.ca
 #SBATCH --mail-type=ALL
+#SBATCH --output=~/projects/def-karray/a24ravi/trained_models/`date +%d_%m_%Y_%H:%M.out`
 
 free -g
 nvidia-smi
 
 tar xf ~/projects/def-karray/a24ravi/VAD_Datasets.tar -C $SLURM_TMPDIR/
 echo "[STATUS] Created data directory"
-
-ls $SLURM_TMPDIR -a
-ls $SLURM_TMPDIR/VAD_Datasets/ -l | wc -l
 
 module load python/3.7.4
 source /home/$USER/ENV/bin/activate
