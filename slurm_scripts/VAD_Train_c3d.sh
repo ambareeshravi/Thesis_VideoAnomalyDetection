@@ -30,7 +30,8 @@ echo "[STATUS] Starting script at `date`"
 python run_config_c3d.py --model_path $SLURM_TMPDIR/Models/ --data_path $SLURM_TMPDIR/
 echo "[STATUS] Script completed at `date`" 
 
-cp run_config.py $SLURM_TMPDIR/Models/
+for d in $SLURM_TMPDIR/Models/*/; do cp run_config_3d.py "$d"; done
+
 tar cf ~/projects/def-karray/a24ravi/trained_models/`date +%d_%m_%Y_%H.tar` $SLURM_TMPDIR/Models/*
 echo "[STATUS] Models copied safely"
 
