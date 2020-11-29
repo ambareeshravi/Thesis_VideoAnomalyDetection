@@ -9,8 +9,7 @@ from train_autoencoder import *
 from test_autoencoder import *
 
 # Import all available models
-from C3D_Models import *
-from PatchWise.models_PatchWise import *
+from ConvLSTM_AE.ConvLSTM_AE import *
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser("Parameters to run the training")
@@ -21,7 +20,7 @@ if __name__ == '__main__':
     # Editable
     IMAGE_SIZE = 128
     EPOCHS = 300
-    BATCH_SIZE = 44
+    BATCH_SIZE = 36
     IMAGE_TYPE = "normal"
     MODEL_PATH = args.model_path
     if not os.path.exists(MODEL_PATH): os.mkdir(MODEL_PATH)
@@ -57,7 +56,8 @@ if __name__ == '__main__':
     INFO("TRAINING DATA READY")
     
     MODELS_LIST = [
-        C3D_AE_Res_3x3(channels = CHANNELS)
+        CLSTM_AE_CTD(image_size = IMAGE_SIZE, channels = CHANNELS),
+#         CLSTM_AE(image_size = IMAGE_SIZE, channels = CHANNELS)
     ]
     
     model_files = [
