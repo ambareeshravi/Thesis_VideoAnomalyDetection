@@ -31,7 +31,7 @@ python run_config_c2d.py --model_path $SLURM_TMPDIR/Models/ --data_path $SLURM_T
 echo "[STATUS] Script completed at `date`" 
 
  
-for d in $SLURM_TMPDIR/Models/*/; do cp run_config_2d.py "$d"; done
+for d in $SLURM_TMPDIR/Models/*/; do cp run_config_c2d.py "$d"; done
 
 tar cf ~/projects/def-karray/a24ravi/trained_models/`date +%d_%m_%Y_%H.tar` $SLURM_TMPDIR/Models/*
 echo "[STATUS] Models copied safely"

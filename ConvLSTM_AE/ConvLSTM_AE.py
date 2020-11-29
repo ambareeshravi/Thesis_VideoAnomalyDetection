@@ -9,11 +9,11 @@ class CLSTM_AE_CTD(nn.Module):
         self,
         image_size,
         channels = 3,
-        filters_count = [64,64,128,128,32], 
+        filters_count = [64,64,64,64,64], 
         useGPU = True
     ):
         super(CLSTM_AE_CTD, self).__init__()
-        self.__name__ = "CLSTMCTD_128"
+        self.__name__ = "CLSTM_CTD_128"
         self.image_size = image_size
         self.channels = channels
         self.filters_count = filters_count
@@ -27,14 +27,14 @@ class CLSTM_AE_CTD(nn.Module):
         self.clstm3_os = getConvOutputShape(self.clstm2_os, 3,2)
         self.clstm4 = Conv2dLSTM_Cell(self.clstm3_os, self.filters_count[2], self.filters_count[3], 3, 2, 0, useGPU=useGPU)
         self.clstm4_os = getConvOutputShape(self.clstm3_os, 3,2)
-        self.clstm5 = Conv2dLSTM_Cell(self.clstm4_os, self.filters_count[3], self.filters_count[4], 3, 2, 0, useGPU=useGPU)
-        self.clstm5_os = getConvOutputShape(self.clstm4_os, 3,2)
+        self.clstm5 = Conv2dLSTM_Cell(self.clstm4_os, self.filters_count[3], self.filters_count[4], 4, 3, 0, useGPU=useGPU)
+        self.clstm5_os = getConvOutputShape(self.clstm4_os, 4,3)
         
         self.decoder = nn.Sequential(
-            CT3D_BN_A(self.filters_count[4], self.filters_count[3], (1,3,3), (1,1,1)),
+            CT3D_BN_A(self.filters_count[4], self.filters_count[3], (1,4,4), (1,3,3)),
             CT3D_BN_A(self.filters_count[3], self.filters_count[2], (1,3,3), (1,2,2)),
-            CT3D_BN_A(self.filters_count[2], self.filters_count[1], (1,5,5), (1,2,2), output_padding=(0,1,1)),
-            CT3D_BN_A(self.filters_count[1], self.filters_count[0], (1,5,5), (1,2,2)),
+            CT3D_BN_A(self.filters_count[2], self.filters_count[1], (1,3,3), (1,2,2)),
+            CT3D_BN_A(self.filters_count[1], self.filters_count[0], (1,3,3), (1,2,2)),
             CT3D_BN_A(self.filters_count[0], self.channels, (1,4,4), (1,2,2)),
         )
     
@@ -69,7 +69,7 @@ class CLSTM_AE(nn.Module):
         useGPU = True
     ):
         super(CLSTM_AE, self).__init__()
-        self.__name__ = "CLSTM_v1"
+        self.__name__ = "CLSTM_128"
         self.image_size = image_size
         self.channels = channels
         self.filters_count = filters_count
