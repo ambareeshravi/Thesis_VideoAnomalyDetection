@@ -150,3 +150,8 @@ class TimeIt:
             return (self.ending_time - self.starting_time)/60
         elif "hours" in self.unit:
             return (self.ending_time - self.starting_time)/3600
+        
+def read_txt(file_path):
+    with open(file_path, "r") as f:
+        contents = f.read()
+    return contents

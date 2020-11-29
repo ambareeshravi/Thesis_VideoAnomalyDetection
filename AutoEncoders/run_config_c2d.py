@@ -87,6 +87,7 @@ if __name__ == '__main__':
                      status_rate = 25,
                      lr_scheduler_params = {"factor": 0.8, "patience": 5, "threshold": 5e-4},
                      useHalfPrecision = False,
+                     run_status_file = "run_status_c2d.txt",
                      destructAll = True,
                      useGPU = True,
                      debug = True

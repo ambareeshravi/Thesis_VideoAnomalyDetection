@@ -158,6 +158,7 @@ class AutoEncoder_Trainer:
                  status_rate = 1,
                  lr_scheduler_params = {"factor": 0.9, "patience": 5, "threshold": 5e-4},
                  useHalfPrecision = False,
+                 run_status_file = "run_status.txt",
                  destructAll = True,
                  useGPU = True,
                  debug = True):
@@ -167,6 +168,7 @@ class AutoEncoder_Trainer:
         self.device = torch.device("cpu")
         if useGPU and torch.cuda.is_available(): self.device = torch.device("cuda")
         self.debug = debug
+        self.run_status_file = run_status_file
         self.destructAll = destructAll
         
         self.train_loader = train_loader
@@ -206,6 +208,7 @@ class AutoEncoder_Trainer:
             print(e)
             
     def train(self):
+        stopTraining = False
         for epoch in range(1, self.epochs + 1):
             epoch_st = time()
             
@@ -237,7 +240,14 @@ class AutoEncoder_Trainer:
             for model in self.autoencoder_models:
                 if model.stopTraining: continue
                 model.epoch_reset()
-                if print_status: model.epoch_status()
+                if "stop" in read_txt(self.run_status_file).lower(): stopTraining = True
+                if print_status:
+                    model.epoch_status()
+                    model.save()
+                        
+            if stopTraining:
+                INFO("Stopping the training in %d epochs"%(epoch))
+                break
         
         # Finally save models
         model_paths = list()

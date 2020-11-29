@@ -135,10 +135,72 @@ class CLSTM_AE(nn.Module):
         encodings = torch.stack(encodings).transpose(0,1).transpose(1,2)
         reconstructions = torch.stack(reconstructions).transpose(0,1).transpose(1,2)
         return reconstructions, encodings    
+
+class CLSTM_C3D_AE(nn.Module):
+    def __init__(
+        self,
+        image_size,
+        channels = 3,
+        filters_count = [64,64,64,64,64], 
+        useGPU = True
+    ):
+        super(CLSTM_C3D_AE, self).__init__()
+        self.__name__ = "CLSTM_C3D_128"
+        self.image_size = image_size
+        self.channels = channels
+        self.filters_count = filters_count
+        
+        # Encoder
+        self.conv1 = C3D_BN_A(self.channels, self.filters_count[0], (1,3,3), (1,2,2))
+        self.conv1_os = getConvOutputShape(self.image_size, 3,2)
+        self.conv2 = C3D_BN_A(self.filters_count[0], self.filters_count[1], (1,3,3), (1,2,2))
+        self.conv2_os = getConvOutputShape(self.conv1_os, 3,2)
+        self.clstm1 = Conv2dLSTM_Cell(self.conv2_os, self.filters_count[1], self.filters_count[2], 4, 3, 0, useGPU=useGPU)
+        self.clstm1_os = getConvOutputShape(self.conv2_os, 4,3)
+        self.clstm2 = Conv2dLSTM_Cell(self.clstm1_os, self.filters_count[2], self.filters_count[3], 5, 3, 0, useGPU=useGPU)
+        self.clstm2_os = getConvOutputShape(self.clstm1_os, 5,3)
+                
+        # Decoder
+        self.ctlstm3 = ConvTranspose2dLSTM_Cell(self.clstm2_os, self.filters_count[3], self.filters_count[2], 4, 3, 0, useGPU=useGPU)
+        self.ctlstm3_os = getConvOutputShape(self.clstm2_os, 4, 3)
+        self.ctlstm4 = ConvTranspose2dLSTM_Cell(self.ctlstm3_os, self.filters_count[2], self.filters_count[1], 3, 2, 0, useGPU=useGPU)
+        self.ctlstm4_os = getConvOutputShape(self.ctlstm3_os, 3, 2)
+        self.convt_5 = CT3D_BN_A(self.filters_count[1], self.filters_count[0], (1,3,3), (1,2,2))
+        self.convt_6 = CT3D_BN_A(self.filters_count[0], self.filters_count[0], (1,3,3), (1,2,2))
+        self.convt_7 = CT3D_BN_A(self.filters_count[0], self.channels, (1,4,4), (1,2,2))
+    
+    def forward(self, x):
+        bs,c,ts,w,h = x.shape
+        [hs_1, cs_1] = self.clstm1.init_states(batch_size = bs)
+        [hs_2, cs_2] = self.clstm2.init_states(batch_size = bs)
+        [hs_3, cs_3] = self.ctlstm3.init_states(batch_size = bs)
+        [hs_4, cs_4] = self.ctlstm4.init_states(batch_size = bs)
+        
+        c1_o = self.conv1(x)
+        c2_o = self.conv2(c1_o)
+        
+        encodings = list()
+        clstm_out = list()
+        for t in range(ts):
+            # Encoding process
+            hs_1, cs_1 = self.clstm1(c2_o[:,:,t,:,:], (hs_1, cs_1))
+            hs_2, cs_2 = self.clstm2(hs_1, (hs_2, cs_2))
+            hs_3, cs_3 = self.ctlstm3(hs_2, (hs_3, cs_3))
+            hs_4, cs_4 = self.ctlstm4(hs_3, (hs_4, cs_4))
+            encodings.append(hs_2)
+            clstm_out.append(hs_4)
+            
+        encodings = torch.stack(encodings).transpose(0,1).transpose(1,2)
+        clstm_out = torch.stack(clstm_out).transpose(0,1).transpose(1,2)
+        ct_5_o = self.convt_5(clstm_out)
+        ct_6_o = self.convt_6(ct_5_o)
+        reconstructions =self.convt_7(ct_6_o)
+        return reconstructions, encodings
     
 CONV2D_LSTM_DICT = {
     128: {
         "CLSTM_CTD": CLSTM_AE_CTD,
-        "CLSTM": CLSTM_AE
+        "CLSTM": CLSTM_AE,
+        "CLSTM_C3D": CLSTM_C3D_AE
     }
 }
