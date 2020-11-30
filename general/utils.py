@@ -99,7 +99,7 @@ def get_data_loaders(
     train_data, val_data = torch.utils.data.random_split(data, [split_point, len(data)-split_point])
 
     train_loader = torch.utils.data.DataLoader(train_data, batch_size = batch_size, shuffle=True,  num_workers = num_workers, pin_memory=True)
-    val_loader = torch.utils.data.DataLoader(val_data, batch_size = batch_size, shuffle=True, num_workers = num_workers, pin_memory=True)
+    val_loader = torch.utils.data.DataLoader(val_data, batch_size = batch_size, shuffle=False, num_workers = num_workers, pin_memory=True)
     return train_loader, val_loader
 
 def eta(epoch, epochs, epoch_time):
