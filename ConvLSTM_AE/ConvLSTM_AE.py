@@ -162,9 +162,9 @@ class CLSTM_C3D_AE(nn.Module):
                 
         # Decoder
         self.ctlstm3 = ConvTranspose2dLSTM_Cell(self.clstm2_os, self.filters_count[3], self.filters_count[2], 4, 3, 0, useGPU=useGPU)
-        self.ctlstm3_os = getConvOutputShape(self.clstm2_os, 4, 3)
+        self.ctlstm3_os = getConvTransposeOutputShape(self.clstm2_os, 4, 3)
         self.ctlstm4 = ConvTranspose2dLSTM_Cell(self.ctlstm3_os, self.filters_count[2], self.filters_count[1], 3, 2, 0, useGPU=useGPU)
-        self.ctlstm4_os = getConvOutputShape(self.ctlstm3_os, 3, 2)
+        self.ctlstm4_os = getConvTransposeOutputShape(self.ctlstm3_os, 3, 2)
         self.convt_5 = CT3D_BN_A(self.filters_count[1], self.filters_count[0], (1,3,3), (1,2,2))
         self.convt_6 = CT3D_BN_A(self.filters_count[0], self.filters_count[0], (1,3,3), (1,2,2))
         self.convt_7 = CT3D_BN_A(self.filters_count[0], self.channels, (1,4,4), (1,2,2))
@@ -197,10 +197,100 @@ class CLSTM_C3D_AE(nn.Module):
         reconstructions =self.convt_7(ct_6_o)
         return reconstructions, encodings
     
+class CLSTM_C2D_AE(nn.Module):
+    '''
+    conv reduce
+    conv reduce
+    conv lstm
+    conv lstm
+    deconv lstm 
+    deconv lstm
+    deconv expand
+    deconv expand
+    '''
+    def __init__(
+        self,
+        image_size,
+        channels = 3,
+        filters_count = [64,64,64,64,64], 
+        useGPU = True
+    ):
+        super(CLSTM_C2D_AE, self).__init__()
+        self.__name__ = "CLSTM_MIXED_128"
+        self.image_size = image_size
+        self.channels = channels
+        self.filters_count = filters_count
+        
+        # Encoder
+        self.conv2d_1 = C2D_BN_A(self.channels, self.filters_count[0], 3, 2)
+        self.conv2d_1_os = getConvOutputShape(self.image_size, 3, 2)
+        self.conv2d_2 = C2D_BN_A(self.filters_count[0], self.filters_count[1], 3, 2)
+        self.conv2d_2_os = getConvOutputShape(self.conv2d_1_os, 3, 2)
+        
+        self.clstm1 = Conv2dLSTM_Cell(self.conv2d_2_os, self.filters_count[1], self.filters_count[2], 4, 3, 0, useGPU=useGPU)
+        self.clstm1_os = getConvOutputShape(self.conv2d_2_os, 4,3)
+        self.clstm2 = Conv2dLSTM_Cell(self.clstm1_os, self.filters_count[2], self.filters_count[3], 5, 3, 0, useGPU=useGPU)
+        self.clstm2_os = getConvOutputShape(self.clstm1_os, 5,3)
+                
+        # Decoder
+        self.ctlstm3 = ConvTranspose2dLSTM_Cell(self.clstm2_os, self.filters_count[3], self.filters_count[2], 4, 3, 0, useGPU=useGPU)
+        self.ctlstm3_os = getConvTransposeOutputShape(self.clstm2_os, 4, 3)
+        self.ctlstm4 = ConvTranspose2dLSTM_Cell(self.ctlstm3_os, self.filters_count[2], self.filters_count[1], 3, 2, 0, useGPU=useGPU)
+        self.ctlstm4_os = getConvTransposeOutputShape(self.ctlstm3_os, 3, 2)
+        
+        self.deconv = nn.Sequential(
+            CT2D_BN_A(self.filters_count[1], self.filters_count[0], 3 ,2),
+            CT2D_BN_A(self.filters_count[0], self.filters_count[0], 3 ,2),
+            CT2D_BN_A(self.filters_count[0], self.channels, 4 ,2)
+        )
+
+    
+    def forward(self, x):
+        bs,c,ts,w,h = x.shape
+        
+        [hs_1, cs_1] = self.clstm1.init_states(batch_size = bs)
+        [hs_2, cs_2] = self.clstm2.init_states(batch_size = bs)
+        [hs_3, cs_3] = self.ctlstm3.init_states(batch_size = bs)
+        [hs_4, cs_4] = self.ctlstm4.init_states(batch_size = bs)
+        
+        inp = x.transpose(1,2).reshape(-1,c,w,h) # bsxts, c, w, h
+        c1_o = self.conv2d_1(inp)
+        c2_o = self.conv2d_2(c1_o)
+        c2_o = c2_o.reshape(bs,ts,self.filters_count[1], self.conv2d_2_os, self.conv2d_2_os).transpose(1,2) # bs,c,ts,w,h
+        
+        encodings = list()
+        clstm_out = list()
+        for t in range(ts):
+            # Encoding process
+            hs_1, cs_1 = self.clstm1(c2_o[:,:,t,:,:], (hs_1, cs_1))
+            hs_2, cs_2 = self.clstm2(hs_1, (hs_2, cs_2))
+            hs_3, cs_3 = self.ctlstm3(hs_2, (hs_3, cs_3))
+            hs_4, cs_4 = self.ctlstm4(hs_3, (hs_4, cs_4))
+            encodings.append(hs_2)
+            clstm_out.append(hs_4)
+            
+        encodings = torch.stack(encodings).transpose(0,1).transpose(1,2)
+        clstm_out = torch.stack(clstm_out).transpose(0,1).transpose(1,2)
+        
+        clstm_out = clstm_out.transpose(1,2).reshape(-1,self.filters_count[1],self.ctlstm4_os,self.ctlstm4_os)
+        reconstructions = self.deconv(clstm_out)
+        reconstructions = reconstructions.reshape(bs,ts,c,w,h).transpose(1,2)
+        return reconstructions, encodings
+    
 CONV2D_LSTM_DICT = {
     128: {
         "CLSTM_CTD": CLSTM_AE_CTD,
         "CLSTM": CLSTM_AE,
-        "CLSTM_C3D": CLSTM_C3D_AE
+        "CLSTM_C3D": CLSTM_C3D_AE,
+        "CLSTM_C2D": CLSTM_C2D_AE
     }
 }
+
+'''
+# Mixed ideas:
+
+    3. Try expanding and contracting time steps
+    
+    4. Use ACB and Res Connections
+    
+'''
