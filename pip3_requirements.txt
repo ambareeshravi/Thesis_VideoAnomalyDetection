@@ -1,4 +1,5 @@
 opencv-python
+pytorch-lightning
 matplotlib==3.2.1
 ml-metrics==0.1.4
 pandas==1.0.3

@@ -14,6 +14,7 @@ from tqdm import tqdm
 from PIL import Image, ImageOps
 
 from torch import nn
+from torch.nn import functional as F
 from glob import glob
 from matplotlib import pyplot as plt
 
