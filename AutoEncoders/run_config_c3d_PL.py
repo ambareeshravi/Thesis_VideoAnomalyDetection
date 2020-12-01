@@ -104,7 +104,7 @@ if __name__ == '__main__':
     trainer = Trainer(
         default_root_dir = MODEL_SAVE_PATH,
         gpus=GPUS,
-        nodes = NODES,
+        num_nodes = NODES,
         accelerator='ddp',
         min_epochs = 50,
         max_epochs = EPOCHS,
