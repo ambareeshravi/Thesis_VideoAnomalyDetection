@@ -54,7 +54,7 @@ def plot_stat(history, title, save_path):
     try:
         epochs = list(range(len(history["train_loss"])))
         plt.plot(epochs, history["train_loss"], label = "Train Loss")
-        plt.plot(epochs, history["val_loss"], label = "Validation Loss")
+        plt.plot(epochs, history["validation_loss"], label = "Validation Loss")
         plt.legend()
         plt.xlabel("Number of epochs")
         plt.ylabel("Loss")
@@ -105,7 +105,7 @@ def get_data_loaders(
 def eta(epoch, epochs, epoch_time):
     eta_hours = (epoch_time * (epochs - epoch)) / 3600
     eta_ts = datetime.now() + timedelta(hours = eta_hours)
-    print("Estimated Time %0.2f hours | Will be completed by %s:"%(eta_hours, str(eta_ts)[:16]))
+    print("Maximum estimated Time: %0.2f hours | Will be completed by: %s"%(eta_hours, str(eta_ts)[:16]))
     
 def get_patches(images, patch_size = 64, overlap = 32):
     patches = list()
@@ -155,3 +155,6 @@ def read_txt(file_path):
     with open(file_path, "r") as f:
         contents = f.read()
     return contents
+
+def create_directory(path):
+    if not os.path.exists(path): os.mkdir(path)
