@@ -65,7 +65,7 @@ if __name__ == '__main__':
     INFO("TRAINING DATA READY")
     
     # Manual
-    model = CLSTM_AE_CTD(image_size = IMAGE_SIZE, channels = CHANNELS, useGPU = False)
+    model = CLSTM_AE_CTD(image_size = IMAGE_SIZE, channels = CHANNELS)
     
     # Automated model config
     model_file = "PL_%s_%s_%s_%s_E%03d_BS%03d"%(model.__name__, IMAGE_TYPE, OPTIMIZER_TYPE, LOSS_TYPE, EPOCHS, BATCH_SIZE)
