@@ -19,15 +19,15 @@ class CLSTM_AE_CTD(nn.Module):
         self.filters_count = filters_count
         
         # Encoder
-        self.clstm1 = Conv2dLSTM_Cell(self.image_size, self.channels, self.filters_count[0], 3, 2, 0, useGPU=useGPU)
+        self.clstm1 = Conv2dLSTM_Cell(self.image_size, self.channels, self.filters_count[0], 3, 2, 0)
         self.clstm1_os = getConvOutputShape(self.image_size, 3,2)
-        self.clstm2 = Conv2dLSTM_Cell(self.clstm1_os, self.filters_count[0], self.filters_count[1], 3, 2, 0, useGPU=useGPU)
+        self.clstm2 = Conv2dLSTM_Cell(self.clstm1_os, self.filters_count[0], self.filters_count[1], 3, 2, 0)
         self.clstm2_os = getConvOutputShape(self.clstm1_os, 3,2)
-        self.clstm3 = Conv2dLSTM_Cell(self.clstm2_os, self.filters_count[1], self.filters_count[2], 3, 2, 0, useGPU=useGPU)
+        self.clstm3 = Conv2dLSTM_Cell(self.clstm2_os, self.filters_count[1], self.filters_count[2], 3, 2, 0)
         self.clstm3_os = getConvOutputShape(self.clstm2_os, 3,2)
-        self.clstm4 = Conv2dLSTM_Cell(self.clstm3_os, self.filters_count[2], self.filters_count[3], 3, 2, 0, useGPU=useGPU)
+        self.clstm4 = Conv2dLSTM_Cell(self.clstm3_os, self.filters_count[2], self.filters_count[3], 3, 2, 0)
         self.clstm4_os = getConvOutputShape(self.clstm3_os, 3,2)
-        self.clstm5 = Conv2dLSTM_Cell(self.clstm4_os, self.filters_count[3], self.filters_count[4], 4, 3, 0, useGPU=useGPU)
+        self.clstm5 = Conv2dLSTM_Cell(self.clstm4_os, self.filters_count[3], self.filters_count[4], 4, 3, 0)
         self.clstm5_os = getConvOutputShape(self.clstm4_os, 4,3)
         
         self.decoder = nn.Sequential(
@@ -75,27 +75,27 @@ class CLSTM_AE(nn.Module):
         self.filters_count = filters_count
         
         # Encoder
-        self.clstm1 = Conv2dLSTM_Cell(self.image_size, self.channels, self.filters_count[0], 3, 2, 0, useGPU=useGPU)
+        self.clstm1 = Conv2dLSTM_Cell(self.image_size, self.channels, self.filters_count[0], 3, 2, 0)
         self.clstm1_os = getConvOutputShape(self.image_size, 3,2)
-        self.clstm2 = Conv2dLSTM_Cell(self.clstm1_os, self.filters_count[0], self.filters_count[1], 3, 2, 0, useGPU=useGPU)
+        self.clstm2 = Conv2dLSTM_Cell(self.clstm1_os, self.filters_count[0], self.filters_count[1], 3, 2, 0)
         self.clstm2_os = getConvOutputShape(self.clstm1_os, 3,2)
-        self.clstm3 = Conv2dLSTM_Cell(self.clstm2_os, self.filters_count[1], self.filters_count[2], 3, 2, 0, useGPU=useGPU)
+        self.clstm3 = Conv2dLSTM_Cell(self.clstm2_os, self.filters_count[1], self.filters_count[2], 3, 2, 0)
         self.clstm3_os = getConvOutputShape(self.clstm2_os, 3,2)
-        self.clstm4 = Conv2dLSTM_Cell(self.clstm3_os, self.filters_count[2], self.filters_count[3], 3, 2, 0, useGPU=useGPU)
+        self.clstm4 = Conv2dLSTM_Cell(self.clstm3_os, self.filters_count[2], self.filters_count[3], 3, 2, 0)
         self.clstm4_os = getConvOutputShape(self.clstm3_os, 3,2)
-        self.clstm5 = Conv2dLSTM_Cell(self.clstm4_os, self.filters_count[3], self.filters_count[4], 4, 3, 0, useGPU=useGPU)
+        self.clstm5 = Conv2dLSTM_Cell(self.clstm4_os, self.filters_count[3], self.filters_count[4], 4, 3, 0)
         self.clstm5_os = getConvOutputShape(self.clstm4_os, 4,3)
         
         # Decoder
-        self.ctlstm6 = ConvTranspose2dLSTM_Cell(self.clstm5_os, self.filters_count[4], self.filters_count[3], 4, 3, 0, useGPU=useGPU)
+        self.ctlstm6 = ConvTranspose2dLSTM_Cell(self.clstm5_os, self.filters_count[4], self.filters_count[3], 4, 3, 0)
         self.ctlstm6_os = getConvTransposeOutputShape(self.clstm5_os, 4,3)
-        self.ctlstm7 = ConvTranspose2dLSTM_Cell(self.ctlstm6_os, self.filters_count[3], self.filters_count[2], 3, 2, 0, useGPU=useGPU)
+        self.ctlstm7 = ConvTranspose2dLSTM_Cell(self.ctlstm6_os, self.filters_count[3], self.filters_count[2], 3, 2, 0)
         self.ctlstm7_os = getConvTransposeOutputShape(self.ctlstm6_os,3,2)
-        self.ctlstm8 = ConvTranspose2dLSTM_Cell(self.ctlstm7_os, self.filters_count[2], self.filters_count[1], 3, 2, 0, useGPU=useGPU)
+        self.ctlstm8 = ConvTranspose2dLSTM_Cell(self.ctlstm7_os, self.filters_count[2], self.filters_count[1], 3, 2, 0)
         self.ctlstm8_os = getConvTransposeOutputShape(self.ctlstm7_os,3,2)
-        self.ctlstm9 = ConvTranspose2dLSTM_Cell(self.ctlstm8_os, self.filters_count[1], self.filters_count[0], 3, 2, 0, useGPU=useGPU)
+        self.ctlstm9 = ConvTranspose2dLSTM_Cell(self.ctlstm8_os, self.filters_count[1], self.filters_count[0], 3, 2, 0)
         self.ctlstm9_os = getConvTransposeOutputShape(self.ctlstm8_os,3,2)
-        self.ctlstm10 =ConvTranspose2dLSTM_Cell(self.ctlstm9_os, self.filters_count[0], self.channels, 4, 2, 0, useGPU=useGPU)
+        self.ctlstm10 =ConvTranspose2dLSTM_Cell(self.ctlstm9_os, self.filters_count[0], self.channels, 4, 2, 0)
         self.ctlstm10_os = getConvTransposeOutputShape(self.ctlstm9_os,4,2)
     
     def forward(self, x):
@@ -155,15 +155,15 @@ class CLSTM_C3D_AE(nn.Module):
         self.conv1_os = getConvOutputShape(self.image_size, 3,2)
         self.conv2 = C3D_BN_A(self.filters_count[0], self.filters_count[1], (1,3,3), (1,2,2))
         self.conv2_os = getConvOutputShape(self.conv1_os, 3,2)
-        self.clstm1 = Conv2dLSTM_Cell(self.conv2_os, self.filters_count[1], self.filters_count[2], 4, 3, 0, useGPU=useGPU)
+        self.clstm1 = Conv2dLSTM_Cell(self.conv2_os, self.filters_count[1], self.filters_count[2], 4, 3, 0)
         self.clstm1_os = getConvOutputShape(self.conv2_os, 4,3)
-        self.clstm2 = Conv2dLSTM_Cell(self.clstm1_os, self.filters_count[2], self.filters_count[3], 5, 3, 0, useGPU=useGPU)
+        self.clstm2 = Conv2dLSTM_Cell(self.clstm1_os, self.filters_count[2], self.filters_count[3], 5, 3, 0)
         self.clstm2_os = getConvOutputShape(self.clstm1_os, 5,3)
                 
         # Decoder
-        self.ctlstm3 = ConvTranspose2dLSTM_Cell(self.clstm2_os, self.filters_count[3], self.filters_count[2], 4, 3, 0, useGPU=useGPU)
+        self.ctlstm3 = ConvTranspose2dLSTM_Cell(self.clstm2_os, self.filters_count[3], self.filters_count[2], 4, 3, 0)
         self.ctlstm3_os = getConvTransposeOutputShape(self.clstm2_os, 4, 3)
-        self.ctlstm4 = ConvTranspose2dLSTM_Cell(self.ctlstm3_os, self.filters_count[2], self.filters_count[1], 3, 2, 0, useGPU=useGPU)
+        self.ctlstm4 = ConvTranspose2dLSTM_Cell(self.ctlstm3_os, self.filters_count[2], self.filters_count[1], 3, 2, 0)
         self.ctlstm4_os = getConvTransposeOutputShape(self.ctlstm3_os, 3, 2)
         self.convt_5 = CT3D_BN_A(self.filters_count[1], self.filters_count[0], (1,3,3), (1,2,2))
         self.convt_6 = CT3D_BN_A(self.filters_count[0], self.filters_count[0], (1,3,3), (1,2,2))
@@ -227,15 +227,15 @@ class CLSTM_C2D_AE(nn.Module):
         self.conv2d_2 = C2D_BN_A(self.filters_count[0], self.filters_count[1], 3, 2)
         self.conv2d_2_os = getConvOutputShape(self.conv2d_1_os, 3, 2)
         
-        self.clstm1 = Conv2dLSTM_Cell(self.conv2d_2_os, self.filters_count[1], self.filters_count[2], 4, 3, 0, useGPU=useGPU)
+        self.clstm1 = Conv2dLSTM_Cell(self.conv2d_2_os, self.filters_count[1], self.filters_count[2], 4, 3, 0)
         self.clstm1_os = getConvOutputShape(self.conv2d_2_os, 4,3)
-        self.clstm2 = Conv2dLSTM_Cell(self.clstm1_os, self.filters_count[2], self.filters_count[3], 5, 3, 0, useGPU=useGPU)
+        self.clstm2 = Conv2dLSTM_Cell(self.clstm1_os, self.filters_count[2], self.filters_count[3], 5, 3, 0)
         self.clstm2_os = getConvOutputShape(self.clstm1_os, 5,3)
                 
         # Decoder
-        self.ctlstm3 = ConvTranspose2dLSTM_Cell(self.clstm2_os, self.filters_count[3], self.filters_count[2], 4, 3, 0, useGPU=useGPU)
+        self.ctlstm3 = ConvTranspose2dLSTM_Cell(self.clstm2_os, self.filters_count[3], self.filters_count[2], 4, 3, 0)
         self.ctlstm3_os = getConvTransposeOutputShape(self.clstm2_os, 4, 3)
-        self.ctlstm4 = ConvTranspose2dLSTM_Cell(self.ctlstm3_os, self.filters_count[2], self.filters_count[1], 3, 2, 0, useGPU=useGPU)
+        self.ctlstm4 = ConvTranspose2dLSTM_Cell(self.ctlstm3_os, self.filters_count[2], self.filters_count[1], 3, 2, 0)
         self.ctlstm4_os = getConvTransposeOutputShape(self.ctlstm3_os, 3, 2)
         
         self.deconv = nn.Sequential(

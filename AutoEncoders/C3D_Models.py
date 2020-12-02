@@ -174,7 +174,7 @@ class C3D2D_AE_3x3(nn.Module):
             CT3D_BN_A(self.filter_count[3], self.filter_count[2], (3,5,5), (2,3,3)),
             CT3D_BN_A(self.filter_count[2], self.filter_count[1], (3,5,5), 2),
             CT3D_BN_A(self.filter_count[1], self.filter_count[0], (3,5,5), 2),
-            CT3D_BN_A(self.filter_count[0], self.channels, (2,4,4), 1)
+            CT3D_BN_A(self.filter_count[0], self.channels, (2,4,4), 1, activation_type = "sigmoid")
         )
         
     def forward(self, x):

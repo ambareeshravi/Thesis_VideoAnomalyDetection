@@ -282,8 +282,8 @@ class Conv2dLSTM_Cell(nn.Module):
                  padding,
                  bias = False,
                  conv_type = "conv2d",
-                 init_random = False,
-                 useGPU = True
+                 init_random = True,
+#                  useGPU = True
                 ):
         '''
         Using channels first n,c,w,h for images
@@ -301,8 +301,8 @@ class Conv2dLSTM_Cell(nn.Module):
 
         '''
         super(Conv2dLSTM_Cell, self).__init__()
-        self.device = torch.device("cpu")
-        if useGPU and torch.cuda.is_available: self.device = torch.device("cuda")
+#         self.device = torch.device("cpu")
+#         if useGPU and torch.cuda.is_available: self.device = torch.device("cuda")
         self.image_size = image_size
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
@@ -344,11 +344,11 @@ class Conv2dLSTM_Cell(nn.Module):
             "padding": self.hidden_kernel_size // 2,
         }
         
-        self.conv_Wx = self.conv_layer(**inp_conv_kwargs).to(self.device)
-        self.conv_Wh = nn.Conv2d(**hid_conv_kwargs).to(self.device)
+        self.conv_Wx = self.conv_layer(**inp_conv_kwargs)
+        self.conv_Wh = nn.Conv2d(**hid_conv_kwargs)
         
         self.weights_shape = tuple([3, 1, self.hidden_dim] + list(self.conv_output))
-        self.W = torch.autograd.Variable(torch.randn(*self.weights_shape), requires_grad = True).to(self.device)
+        self.W = torch.autograd.Variable(torch.randn(*self.weights_shape), requires_grad = True)
         
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
@@ -360,8 +360,8 @@ class Conv2dLSTM_Cell(nn.Module):
             init_fn = torch.randn
             
         return (
-            init_fn(*state_shape, device = self.device),
-            init_fn(*state_shape, device = self.device)
+            init_fn(*state_shape),
+            init_fn(*state_shape)
         )
             
     def forward(self, x, states):
@@ -392,8 +392,8 @@ class ConvTranspose2dLSTM_Cell(nn.Module):
                  output_padding = 0,
                  bias = False,
                  conv_type = "conv2d_transpose",
-                 init_random = False,
-                 useGPU = True
+                 init_random = True,
+#                  useGPU = True
                 ):
         '''
         Using channels first n,c,w,h for images
@@ -410,8 +410,8 @@ class ConvTranspose2dLSTM_Cell(nn.Module):
             (samples, filters, rows, cols)
         '''
         super(ConvTranspose2dLSTM_Cell, self).__init__()
-        self.device = torch.device("cpu")
-        if useGPU and torch.cuda.is_available: self.device = torch.device("cuda")
+#         self.device = torch.device("cpu")
+#         if useGPU and torch.cuda.is_available: self.device = torch.device("cuda")
         self.image_size = image_size
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
@@ -455,11 +455,11 @@ class ConvTranspose2dLSTM_Cell(nn.Module):
             "padding": self.hidden_kernel_size // 2,
             "output_padding": self.output_padding,
         }
-        self.conv_Wx = self.conv_layer(**inp_conv_kwargs).to(self.device)        
-        self.conv_Wh = nn.ConvTranspose2d(**hid_conv_kwargs).to(self.device)
+        self.conv_Wx = self.conv_layer(**inp_conv_kwargs)
+        self.conv_Wh = nn.ConvTranspose2d(**hid_conv_kwargs)
         
         self.weights_shape = tuple([3, 1, self.hidden_dim] + list(self.conv_output))
-        self.W = torch.autograd.Variable(torch.randn(*self.weights_shape), requires_grad = True).to(self.device)
+        self.W = torch.autograd.Variable(torch.randn(*self.weights_shape), requires_grad = True)
         
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
@@ -471,8 +471,8 @@ class ConvTranspose2dLSTM_Cell(nn.Module):
             init_fn = torch.randn
             
         return (
-            init_fn(*state_shape, device = self.device),
-            init_fn(*state_shape, device = self.device)
+            init_fn(*state_shape),
+            init_fn(*state_shape)
         )
             
     def forward(self, x, states):
