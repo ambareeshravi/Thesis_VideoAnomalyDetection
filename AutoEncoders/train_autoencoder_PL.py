@@ -38,7 +38,7 @@ class AutoEncoderLM(LightningModule):
         
         # Path
         self.save_path = save_path
-        if not os.path.exists(self.save_path): os.mkdir(self.save_path)
+        create_directory(self.save_path)
         self.model_file = join_paths([self.save_path, os.path.split(self.save_path)[-1] + ".pth.tar"])
         
         # Model Params

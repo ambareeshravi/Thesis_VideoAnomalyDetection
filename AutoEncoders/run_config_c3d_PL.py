@@ -115,7 +115,7 @@ if __name__ == '__main__':
         weights_summary = None,
         auto_lr_find=True
     )
-    trainer.tune(model = lm_model, train_dataloader = train_loader)
+#     trainer.tune(model = lm_model, train_dataloader = train_loader)
     INFO("STARTING THE TRAINING")
     trainer.fit(model = lm_model, train_dataloader=train_loader, val_dataloaders=val_loader)
 
