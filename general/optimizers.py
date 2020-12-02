@@ -1,4 +1,4 @@
-import torch
+from .all_imports import torch
 
 def ADAM(model, lr = 1e-3, betas=(0.9, 0.999), weight_decay = 1e-5):
     return torch.optim.Adam(model.parameters(), lr = 1e-3, betas = betas, weight_decay = weight_decay)

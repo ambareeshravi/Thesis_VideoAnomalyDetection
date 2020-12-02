@@ -3,9 +3,11 @@ matplotlib.use('Agg')
 import os
 import shutil
 import numpy as np
+np.random.seed(0)
 import pandas as pd
 import pickle as pkl
 import torch
+torch.manual_seed(0)
 import gc
 
 from datetime import datetime, timedelta
