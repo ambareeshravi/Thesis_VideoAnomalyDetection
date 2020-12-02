@@ -9,8 +9,7 @@ class CLSTM_AE_CTD(nn.Module):
         self,
         image_size,
         channels = 3,
-        filters_count = [64,64,64,64,64], 
-        useGPU = True
+        filters_count = [64,64,64,64,64]
     ):
         super(CLSTM_AE_CTD, self).__init__()
         self.__name__ = "CLSTM_CTD_128"
@@ -65,8 +64,7 @@ class CLSTM_AE(nn.Module):
         self,
         image_size,
         channels = 3,
-        filters_count = [64,64,64,64,64], 
-        useGPU = True
+        filters_count = [64,64,64,64,64]
     ):
         super(CLSTM_AE, self).__init__()
         self.__name__ = "CLSTM_128"
@@ -141,8 +139,7 @@ class CLSTM_C3D_AE(nn.Module):
         self,
         image_size,
         channels = 3,
-        filters_count = [64,64,64,64,64], 
-        useGPU = True
+        filters_count = [64,64,64,64,64]
     ):
         super(CLSTM_C3D_AE, self).__init__()
         self.__name__ = "CLSTM_C3D_128"
@@ -212,8 +209,7 @@ class CLSTM_C2D_AE(nn.Module):
         self,
         image_size,
         channels = 3,
-        filters_count = [64,64,64,64,64], 
-        useGPU = True
+        filters_count = [64,64,64,64,64]
     ):
         super(CLSTM_C2D_AE, self).__init__()
         self.__name__ = "CLSTM_MIXED_128"

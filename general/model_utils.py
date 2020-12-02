@@ -283,7 +283,6 @@ class Conv2dLSTM_Cell(nn.Module):
                  bias = False,
                  conv_type = "conv2d",
                  init_random = True,
-#                  useGPU = True
                 ):
         '''
         Using channels first n,c,w,h for images
@@ -360,8 +359,8 @@ class Conv2dLSTM_Cell(nn.Module):
             init_fn = torch.randn
             
         return (
-            init_fn(*state_shape),
-            init_fn(*state_shape)
+            init_fn(*state_shape, device = self.conv_Wx.weight.device),
+            init_fn(*state_shape, device = self.conv_Wx.weight.device)
         )
             
     def forward(self, x, states):
@@ -369,7 +368,7 @@ class Conv2dLSTM_Cell(nn.Module):
         # i,f,c,o
         conv_x_out = self.conv_Wx(x)
         conv_h_out = self.conv_Wh(h)
-        (Wci, Wcf, Wco) = self.W * c
+        (Wci, Wcf, Wco) = self.W.to(self.conv_Wx.weight.device) * c
         
         conv_Wxi, conv_Wxf, conv_Wxc, conv_Wxo = conv_x_out.split(self.hidden_dim, dim = 1)
         conv_Whi, conv_Whf, conv_Whc, conv_Who = conv_h_out.split(self.hidden_dim, dim = 1)
@@ -393,7 +392,6 @@ class ConvTranspose2dLSTM_Cell(nn.Module):
                  bias = False,
                  conv_type = "conv2d_transpose",
                  init_random = True,
-#                  useGPU = True
                 ):
         '''
         Using channels first n,c,w,h for images
@@ -471,8 +469,8 @@ class ConvTranspose2dLSTM_Cell(nn.Module):
             init_fn = torch.randn
             
         return (
-            init_fn(*state_shape),
-            init_fn(*state_shape)
+            init_fn(*state_shape, device = self.conv_Wx.weight.device),
+            init_fn(*state_shape, device = self.conv_Wx.weight.device)
         )
             
     def forward(self, x, states):
@@ -480,7 +478,7 @@ class ConvTranspose2dLSTM_Cell(nn.Module):
         # i,f,c,o
         conv_x_out = self.conv_Wx(x)
         conv_h_out = self.conv_Wh(h)
-        (Wci, Wcf, Wco) = self.W * c
+        (Wci, Wcf, Wco) = self.W.to(self.conv_Wx.weight.device) * c
         
         conv_Wxi, conv_Wxf, conv_Wxc, conv_Wxo = conv_x_out.split(self.hidden_dim, dim = 1)
         conv_Whi, conv_Whf, conv_Whc, conv_Who = conv_h_out.split(self.hidden_dim, dim = 1)
