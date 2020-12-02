@@ -158,3 +158,6 @@ def read_txt(file_path):
 
 def create_directory(path):
     if not os.path.exists(path): os.mkdir(path)
+        
+def getModelFileName(save_path):
+    return join_paths([save_path, os.path.split(save_path)[-1] + ".pth.tar"])

@@ -115,7 +115,7 @@ if __name__ == '__main__':
 #     trainer.tune(model = lm_model, train_dataloader = train_loader)
     INFO("STARTING THE TRAINING")
     trainer.fit(model = lm_model, train_dataloader=train_loader, val_dataloaders=val_loader)
-
+    
     # 2. Testing
     test_data, CHANNELS = select_dataset(
         dataset = DATA_TYPE,
@@ -131,11 +131,13 @@ if __name__ == '__main__':
     INFO("TESTING DATA READY")
     
     # Changed for PL module
-    ae_model = trainer.model
+    
     print("-"*40)
-    print(ae_model.model_file)
+    model_file = getModelFileName(MODEL_SAVE_PATH)
+    load_model(model, model_file)
+    print(model_file)
     tester = AutoEncoder_Tester(
-        model = ae_model.model,
+        model = model,
         dataset = test_data,
         patchwise = PATCH_WISE,
         stacked = STACKED,
@@ -144,7 +146,7 @@ if __name__ == '__main__':
     results = tester.test(
         stackFrames = stackFrames,
         isVideo = isVideo,
-        save_as = ".pkl".join(ae_model.model_file.split(".pth.tar"))
+        save_as = ".pkl".join(model_file.split(".pth.tar"))
     )
     print("-"*40)
     try:
