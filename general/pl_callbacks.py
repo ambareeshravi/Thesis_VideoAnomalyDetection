@@ -14,7 +14,7 @@ class EpochChange(Callback):
         pl_module.epoch_reset()
         
         if pl_module.EPOCH == 0:
-            eta(pl_module.EPOCH, pl_module.MAX_EPOCHS, (pl_module.EPOCH_END_TIME-self.EPOCH_START_TIME))
+            eta(pl_module.EPOCH, pl_module.MAX_EPOCHS, (pl_module.EPOCH_END_TIME-pl_module.EPOCH_START_TIME))
             print("-"*60)
             
         if pl_module.EPOCH % pl_module.status_rate == 0:
