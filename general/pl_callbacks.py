@@ -12,11 +12,11 @@ class EpochChange(Callback):
         pl_module.EPOCH_END_TIME = time()
         pl_module.epoch_reset()
         
-        if not pl_module.EPOCH:
+        if pl_module.EPOCH == 0:
             eta(pl_module.EPOCH, pl_module.MAX_EPOCHS, (pl_module.EPOCH_END_TIME-self.EPOCH_START_TIME))
             print("-"*60)
             
-        if not (pl_module.EPOCH % pl_module.status_rate):
+        if pl_module.EPOCH % pl_module.status_rate == 0:
             pl_module.epoch_status()
             pl_module.save()
         pl_module.EPOCH += 1
