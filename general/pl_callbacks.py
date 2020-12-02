@@ -1,5 +1,6 @@
 from pytorch_lightning.callbacks import Callback
 from time import time
+from .utils import eta
 
 class EpochChange(Callback):
     def __init__(self):
