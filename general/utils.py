@@ -161,3 +161,8 @@ def create_directory(path):
         
 def getModelFileName(save_path):
     return join_paths([save_path, os.path.split(save_path)[-1] + ".pth.tar"])
+
+def movingaverage(values, window):
+    weights = np.repeat(1.0, window)/window
+    smas = np.convolve(values, weights, 'valid')
+    return smas

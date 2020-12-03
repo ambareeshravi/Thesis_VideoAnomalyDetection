@@ -19,8 +19,8 @@ if __name__ == '__main__':
     
     # Editable
     IMAGE_SIZE = 128
-    EPOCHS = 300
-    BATCH_SIZE = 36
+    EPOCHS = 150
+    BATCH_SIZE = 40
     IMAGE_TYPE = "normal"
     MODEL_PATH = args.model_path
     if not os.path.exists(MODEL_PATH): os.mkdir(MODEL_PATH)
@@ -56,8 +56,8 @@ if __name__ == '__main__':
     INFO("TRAINING DATA READY")
     
     MODELS_LIST = [
-        CLSTM_AE_CTD(image_size = IMAGE_SIZE, channels = CHANNELS),
-#         CLSTM_AE(image_size = IMAGE_SIZE, channels = CHANNELS)
+        # CLSTM_AE_CTD(image_size = IMAGE_SIZE, channels = CHANNELS),
+        CLSTM_AE(image_size = IMAGE_SIZE, channels = CHANNELS)
     ]
     
     model_files = [
