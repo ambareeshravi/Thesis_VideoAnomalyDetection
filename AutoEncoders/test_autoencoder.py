@@ -35,9 +35,7 @@ class AutoEncoder_Tester:
             self.predict = self.predict_stacked
        
     def regularity(self, x):
-        x = normalize_error(x)
-        if self.NORMAL_LABEL: return (1-x)
-        return x
+        return (1-normalize_error(x))
         
     def abs_loss(self, original, reconstruction):
         return [tensor_to_numpy(torch.norm((o-r), dim = 0)) for o,r in zip(original, reconstruction)]

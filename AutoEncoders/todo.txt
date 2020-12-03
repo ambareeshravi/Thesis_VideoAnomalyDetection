@@ -2,3 +2,7 @@
 2. Check pandora again
 3. Better reconstructions
 4. Better separability of embeddings
+
+
+Notes:
+1. Reverse the number of kernels 512 -> 3 [hashem implementation - https://github.com/hashemsellat/video-anomaly-detection/blob/master/notebooks/lstmautoencoder/lstmautoencoder.ipynb]
