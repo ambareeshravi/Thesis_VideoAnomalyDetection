@@ -61,7 +61,7 @@ if __name__ == '__main__':
     ]
     
     model_files = [
-        "%s_%s_%s_%s_E%03d_BS%03d"%(m.__name__, IMAGE_TYPE, OPTIMIZER_TYPE, LOSS_TYPE, EPOCHS, BATCH_SIZE) for m in MODELS_LIST
+        "%s_%s_%s_%s_%s_E%03d_BS%03d"%(m.__name__, DATA_TYPE.upper(), IMAGE_TYPE, OPTIMIZER_TYPE, LOSS_TYPE, EPOCHS, BATCH_SIZE) for m in MODELS_LIST
     ]
     
     if DENOISING: model_files = [mf + "_DeNoising" for mf in model_files]

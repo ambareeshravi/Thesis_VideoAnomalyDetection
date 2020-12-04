@@ -6,3 +6,58 @@
 
 Notes:
 1. Reverse the number of kernels 512 -> 3 [hashem implementation - https://github.com/hashemsellat/video-anomaly-detection/blob/master/notebooks/lstmautoencoder/lstmautoencoder.ipynb]
+2. def evaluate():
+    seq = STAE.get_model(re=Config.RELOAD_MODEL)
+    print("got model")
+    dataProvider = DataProvider()
+    images = dataProvider.get_testset(True)
+    print("got data")
+    x_axis_values = []
+    min_et = 1e9
+    max_et = 0
+    for i in range(0,20):
+        x = np.zeros((1, 256, 256, 10))
+        x[0] = images[i]
+        output = seq.predict(x)
+        for j in range(0,10):
+            et = np.sum(np.square(np.subtract(x[0,:,:,j],output[0,:,:,j])))
+            min_et=min(min_et,et)
+            max_et=max(max_et,et)
+            x_axis_values.append(et)
+    x_axis_values =1.0 - (x_axis_values - min_et)/max_et
+    x_axis_values = Helpers.movingaverage(x_axis_values,20)
+    import matplotlib.pyplot as plt
+    plt.plot(x_axis_values)
+    plt.ylabel('regularity score')
+    plt.show()
+    
+    The usage of contiguous min max check across all the results
+    
+3. Using C3D with ConvLSTM [https://github.com/harshtikuu/Abnormal_Event_Detection/blob/master/model.py]
+
+	model=Sequential()
+	model.add(Conv3D(filters=128,kernel_size=(11,11,1),strides=(4,4,1),padding='valid',input_shape=(227,227,10,1),activation='tanh'))
+	model.add(Conv3D(filters=64,kernel_size=(5,5,1),strides=(2,2,1),padding='valid',activation='tanh'))
+
+
+
+	model.add(ConvLSTM2D(filters=64,kernel_size=(3,3),strides=1,padding='same',dropout=0.4,recurrent_dropout=0.3,return_sequences=True))
+
+	
+	model.add(ConvLSTM2D(filters=32,kernel_size=(3,3),strides=1,padding='same',dropout=0.3,return_sequences=True))
+
+
+	model.add(ConvLSTM2D(filters=64,kernel_size=(3,3),strides=1,return_sequences=True, padding='same',dropout=0.5))
+
+
+
+
+	model.add(Conv3DTranspose(filters=128,kernel_size=(5,5,1),strides=(2,2,1),padding='valid',activation='tanh'))
+	model.add(Conv3DTranspose(filters=1,kernel_size=(11,11,1),strides=(4,4,1),padding='valid',activation='tanh'))
+
+	model.compile(optimizer='adam',loss='mean_squared_error',metrics=['accuracy'])
+
+	return model
+    
+    
+4. [https://github.com/harshablast/Video-Anomaly-Detection/blob/master/TCS_ConvLSTM_Model.ipynb] Trains on optical flow and gray scale image and try to predict the ground truth

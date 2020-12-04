@@ -280,7 +280,8 @@ class Conv2dLSTM_Cell(nn.Module):
                  kernel_size,
                  stride,
                  padding,
-                 bias = False,
+                 include_W = False,
+                 conv_bias = False,
                  conv_type = "conv2d",
                  init_random = True,
                 ):
@@ -310,7 +311,8 @@ class Conv2dLSTM_Cell(nn.Module):
         self.kernel_size = kernel_size
         self.stride = stride
         self.padding = padding
-        self.bias = bias
+        self.include_W = include_W
+        self.conv_bias = conv_bias
         
         isACB = False
         self.conv_layer = nn.Conv2d
@@ -341,13 +343,15 @@ class Conv2dLSTM_Cell(nn.Module):
             "kernel_size": self.hidden_kernel_size,
             "stride": 1, 
             "padding": self.hidden_kernel_size // 2,
+            "bias": self.conv_bias
         }
         
         self.conv_Wx = self.conv_layer(**inp_conv_kwargs)
         self.conv_Wh = nn.Conv2d(**hid_conv_kwargs)
         
-        self.weights_shape = tuple([3, 1, self.hidden_dim] + list(self.conv_output))
-        self.W = torch.autograd.Variable(torch.randn(*self.weights_shape), requires_grad = True)
+        if self.include_W:
+            self.weights_shape = tuple([3, 1, self.hidden_dim] + list(self.conv_output))
+            self.W = torch.autograd.Variable(torch.randn(*self.weights_shape), requires_grad = True)
         
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
@@ -368,15 +372,25 @@ class Conv2dLSTM_Cell(nn.Module):
         # i,f,c,o
         conv_x_out = self.conv_Wx(x)
         conv_h_out = self.conv_Wh(h)
-        (Wci, Wcf, Wco) = self.W.to(self.conv_Wx.weight.device) * c
+        if self.include_W: (Wci, Wcf, Wco) = self.W.to(self.conv_Wx.weight.device) * c
         
         conv_Wxi, conv_Wxf, conv_Wxc, conv_Wxo = conv_x_out.split(self.hidden_dim, dim = 1)
         conv_Whi, conv_Whf, conv_Whc, conv_Who = conv_h_out.split(self.hidden_dim, dim = 1)
         
-        i = self.sigmoid(conv_Wxi + conv_Whi + Wci)
-        f = self.sigmoid(conv_Wxf + conv_Whf + Wcf)
+        i = conv_Wxi + conv_Whi
+        if self.include_W: i += Wci
+        i = self.sigmoid(i)
+        
+        f = conv_Wxf + conv_Whf
+        if self.include_W: f += Wcf
+        f = self.sigmoid(f)
+        
         c_n = f * c + i * self.tanh(conv_Wxc + conv_Whc)
-        o = self.sigmoid(conv_Wxo + conv_Who + Wco)
+        
+        o = conv_Wxo + conv_Who
+        if self.include_W: o += Wco
+            
+        o = self.sigmoid(o)
         h_n = o * self.tanh(c_n) 
         return h_n, c_n
 
@@ -389,7 +403,8 @@ class ConvTranspose2dLSTM_Cell(nn.Module):
                  stride,
                  padding,
                  output_padding = 0,
-                 bias = False,
+                 include_W = False,
+                 conv_bias = False,
                  conv_type = "conv2d_transpose",
                  init_random = True,
                 ):
@@ -419,7 +434,8 @@ class ConvTranspose2dLSTM_Cell(nn.Module):
         self.stride = stride
         self.padding = padding
         self.output_padding = output_padding
-        self.bias = bias
+        self.include_W = include_W
+        self.conv_bias = conv_bias
         
         isADB = False
         self.conv_layer = nn.ConvTranspose2d
@@ -452,12 +468,14 @@ class ConvTranspose2dLSTM_Cell(nn.Module):
             "stride": 1, 
             "padding": self.hidden_kernel_size // 2,
             "output_padding": self.output_padding,
+            "bias": self.conv_bias
         }
         self.conv_Wx = self.conv_layer(**inp_conv_kwargs)
         self.conv_Wh = nn.ConvTranspose2d(**hid_conv_kwargs)
         
-        self.weights_shape = tuple([3, 1, self.hidden_dim] + list(self.conv_output))
-        self.W = torch.autograd.Variable(torch.randn(*self.weights_shape), requires_grad = True)
+        if self.include_W:
+            self.weights_shape = tuple([3, 1, self.hidden_dim] + list(self.conv_output))
+            self.W = torch.autograd.Variable(torch.randn(*self.weights_shape), requires_grad = True)
         
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
@@ -478,14 +496,24 @@ class ConvTranspose2dLSTM_Cell(nn.Module):
         # i,f,c,o
         conv_x_out = self.conv_Wx(x)
         conv_h_out = self.conv_Wh(h)
-        (Wci, Wcf, Wco) = self.W.to(self.conv_Wx.weight.device) * c
+        if self.include_W: (Wci, Wcf, Wco) = self.W.to(self.conv_Wx.weight.device) * c
         
         conv_Wxi, conv_Wxf, conv_Wxc, conv_Wxo = conv_x_out.split(self.hidden_dim, dim = 1)
         conv_Whi, conv_Whf, conv_Whc, conv_Who = conv_h_out.split(self.hidden_dim, dim = 1)
         
-        i = self.sigmoid(conv_Wxi + conv_Whi + Wci)
-        f = self.sigmoid(conv_Wxf + conv_Whf + Wcf)
+        i = conv_Wxi + conv_Whi
+        if self.include_W: i += Wci
+        i = self.sigmoid(i)
+        
+        f = conv_Wxf + conv_Whf
+        if self.include_W: f += Wcf
+        f = self.sigmoid(f)
+        
         c_n = f * c + i * self.tanh(conv_Wxc + conv_Whc)
-        o = self.sigmoid(conv_Wxo + conv_Who + Wco)
+        
+        o = conv_Wxo + conv_Who
+        if self.include_W: o += Wco
+            
+        o = self.sigmoid(o)
         h_n = o * self.tanh(c_n) 
         return h_n, c_n

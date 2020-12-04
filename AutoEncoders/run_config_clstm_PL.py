@@ -68,7 +68,7 @@ if __name__ == '__main__':
     model = CLSTM_AE_CTD(image_size = IMAGE_SIZE, channels = CHANNELS)
     
     # Automated model config
-    model_file = "PL_%s_%s_%s_%s_E%03d_BS%03d"%(model.__name__, IMAGE_TYPE, OPTIMIZER_TYPE, LOSS_TYPE, EPOCHS, BATCH_SIZE)
+    model_file = "PL_%s_%s_%s_%s_%s_E%03d_BS%03d"%(model.__name__, DATA_TYPE.upper(), IMAGE_TYPE, OPTIMIZER_TYPE, LOSS_TYPE, EPOCHS, BATCH_SIZE)
     if DENOISING: model_file += "_DeNoising"
     if STACKED: model_file += "_Stacked"
     if PATCH_WISE: model_file += "_PatchWise"
