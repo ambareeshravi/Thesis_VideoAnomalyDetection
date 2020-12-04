@@ -109,7 +109,6 @@ if __name__ == '__main__':
         precision = PRECISION,
         callbacks = callbacks_list,
         progress_bar_refresh_rate = 0,
-        weights_summary = None,
         auto_lr_find=True
     )
     trainer.tune(model = lm_model, train_dataloader = train_loader)
