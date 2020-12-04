@@ -9,7 +9,7 @@
 #SBATCH --mem=60G        # Memory proportional to GPUs: 31500 Cedar, 63500 Graham. [--mem=127G ]
 
 #SBATCH --time=0-6:00      # time (DD-HH:MM)
-#SBATCH --output=PL_C2D_%u-%x-%j.txt
+#SBATCH --output=../../../projects/def-karray/a24ravi/slurm_outputs/PL_C2D_%u-%x-%j.txt
 
 #SBATCH --mail-user=ambareesh.ravi@uwaterloo.ca
 #SBATCH --mail-type=ALL
