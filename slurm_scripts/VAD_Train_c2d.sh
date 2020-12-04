@@ -6,10 +6,10 @@
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:1   # Request GPU "generic resources" [--gres=gpu:2]
 #SBATCH --cpus-per-task=16  # Cores proportional to GPUs: 6 on Cedar, 16 on Graham. [--ntasks-per-node=32]
-#SBATCH --mem=63G        # Memory proportional to GPUs: 31500 Cedar, 63500 Graham. [--mem=127G ]
+#SBATCH --mem=60G        # Memory proportional to GPUs: 31500 Cedar, 63500 Graham. [--mem=127G ]
 
 #SBATCH --time=0-6:00      # time (DD-HH:MM)
-#SBATCH --output=~/projects/def-karray/a24ravi/slurm_outputs/C2D_%u-%x-%j.txt
+#SBATCH --output=C2D_%u-%x-%j.txt
 
 #SBATCH --mail-user=ambareesh.ravi@uwaterloo.ca
 #SBATCH --mail-type=ALL
