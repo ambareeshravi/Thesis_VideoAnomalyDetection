@@ -401,7 +401,6 @@ C2D_MODELS_DICT = {
     }
 }
 
-
 class C2D_AE_128_3x3_extra(nn.Module):
     def __init__(
         self,
@@ -409,8 +408,8 @@ class C2D_AE_128_3x3_extra(nn.Module):
         filters_count = [64,64,128,256,128,128],
         conv_type = "conv2d"
     ):
-        super(C2D_AE_128_3x3, self).__init__()
-        self.__name__ = "C2D_128_3x3"
+        super(C2D_AE_128_3x3_extra, self).__init__()
+        self.__name__ = "C2D_128_3x3_EXTRACONV"
         self.channels = channels
         self.filters_count = filters_count
         
@@ -429,8 +428,8 @@ class C2D_AE_128_3x3_extra(nn.Module):
             CT2D_BN_A(self.filters_count[3], self.filters_count[2], 3, 2),
             CT2D_BN_A(self.filters_count[2], self.filters_count[1], 3, 2),
             CT2D_BN_A(self.filters_count[1], self.filters_count[0], 3, 2),
-            CT2D_BN_A(self.filters_count[0], self.channels, 4, 2),
-            C2D_BN_A(self.filters_count[0], self.channels, 4, 1)
+            CT2D_BN_A(self.filters_count[0], self.filters_count[0], 6, 2),
+            C2D_BN_A(self.filters_count[0], self.channels, 3, 1)
         )
         
     def forward(self, x):
