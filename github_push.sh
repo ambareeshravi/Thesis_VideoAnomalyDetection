@@ -1,4 +1,4 @@
 #!/bin/bash
 git add *
-git commit -m "script change"
+git commit -m "Generic insignificant changes auto-push"
 git push
