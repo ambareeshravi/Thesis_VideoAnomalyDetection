@@ -247,10 +247,13 @@ class AutoEncoder_Tester:
         mean_sqr_vid_aucroc = VL_sqr_rocauc_scores.mean()
         
         # aggregated regularity roc-auc
+        # video-wise regularized scores [CORRECT and INTUITIVE]
         agg_abs_reg_aucroc = roc_auc_score(FLT_targets, FLT_agg_abs_regularity)
         agg_abs_reg_report = classification_report(FLT_targets, np.round(FLT_agg_abs_regularity))
+        agg_abs_conf_matrix = confusion_matrix(FLT_targets, np.round(FLT_agg_abs_regularity))
         agg_sqr_reg_aucroc = roc_auc_score(FLT_targets, FLT_agg_sqr_regularity)
         agg_sqr_reg_report = classification_report(FLT_targets, np.round(FLT_agg_sqr_regularity))
+        agg_sqr_conf_matrix = confusion_matrix(FLT_targets, np.round(FLT_agg_sqr_regularity))
         
         # overall roc-auc
         overall_abs_aucroc = roc_auc_score(FLT_targets, FLT_abs_regularity)
@@ -272,7 +275,10 @@ class AutoEncoder_Tester:
                 "agg_sqr_reg_report": agg_sqr_reg_report,
                 "overall_abs_report": overall_abs_report,
                 "overall_sqr_report": overall_sqr_report
-                
+            },
+            "confusion_matrices": {
+                "agg_abs_conf_matrix": agg_abs_conf_matrix,
+                "agg_sqr_conf_matrix": agg_sqr_conf_matrix,
             },
             "params": {
                 "targets": VL_targets,
