@@ -35,7 +35,7 @@ class CLSTM_CTD_AE(nn.Module):
             ),
             nn.Sequential(
                 nn.BatchNorm2d(self.filters_count[3]),
-                nn.LeakyReLU()
+                nn.Tanh()
             ),
         ])
         
@@ -47,8 +47,7 @@ class CLSTM_CTD_AE(nn.Module):
             CT3D_BN_A(self.filters_count[1], self.filters_count[1], (1,5,5), (1,3,3)),
             CT3D_BN_A(self.filters_count[1], self.filters_count[1], (2,5,5), (1,3,3)),
             CT3D_BN_A(self.filters_count[1], self.filters_count[0], (2,6,6), (1,1,1)),
-            C3D_BN_A(self.filters_count[0], self.channels, 3, 1),
-#             CT3D_BN_A(self.filters_count[1], self.filters_count[0], (2,5,5), (1,2,2)),
+            C3D_BN_A(self.filters_count[0], self.channels, 3, 1, activation_type = "sigmoid"),
         )
         
     def forward(self, x):
@@ -91,7 +90,7 @@ class CLSTM_C2D_AE(nn.Module):
         
         self.clstm1 = Conv2dLSTM_Cell(self.c2d_encoder[-1].output_shape, self.filters_count[1], self.filters_count[2], 5, 3)
         self.clstm2 = Conv2dLSTM_Cell(self.clstm1.output_shape, self.filters_count[2], self.filters_count[3], 5, 3)
-                
+        # Decoding part       
         self.ctlstm1 = ConvTranspose2dLSTM_Cell(self.clstm2.output_shape, self.filters_count[3], self.filters_count[2], 4, 2)
         self.ctlstm2 = ConvTranspose2dLSTM_Cell(self.ctlstm1.output_shape, self.filters_count[2], self.filters_count[1], 4, 2)
         
@@ -102,7 +101,7 @@ class CLSTM_C2D_AE(nn.Module):
             ),
             nn.Sequential(
                 nn.BatchNorm2d(self.filters_count[3]),
-                nn.LeakyReLU()
+                nn.Tanh()
             ),
             
             nn.Sequential(
@@ -120,7 +119,7 @@ class CLSTM_C2D_AE(nn.Module):
         self.ct2d_1 = CT2D_BN_A(self.filters_count[1], self.filters_count[0], 5, 2)
         self.ct2d_2 = CT2D_BN_A(self.filters_count[0], self.filters_count[0], 5, 2)
         self.ct2d_3 = CT2D_BN_A(self.filters_count[0], self.filters_count[0], 3, 2)
-        self.c2d_3 = C2D_BN_A(self.filters_count[0], self.channels, 4, 1)
+        self.c2d_3 = C2D_BN_A(self.filters_count[0], self.channels, 4, 1, activation_type = "sigmoid")
         self.ct2d_decoder = nn.Sequential(self.ct2d_1, self.ct2d_2, self.ct2d_3, self.c2d_3)
         
     def forward(self, x):
@@ -169,7 +168,7 @@ class CLSTM_C3D_AE(nn.Module):
         
         self.c3d_1 = C3D_BN_A(self.filters_count[1], self.filters_count[2], 3, 2)
         self.c3d_2 = C3D_BN_A(self.filters_count[2], self.filters_count[3], 3, 2)
-        self.c3d_3 = C3D_BN_A(self.filters_count[3], self.filters_count[4], (2,4,4), (1,3,3))
+        self.c3d_3 = C3D_BN_A(self.filters_count[3], self.filters_count[4], (2,4,4), (1,3,3), activation_type = "tanh")
         
         self.c3d_encoder = nn.Sequential(self.c3d_1, self.c3d_2, self.c3d_3)
         
@@ -184,7 +183,7 @@ class CLSTM_C3D_AE(nn.Module):
         
         self.ctlstm_layers = nn.ModuleList([self.ctlstm1, self.ctlstm2])
         
-        self.c3d_4 = C3D_BN_A(self.filters_count[0], self.channels, (1,3,3), 1)
+        self.c3d_4 = C3D_BN_A(self.filters_count[0], self.channels, (1,3,3), 1, activation_type = "sigmoid")
         
         self.act_blocks = nn.ModuleList([
             nn.Sequential(
