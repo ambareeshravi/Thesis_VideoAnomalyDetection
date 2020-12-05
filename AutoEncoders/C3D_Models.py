@@ -69,7 +69,7 @@ class C3D_AE_3x3(nn.Module):
     def __init__(
         self,
         channels = 3,
-        filter_count = [64,64,128,256,128,128],
+        filter_count = [512,256,256,128,128,128],
         conv_type = "conv3d"
     ):
         super(C3D_AE_3x3, self).__init__()
@@ -105,7 +105,7 @@ class C3D_AE_Res_3x3(nn.Module):
     def __init__(
         self,
         channels = 3,
-        filter_count = [64,64,128,256,128,128],
+        filter_count = [512,256,256,128,128,128],
         conv_type = "conv3d"
     ):
         super(C3D_AE_Res_3x3, self).__init__()
@@ -151,7 +151,7 @@ class C3D2D_AE_3x3(nn.Module):
     def __init__(
         self,
         channels = 3,
-        filter_count = [64,64,128,256,128,128],
+        filter_count = [512,256,256,128,128,128],
         conv_type = "conv3d"
     ):
         super(C3D2D_AE_3x3, self).__init__()
