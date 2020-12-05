@@ -149,6 +149,95 @@ class CLSTM_C2D_AE(nn.Module):
         reconstructions = reconstructions.reshape(bs,t,c,w,h).transpose(1,2)
         return reconstructions, encodings
     
+class CLSTM_C3D_AE(nn.Module):
+    def __init__(
+        self,
+        image_size,
+        channels = 3,
+        filters_count = [256,128,128,128,128]
+    ):
+        super(CLSTM_C3D_AE, self).__init__()
+        self.__name__ = "CLSTM_C3D_128"
+        self.image_size = image_size
+        self.channels = channels
+        self.filters_count = filters_count
+        
+        self.clstm1 = Conv2dLSTM_Cell(self.image_size, self.channels, self.filters_count[0], 3, 2)
+        self.clstm2 = Conv2dLSTM_Cell(self.clstm1.output_shape, self.filters_count[0], self.filters_count[1], 3, 2)
+        
+        self.clstm_layers = nn.ModuleList([self.clstm1, self.clstm2])
+        
+        self.c3d_1 = C3D_BN_A(self.filters_count[1], self.filters_count[2], 3, 2)
+        self.c3d_2 = C3D_BN_A(self.filters_count[2], self.filters_count[3], 3, 2)
+        self.c3d_3 = C3D_BN_A(self.filters_count[3], self.filters_count[4], (2,4,4), (1,3,3))
+        
+        self.c3d_encoder = nn.Sequential(self.c3d_1, self.c3d_2, self.c3d_3)
+        
+        self.ct3d_1 = CT3D_BN_A(self.filters_count[4], self.filters_count[3], (3,4,4), (1,3,3))
+        self.ct3d_2 = CT3D_BN_A(self.filters_count[3], self.filters_count[2], 3, 2)
+        self.ct3d_3 = CT3D_BN_A(self.filters_count[2], self.filters_count[1], 3, 2)
+        
+        self.ct3d_decoder = nn.Sequential(self.ct3d_1, self.ct3d_2, self.ct3d_3)
+        
+        self.ctlstm1 = ConvTranspose2dLSTM_Cell(31, self.filters_count[1], self.filters_count[0], 3, 2)
+        self.ctlstm2 = ConvTranspose2dLSTM_Cell(self.ctlstm1.output_shape, self.filters_count[0], self.filters_count[0], 6, 2)
+        
+        self.ctlstm_layers = nn.ModuleList([self.ctlstm1, self.ctlstm2])
+        
+        self.c3d_4 = C3D_BN_A(self.filters_count[0], self.channels, (1,3,3), 1)
+        
+        self.act_blocks = nn.ModuleList([
+            nn.Sequential(
+                nn.BatchNorm2d(self.filters_count[0]),
+                nn.LeakyReLU()
+            ),
+            nn.Sequential(
+                nn.BatchNorm2d(self.filters_count[1]),
+                nn.LeakyReLU()
+            ),
+            nn.Sequential(
+                nn.BatchNorm2d(self.filters_count[0]),
+                nn.LeakyReLU()
+            ),
+            nn.Sequential(
+                nn.BatchNorm2d(self.filters_count[0]),
+                nn.LeakyReLU()
+            )
+        ])
+    
+    def forward(self, x):
+        bs, c, t, w, h = x.shape
+        
+        clstm_hidden_states = [None] * len(self.clstm_layers)
+        clstm_outputs = list()
+        for ts in range(t):
+            ts_input = x[:,:,ts,:,:]
+            for idx, layer in enumerate(self.clstm_layers):
+                h_l, c_l = layer(ts_input, clstm_hidden_states[idx])
+                h_l = self.act_blocks[idx](h_l)
+                clstm_hidden_states[idx] = [h_l, c_l]
+                ts_input = h_l
+            clstm_outputs += [h_l]
+        clstm_outputs = torch.stack(clstm_outputs).permute(1,2,0,3,4)
+        
+        c3d_outputs = self.c3d_encoder(clstm_outputs)
+        encodings = c3d_outputs
+        ct3d_outputs = self.ct3d_decoder(c3d_outputs)
+        
+        ctlstm_hidden_states = [None] * len(self.ctlstm_layers)
+        ctlstm_outputs = list()
+        for ts in range(t):
+            ts_input = ct3d_outputs[:,:,ts,:,:]
+            for idx, layer in enumerate(self.ctlstm_layers):
+                h_l, c_l = layer(ts_input, ctlstm_hidden_states[idx])
+                h_l = self.act_blocks[idx + 2](h_l)
+                ctlstm_hidden_states[idx] = [h_l, c_l]
+                ts_input = h_l
+            ctlstm_outputs += [h_l]
+        ctlstm_outputs = torch.stack(ctlstm_outputs).permute(1,2,0,3,4))
+        reconstructions = self.c3d_4(ctlstm_outputs)
+        return reconstructions, encodings
+    
 class CLSTM_AE(nn.Module):
     def __init__(
         self,
