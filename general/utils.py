@@ -1,5 +1,8 @@
 from .all_imports import *
 
+from sklearn.metrics import make_scorer, roc_curve
+from scipy.optimize import brentq
+from scipy.interpolate import interp1d
 from torchvision.utils import make_grid, save_image
 
 def join_paths(paths):
@@ -162,7 +165,12 @@ def create_directory(path):
 def getModelFileName(save_path):
     return join_paths([save_path, os.path.split(save_path)[-1] + ".pth.tar"])
 
-def movingaverage(values, window):
+def moving_average(values, window):
     weights = np.repeat(1.0, window)/window
     smas = np.convolve(values, weights, 'valid')
     return smas
+
+def calculate_eer(y_true, y_score):
+    fpr, tpr, thresholds = roc_curve(y_true, y_score, pos_label=1)
+    eer = brentq(lambda x : 1. - x - interp1d(fpr, tpr)(x), 0., 1.)
+    return eer

@@ -251,14 +251,20 @@ class AutoEncoder_Tester:
         agg_abs_reg_aucroc = roc_auc_score(FLT_targets, FLT_agg_abs_regularity)
         agg_abs_reg_report = classification_report(FLT_targets, np.round(FLT_agg_abs_regularity))
         agg_abs_conf_matrix = confusion_matrix(FLT_targets, np.round(FLT_agg_abs_regularity))
+        agg_abs_eer = calculate_eer(FLT_targets, FLT_agg_abs_regularity)
+        
         agg_sqr_reg_aucroc = roc_auc_score(FLT_targets, FLT_agg_sqr_regularity)
         agg_sqr_reg_report = classification_report(FLT_targets, np.round(FLT_agg_sqr_regularity))
         agg_sqr_conf_matrix = confusion_matrix(FLT_targets, np.round(FLT_agg_sqr_regularity))
+        agg_sqr_eer = calculate_eer(FLT_targets, FLT_agg_sqr_regularity)
         
         # overall roc-auc
         overall_abs_aucroc = roc_auc_score(FLT_targets, FLT_abs_regularity)
+        overall_abs_eer = calculate_eer(FLT_targets, FLT_abs_regularity)
         overall_abs_report = classification_report(FLT_targets, np.round(FLT_abs_regularity))
+        
         overall_sqr_aucroc = roc_auc_score(FLT_targets, FLT_sqr_regularity)
+        overall_sqr_eer = calculate_eer(FLT_targets, FLT_sqr_regularity)
         overall_sqr_report = classification_report(FLT_targets, np.round(FLT_sqr_regularity))
         
         self.results = {
@@ -267,8 +273,12 @@ class AutoEncoder_Tester:
                 "mean_sqr_vid_aucroc": mean_sqr_vid_aucroc,
                 "agg_abs_reg_aucroc": agg_abs_reg_aucroc,
                 "agg_sqr_reg_aucroc": agg_sqr_reg_aucroc,
+                "agg_abs_eer": agg_abs_eer,
+                "agg_sqr_eer": agg_sqr_eer,
                 "overall_abs_aucroc": overall_abs_aucroc,
-                "overall_sqr_aucroc": overall_sqr_aucroc
+                "overall_sqr_aucroc": overall_sqr_aucroc,
+                "overall_abs_eer": overall_abs_eer,
+                "overall_sqr_eer": overall_sqr_eer
             },
             "classification_reports": {
                 "agg_abs_reg_report": agg_abs_reg_report,
