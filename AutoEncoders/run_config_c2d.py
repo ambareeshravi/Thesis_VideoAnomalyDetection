@@ -112,6 +112,7 @@ if __name__ == '__main__':
     for ae_model in trainer.autoencoder_models:
         print("-"*40)
         print(ae_model.model_file)
+        if "vae" in ae_model.model_file.lower(): model.isTrain = False
         tester = AutoEncoder_Tester(
             model = ae_model.model,
             dataset = test_data,

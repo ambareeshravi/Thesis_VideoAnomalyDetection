@@ -112,7 +112,7 @@ if __name__ == '__main__':
         progress_bar_refresh_rate = 0,
 #         auto_lr_find=True
     )
-#     trainer.tune(model = lm_model, train_dataloader = train_loader)
+    trainer.tune(model = lm_model, train_dataloader = train_loader)
     INFO("STARTING THE TRAINING")
     trainer.fit(model = lm_model, train_dataloader=train_loader, val_dataloaders=val_loader)
     
@@ -136,6 +136,7 @@ if __name__ == '__main__':
     model_file = getModelFileName(MODEL_SAVE_PATH)
     load_model(model, model_file)
     print(model_file)
+    if "vae" in model_file.lower(): model.isTrain = False
     tester = AutoEncoder_Tester(
         model = model,
         dataset = test_data,

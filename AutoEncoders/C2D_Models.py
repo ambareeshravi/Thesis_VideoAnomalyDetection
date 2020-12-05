@@ -137,7 +137,7 @@ class C2D_AE_128_3x3_VAE(C2D_AE_128_3x3):
         isTrain = True,
         channels = 3,
         filters_count = [64,64,128,256,128,128],
-        embedding_dim = [1,64,2,2],
+        embedding_dim = [1,128,2,2],
         conv_type = "conv2d"
     ):
         C2D_AE_128_3x3.__init__(self, channels = channels, filters_count = filters_count, conv_type = conv_type)
