@@ -88,7 +88,7 @@ if __name__ == '__main__':
         lr_scheduler_kwargs = {
             'factor': 0.5,
             'patience': 3,
-            'threshold': 5e-5,
+            'threshold': 1e-5,
             'verbose': True
          }
     )
@@ -97,7 +97,7 @@ if __name__ == '__main__':
     # Automated Trainer
     callbacks_list = [
         EpochChange(),
-        EarlyStopping('validation_loss', min_delta = 1e-6, patience=8, verbose=True)
+        EarlyStopping('validation_loss', min_delta = 1e-8, patience=8, verbose=True)
     ]
     
     trainer = Trainer(
