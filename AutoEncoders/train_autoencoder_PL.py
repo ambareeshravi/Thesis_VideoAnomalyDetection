@@ -122,7 +122,7 @@ class AutoEncoderLM(LightningModule):
 
     def vae_step(self, images):
         reconstructions, latent_mu, latent_logvar = self.model(self.get_inputs(images))
-        return self.vae_loss(images, reconstructions, latent_mu, latent_logvar)      
+        return self.model.vae_loss(images, reconstructions, latent_mu, latent_logvar)      
     
     # LM functions
     def configure_optimizers(self):
