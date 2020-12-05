@@ -113,7 +113,7 @@ if __name__ == '__main__':
         callbacks = callbacks_list,
         accumulate_grad_batches={20: 2, 50: 4, 100: 8},
         progress_bar_refresh_rate = 0,
-#         auto_lr_find=True
+        auto_lr_find=True
     )
     trainer.tune(model = lm_model, train_dataloader = train_loader)
     INFO("STARTING THE TRAINING")
