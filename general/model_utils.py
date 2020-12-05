@@ -275,11 +275,11 @@ class CT3D_Res(nn.Module):
 class Conv2dLSTM_Cell(nn.Module):
     def __init__(self, 
                  image_size,
-                 input_dim,
-                 hidden_dim,
-                 kernel_size,
-                 stride,
-                 padding,
+                 input_dim = 32,
+                 hidden_dim = 32,
+                 kernel_size = 3,
+                 stride = 1,
+                 padding = 0,
                  include_W = False,
                  conv_bias = False,
                  conv_type = "conv2d",
@@ -313,6 +313,8 @@ class Conv2dLSTM_Cell(nn.Module):
         self.padding = padding
         self.include_W = include_W
         self.conv_bias = conv_bias
+        
+        self.output_shape = getConvOutputShape(self.image_size, self.kernel_size, self.stride, self.padding)
         
         isACB = False
         self.conv_layer = nn.Conv2d
@@ -367,7 +369,10 @@ class Conv2dLSTM_Cell(nn.Module):
             init_fn(*state_shape, device = self.conv_Wx.weight.device)
         )
             
-    def forward(self, x, states):
+    def forward(self, x, states = None):
+        b,c,w,h = x.shape
+        if states == None: states = self.init_states(b)
+            
         h, c = states
         # i,f,c,o
         conv_x_out = self.conv_Wx(x)
@@ -397,11 +402,11 @@ class Conv2dLSTM_Cell(nn.Module):
 class ConvTranspose2dLSTM_Cell(nn.Module):
     def __init__(self, 
                  image_size,
-                 input_dim,
-                 hidden_dim,
-                 kernel_size,
-                 stride,
-                 padding,
+                 input_dim = 32,
+                 hidden_dim = 32,
+                 kernel_size = 3,
+                 stride = 1,
+                 padding = 0,
                  output_padding = 0,
                  include_W = False,
                  conv_bias = False,
@@ -436,6 +441,8 @@ class ConvTranspose2dLSTM_Cell(nn.Module):
         self.output_padding = output_padding
         self.include_W = include_W
         self.conv_bias = conv_bias
+        
+        self.output_shape = getConvTransposeOutputShape(self.image_size, self.kernel_size, self.stride, self.padding, self.output_padding)
         
         isADB = False
         self.conv_layer = nn.ConvTranspose2d
@@ -491,7 +498,10 @@ class ConvTranspose2dLSTM_Cell(nn.Module):
             init_fn(*state_shape, device = self.conv_Wx.weight.device)
         )
             
-    def forward(self, x, states):
+    def forward(self, x, states = None):
+        b,c,w,h = x.shape
+        if states == None: states = self.init_states(b)
+            
         h, c = states
         # i,f,c,o
         conv_x_out = self.conv_Wx(x)
