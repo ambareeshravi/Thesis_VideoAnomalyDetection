@@ -100,7 +100,7 @@ class AutoEncoderModel:
     
     def get_inputs(self, images):
         if self.addNoise:
-            return add_noise(images, device = self.device)
+            return add_noise(images)
         return images
         
     def step(self, images):

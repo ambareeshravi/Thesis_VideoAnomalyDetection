@@ -86,10 +86,8 @@ def moving_average(x, window = 3):
     residue = x[:(len(x) - len(averaged))]
     return np.concatenate((residue, averaged))
     
-def add_noise(img, var = 0.1, device = torch.device("cpu")):
-    noise = torch.randn(img.size(), device = device) * var
-    noisy_img = img + noise
-    return noisy_img
+def add_noise(img, var = 0.1):
+    return img + (torch.randn(img.size(), device = img.device) * var * torch.randint(0, 2, img.shape, device = img.device))
 
 def get_data_loaders(
     data,
