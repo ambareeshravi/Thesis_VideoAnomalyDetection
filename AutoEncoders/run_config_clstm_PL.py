@@ -21,7 +21,7 @@ if __name__ == '__main__':
     # Editable
     IMAGE_SIZE = 128
     EPOCHS = 300
-    BATCH_SIZE = 36
+    BATCH_SIZE = 32
     IMAGE_TYPE = "normal"
     MODEL_PATH = args.model_path
     create_directory(MODEL_PATH)
