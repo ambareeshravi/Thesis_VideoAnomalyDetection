@@ -44,7 +44,7 @@ if __name__ == '__main__':
     DATA_TYPE = "ucsd2" 
     
     # PL Params
-    PRECISION = 32 #16
+    PRECISION = 16 #32
     GPUS = -1
     GRAD_CLIP_VAL = 0
     NODES = args.nodes

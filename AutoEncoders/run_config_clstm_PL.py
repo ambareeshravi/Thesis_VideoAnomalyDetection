@@ -21,7 +21,7 @@ if __name__ == '__main__':
     # Editable
     IMAGE_SIZE = 128
     EPOCHS = 300
-    BATCH_SIZE = 24
+    BATCH_SIZE = 28
     IMAGE_TYPE = "normal"
     MODEL_PATH = args.model_path
     create_directory(MODEL_PATH)
@@ -43,7 +43,7 @@ if __name__ == '__main__':
     DATA_TYPE = "ucsd2" 
     
     # PL Params
-    PRECISION = 32 #16
+    PRECISION = 16 # 32
     GPUS = -1
     GRAD_CLIP_VAL = 0
     NODES = args.nodes
