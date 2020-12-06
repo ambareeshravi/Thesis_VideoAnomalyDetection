@@ -175,7 +175,7 @@ class C2D_AE_128_3x3_VAE(C2D_AE_128_3x3):
         logvar = self.fc_logvar(encodings)
         
         latent = self.latent_sample(mu, logvar)
-        reconstructions = self.decoder(latent.view(*self.view_shape))
+        reconstructions = self.decoder(latent.reshape(*self.view_shape))
         return reconstructions, mu, logvar
     
 class C2D_AE_128_5x5_VAE(C2D_AE_128_5x5):
@@ -190,7 +190,7 @@ class C2D_AE_128_5x5_VAE(C2D_AE_128_5x5):
         C2D_AE_128_5x5.__init__(self, channels = channels, filters_count = filters_count, conv_type = conv_type)
         self.__name__ = "C2D_128_5x5_VAE"
         self.embedding_dim = np.product(embedding_dim)
-        self.view_shape = tuple([1] + embedding_dim[1:])
+        self.view_shape = tuple([-1] + embedding_dim[1:])
         self.isTrain = isTrain
         
         self.fc_mu = nn.Sequential(
@@ -222,7 +222,7 @@ class C2D_AE_128_5x5_VAE(C2D_AE_128_5x5):
         logvar = self.fc_logvar(encodings)
         
         latent = self.latent_sample(mu, logvar)
-        reconstructions = self.decoder(latent.view(*self.view_shape))
+        reconstructions = self.decoder(latent.reshape(*self.view_shape))
         return reconstructions, mu, logvar
 
 class C2D_AE_3x3_Res(nn.Module):
