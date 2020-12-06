@@ -57,7 +57,7 @@ if __name__ == '__main__':
     
     MODELS_LIST = [
         # CLSTM_AE_CTD(image_size = IMAGE_SIZE, channels = CHANNELS),
-        CLSTM_AE(image_size = IMAGE_SIZE, channels = CHANNELS)
+        CLSTM_FULL_AE(image_size = IMAGE_SIZE, channels = CHANNELS)
     ]
     
     model_files = [
