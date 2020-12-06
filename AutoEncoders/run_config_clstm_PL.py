@@ -101,7 +101,7 @@ if __name__ == '__main__':
     ]
     
     trainer = Trainer(
-        default_root_dir = MODEL_SAVE_PATH,
+        default_root_dir = MODEL_PATH,
         gpus=GPUS,
         num_nodes = NODES,
         accelerator='ddp',

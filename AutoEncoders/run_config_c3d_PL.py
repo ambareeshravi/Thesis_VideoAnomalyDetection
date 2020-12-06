@@ -22,7 +22,7 @@ if __name__ == '__main__':
     # Editable
     IMAGE_SIZE = 128
     EPOCHS = 300
-    BATCH_SIZE = 24
+    BATCH_SIZE = 16
     IMAGE_TYPE = "normal"
     MODEL_PATH = args.model_path
     create_directory(MODEL_PATH)
@@ -102,7 +102,7 @@ if __name__ == '__main__':
     ]
     
     trainer = Trainer(
-        default_root_dir = MODEL_SAVE_PATH,
+        default_root_dir = MODEL_PATH,
         gpus=GPUS,
         num_nodes = NODES,
         accelerator='ddp',
