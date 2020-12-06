@@ -21,7 +21,7 @@ if __name__ == '__main__':
     # Editable
     IMAGE_SIZE = 128
     EPOCHS = 300
-    BATCH_SIZE = 28
+    BATCH_SIZE = 32
     IMAGE_TYPE = "normal"
     MODEL_PATH = args.model_path
     create_directory(MODEL_PATH)
@@ -57,7 +57,7 @@ if __name__ == '__main__':
         image_size = IMAGE_SIZE,
         image_type = IMAGE_TYPE,
         n_frames = 16,
-        frame_strides = [2,4,8,16],
+        frame_strides = [1,2,4,8,16],
         sample_stride = 1,
     )
 

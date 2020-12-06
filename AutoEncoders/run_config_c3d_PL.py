@@ -58,7 +58,7 @@ if __name__ == '__main__':
         image_size = IMAGE_SIZE,
         image_type = IMAGE_TYPE,
         n_frames = 16,
-        frame_strides = [2,4,8,16],
+        frame_strides = [1,2,4,8,16],
         sample_stride = 1,
     )
 
