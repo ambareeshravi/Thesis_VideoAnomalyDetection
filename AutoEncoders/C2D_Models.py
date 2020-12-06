@@ -65,7 +65,7 @@ class C2D_AE_128_3x3(nn.Module):
     def __init__(
         self,
         channels = 3,
-        filters_count = [512,256,256,128,128,128],
+        filters_count = [256,256,128,128,128,128],
         conv_type = "conv2d"
     ):
         super(C2D_AE_128_3x3, self).__init__()
@@ -101,7 +101,7 @@ class C2D_AE_128_5x5(nn.Module):
     def __init__(
         self,
         channels = 3,
-        filters_count = [512,256,256,128,128,128],
+        filters_count = [256,256,128,128,128,128],
         conv_type = "conv2d"
     ):
         super(C2D_AE_128_5x5, self).__init__()
@@ -136,7 +136,7 @@ class C2D_AE_128_3x3_VAE(C2D_AE_128_3x3):
         self,
         isTrain = True,
         channels = 3,
-        filters_count = [512,256,256,128,128,128],
+        filters_count = [256,256,128,128,128,128],
         embedding_dim = [1,128,2,2],
         conv_type = "conv2d"
     ):
@@ -183,7 +183,7 @@ class C2D_AE_128_5x5_VAE(C2D_AE_128_5x5):
         self,
         isTrain = True,
         channels = 3,
-        filters_count = [512,256,256,128,128,128],
+        filters_count = [256,256,128,128,128,128],
         embedding_dim = [1,128,2,2],
         conv_type = "conv2d"
     ):
@@ -273,7 +273,7 @@ class C2D_AE_ACB_128_3x3(nn.Module):
     def __init__(
         self,
         channels = 3,
-        filters_count = [512,256,256,128,128,128],
+        filters_count = [256,256,128,128,128,128],
         conv_type = "conv2d"
     ):
         super(C2D_AE_ACB_128_3x3, self).__init__()

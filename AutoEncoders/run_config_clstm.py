@@ -19,8 +19,8 @@ if __name__ == '__main__':
     
     # Editable
     IMAGE_SIZE = 128
-    EPOCHS = 150
-    BATCH_SIZE = 40
+    EPOCHS = 300
+    BATCH_SIZE = 36
     IMAGE_TYPE = "normal"
     MODEL_PATH = args.model_path
     if not os.path.exists(MODEL_PATH): os.mkdir(MODEL_PATH)
@@ -48,7 +48,7 @@ if __name__ == '__main__':
         image_size = IMAGE_SIZE,
         image_type = IMAGE_TYPE,
         n_frames = 16,
-        frame_strides = [2,4,8,16],
+        frame_strides = [1,2,4,8,16],
         sample_stride = 1,
     )
 
