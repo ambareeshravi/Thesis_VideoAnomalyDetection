@@ -44,7 +44,7 @@ if __name__ == '__main__':
     DATA_TYPE = "ucsd2" 
     
     # PL Params
-    PRECISION = 16 #32
+    PRECISION = 32 #32
     GPUS = -1
     GRAD_CLIP_VAL = 0
     NODES = args.nodes
@@ -58,7 +58,7 @@ if __name__ == '__main__':
         image_size = IMAGE_SIZE,
         image_type = IMAGE_TYPE,
         n_frames = 16,
-        frame_strides = [1,2,4,8,16],
+        frame_strides = [2,4,8,16],
         sample_stride = 1,
     )
 
