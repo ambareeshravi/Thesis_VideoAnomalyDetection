@@ -104,7 +104,7 @@ if __name__ == '__main__':
         default_root_dir = MODEL_PATH,
         gpus=GPUS,
         num_nodes = NODES,
-        accelerator='ddp2',
+        accelerator='ddp',
         min_epochs = 75,
         max_epochs = EPOCHS,
         gradient_clip_val = GRAD_CLIP_VAL,
