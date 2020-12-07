@@ -82,7 +82,7 @@ if __name__ == '__main__':
         MODEL_SAVE_PATH,
         LOSS_TYPE,
         OPTIMIZER_TYPE,
-        default_learning_rate = 1e-3,
+        default_learning_rate = 5e-4,
         max_epochs = 300,
         status_rate = 25,
         lr_scheduler_kwargs = {
@@ -112,9 +112,9 @@ if __name__ == '__main__':
         callbacks = callbacks_list,
         accumulate_grad_batches={20: 2, 50: 4, 100: 8},
         progress_bar_refresh_rate = 0,
-        auto_lr_find=True
+#         auto_lr_find=True
     )
-    trainer.tune(model = lm_model, train_dataloader = train_loader)
+#     trainer.tune(model = lm_model, train_dataloader = train_loader)
     INFO("STARTING THE TRAINING")
     trainer.fit(model = lm_model, train_dataloader=train_loader, val_dataloaders=val_loader)
 
