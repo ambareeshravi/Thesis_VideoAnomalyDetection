@@ -39,6 +39,18 @@ class AutoEncoderModel:
             self.step = self.patch_step
         if "stack" in self.model_file.lower():
             self.step = self.stack_step
+        if "noose" in self.model_file.lower():
+            self.noose_factor = 1.0
+            self.step = self.noose_step
+        self.isET = False
+        if "translat" in self.model_file.lower():
+            self.isET = True
+            self.step = self.double_translative_step
+            from AutoEncoders.embedding_translation import EmbeddingTranslator
+            self.et_model = EmbeddingTranslator()
+            self.et_criterion = nn.MSELoss()
+            self.et_optimizer = torch.optim.Adam(self.et_model.parameters(), lr = 1e-4, weight_decay = 1e-5)
+            self.et_model.to(self.device)
         
         # Model Params
         self.stopTraining = False
@@ -91,6 +103,8 @@ class AutoEncoderModel:
         
     def save(self,):
         save_model(self.model, self.model_file)
+        if self.isET:
+            save_model(self.et_model, "_ET.pth.tar".join(self.model_file.split(".pth.tar")))
     
     def save_final(self,):
         self.save()
@@ -121,6 +135,25 @@ class AutoEncoderModel:
     def vae_step(self, images):
         reconstructions, latent_mu, latent_logvar = self.model(self.get_inputs(images))
         return self.model.vae_loss(images, reconstructions, latent_mu, latent_logvar)
+        
+    def noose_step(self, images):
+        reconstructions, encodings = self.model(self.get_inputs(images))
+        return self.loss_criterion(images, reconstructions) + (self.noose_factor * self.loss_criterion(encodings, encodings.mean(dim = 0)))
+    
+    def double_translative_step(self, images):
+        reconstructions, encodings = self.model(self.get_inputs(images))
+        
+        try:
+            self.et_model.zero_grad()
+            d_encodings = encodings.detach()
+            r, e = self.et_model(d_encodings)
+            et_loss = self.et_criterion(d_encodings, r)
+            et_loss.backward()
+            self.et_optimizer.step()
+        except:
+            pass
+        
+        return self.loss_criterion(images, reconstructions)
         
     def train_step(self, images):
         self.model.to(self.device)

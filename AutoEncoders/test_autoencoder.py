@@ -15,6 +15,7 @@ class AutoEncoder_Tester:
         dataset,
         patchwise = False,
         stacked = False,
+        translative = False,
         useGPU = True
     ):
         self.model = model
@@ -33,6 +34,8 @@ class AutoEncoder_Tester:
             self.predict = self.predict_patchwise
         if stacked:
             self.predict = self.predict_stacked
+        if translative:
+            self.predict = self.predict_translative
        
     def regularity(self, x):
         return (1-normalize_error(x))
@@ -60,6 +63,13 @@ class AutoEncoder_Tester:
             reconstructions, encodings = self.model(stacked_images.to(self.device))
             reconstructions = reconstructions.unsqueeze(dim = -4)
             return (reconstructions, encodings)
+        
+    def predict_translative(self, inputs):
+        with torch.no_grad():
+            main_encodings = self.model.encoder(inputs)
+            r,e = self.et_model(main_encodings)
+            main_reconstructions = self.model.decoder(r)
+            return main_reconstructions, main_encodings
                     
     def plot_regularity(self, y_true, y_pred, file_name):
         x = np.array(range(len(y_true)))
