@@ -7,7 +7,7 @@ class CLSTM_CTD_AE(nn.Module):
     def __init__(self,
                  image_size = 128,
                  channels = 3,
-                 filters_count = [64,64,64,64,64,128],
+                 filters_count = [64,64,96,128],
                 ):
         super(CLSTM_CTD_AE, self).__init__()
         self.__name__ = "CLSTM_CTD_128"
@@ -18,7 +18,7 @@ class CLSTM_CTD_AE(nn.Module):
         self.clstm1 = Conv2dLSTM_Cell(self.image_size, self.channels, self.filters_count[0], 3, 2)
         self.clstm2 = Conv2dLSTM_Cell(self.clstm1.output_shape, self.filters_count[0], self.filters_count[1], 3, 2)
         self.clstm3 = Conv2dLSTM_Cell(self.clstm2.output_shape, self.filters_count[1], self.filters_count[2], 5, 3)
-        self.clstm4 = Conv2dLSTM_Cell(self.clstm3.output_shape, self.filters_count[2], self.filters_count[3], 5, 3)
+        self.clstm4 = Conv2dLSTM_Cell(self.clstm3.output_shape, self.filters_count[2], self.filters_count[3], 3, 2)
         
         self.clstm_act_blocks = nn.Sequential(
             nn.Sequential(
@@ -42,7 +42,7 @@ class CLSTM_CTD_AE(nn.Module):
         self.encoding_layers = nn.Sequential(self.clstm1, self.clstm2, self.clstm3, self.clstm4)
         
         self.decoder = nn.Sequential(
-            CT3D_BN_A(self.filters_count[3], self.filters_count[2], (1,3,3), (1,2,2)),
+            CT3D_BN_A(self.filters_count[3], self.filters_count[2], (1,2,2), (1,1,1)),
             CT3D_BN_A(self.filters_count[2], self.filters_count[1], (1,5,5), (1,2,2)),
             CT3D_BN_A(self.filters_count[1], self.filters_count[1], (1,5,5), (1,3,3)),
             CT3D_BN_A(self.filters_count[1], self.filters_count[1], (2,5,5), (1,3,3)),
@@ -73,7 +73,7 @@ class CLSTM_C2D_AE(nn.Module):
     def __init__(self,
                  image_size = 128,
                  channels = 3,
-                 filters_count = [64,64,64,64,64,128],
+                 filters_count = [64,64,96,128],
                 ):
         super(CLSTM_C2D_AE, self).__init__()
         self.__name__ = "CLSTM_CTD_128"
@@ -89,10 +89,10 @@ class CLSTM_C2D_AE(nn.Module):
         self.c2d_encoder = nn.Sequential(self.c2d_1, self.c2d_2)
         
         self.clstm1 = Conv2dLSTM_Cell(self.c2d_encoder[-1].output_shape, self.filters_count[1], self.filters_count[2], 5, 3)
-        self.clstm2 = Conv2dLSTM_Cell(self.clstm1.output_shape, self.filters_count[2], self.filters_count[3], 5, 3)
+        self.clstm2 = Conv2dLSTM_Cell(self.clstm1.output_shape, self.filters_count[2], self.filters_count[3], 3, 2)
         # Decoding part       
-        self.ctlstm1 = ConvTranspose2dLSTM_Cell(self.clstm2.output_shape, self.filters_count[3], self.filters_count[2], 4, 2)
-        self.ctlstm2 = ConvTranspose2dLSTM_Cell(self.ctlstm1.output_shape, self.filters_count[2], self.filters_count[1], 4, 2)
+        self.ctlstm1 = ConvTranspose2dLSTM_Cell(self.clstm2.output_shape, self.filters_count[3], self.filters_count[2], 4, 1)
+        self.ctlstm2 = ConvTranspose2dLSTM_Cell(self.ctlstm1.output_shape, self.filters_count[2], self.filters_count[1], 3, 2)
         
         self.act_blocks = nn.Sequential(
             nn.Sequential(
@@ -116,10 +116,10 @@ class CLSTM_C2D_AE(nn.Module):
         
         self.lstm_layers = nn.Sequential(self.clstm1, self.clstm2, self.ctlstm1, self.ctlstm2)
         
-        self.ct2d_1 = CT2D_BN_A(self.filters_count[1], self.filters_count[0], 5, 2)
-        self.ct2d_2 = CT2D_BN_A(self.filters_count[0], self.filters_count[0], 5, 2)
-        self.ct2d_3 = CT2D_BN_A(self.filters_count[0], self.filters_count[0], 3, 2)
-        self.c2d_3 = C2D_BN_A(self.filters_count[0], self.channels, 4, 1, activation_type = "sigmoid")
+        self.ct2d_1 = CT2D_BN_A(self.filters_count[1], self.filters_count[0], 3, 2)
+        self.ct2d_2 = CT2D_BN_A(self.filters_count[0], self.filters_count[0], 4, 2)
+        self.ct2d_3 = CT2D_BN_A(self.filters_count[0], self.filters_count[0], 4, 2)
+        self.c2d_3 = C2D_BN_A(self.filters_count[0], self.channels, 3, 1, activation_type = "sigmoid")
         self.ct2d_decoder = nn.Sequential(self.ct2d_1, self.ct2d_2, self.ct2d_3, self.c2d_3)
         
     def forward(self, x):
@@ -153,7 +153,7 @@ class CLSTM_C3D_AE(nn.Module):
         self,
         image_size = 128,
         channels = 3,
-        filters_count = [64,64,64,64,64,128]
+        filters_count = [64,64,64,96,128]
     ):
         super(CLSTM_C3D_AE, self).__init__()
         self.__name__ = "CLSTM_C3D_128"
@@ -168,18 +168,18 @@ class CLSTM_C3D_AE(nn.Module):
         
         self.c3d_1 = C3D_BN_A(self.filters_count[1], self.filters_count[2], 3, 2)
         self.c3d_2 = C3D_BN_A(self.filters_count[2], self.filters_count[3], 3, 2)
-        self.c3d_3 = C3D_BN_A(self.filters_count[3], self.filters_count[4], (2,4,4), (1,3,3), activation_type = "tanh")
+        self.c3d_3 = C3D_BN_A(self.filters_count[3], self.filters_count[4], (2,4,4), (1,1,1), activation_type = "tanh")
         
         self.c3d_encoder = nn.Sequential(self.c3d_1, self.c3d_2, self.c3d_3)
         
-        self.ct3d_1 = CT3D_BN_A(self.filters_count[4], self.filters_count[3], (3,4,4), (1,3,3))
+        self.ct3d_1 = CT3D_BN_A(self.filters_count[4], self.filters_count[3], (3,4,4), (1,1,1))
         self.ct3d_2 = CT3D_BN_A(self.filters_count[3], self.filters_count[2], 3, 2)
         self.ct3d_3 = CT3D_BN_A(self.filters_count[2], self.filters_count[1], 3, 2)
         
         self.ct3d_decoder = nn.Sequential(self.ct3d_1, self.ct3d_2, self.ct3d_3)
         
-        self.ctlstm1 = ConvTranspose2dLSTM_Cell(31, self.filters_count[1], self.filters_count[0], 3, 2)
-        self.ctlstm2 = ConvTranspose2dLSTM_Cell(self.ctlstm1.output_shape, self.filters_count[0], self.filters_count[0], 6, 2)
+        self.ctlstm1 = ConvTranspose2dLSTM_Cell(31, self.filters_count[1], self.filters_count[0], 4, 2)
+        self.ctlstm2 = ConvTranspose2dLSTM_Cell(self.ctlstm1.output_shape, self.filters_count[0], self.filters_count[0], 4, 2)
         
         self.ctlstm_layers = nn.Sequential(self.ctlstm1, self.ctlstm2)
         
@@ -242,7 +242,7 @@ class CLSTM_FULL_AE(nn.Module):
         self,
         image_size = 128,
         channels = 3,
-        filters_count = [64,64,64,64,64,128]
+        filters_count = [64,64,64,96,128]
     ):
         super(CLSTM_FULL_AE, self).__init__()
         self.__name__ = "CLSTM_FULL_128"
@@ -255,18 +255,19 @@ class CLSTM_FULL_AE(nn.Module):
         self.clstm2 = Conv2dLSTM_Cell(self.clstm1.output_shape, self.filters_count[0], self.filters_count[1], 3, 2, 0)
         self.clstm3 = Conv2dLSTM_Cell(self.clstm2.output_shape, self.filters_count[1], self.filters_count[2], 3, 2, 0)
         self.clstm4 = Conv2dLSTM_Cell(self.clstm3.output_shape, self.filters_count[2], self.filters_count[3], 3, 2, 0)
-        self.clstm5 = Conv2dLSTM_Cell(self.clstm4.output_shape, self.filters_count[3], self.filters_count[4], 4, 3, 0)
+        self.clstm5 = Conv2dLSTM_Cell(self.clstm4.output_shape, self.filters_count[3], self.filters_count[4], 4, 1, 0)
         
         # Decoder
-        self.ctlstm6 = ConvTranspose2dLSTM_Cell(self.clstm5.output_shape, self.filters_count[4], self.filters_count[3], 4, 3, 0)
+        self.ctlstm6 = ConvTranspose2dLSTM_Cell(self.clstm5.output_shape, self.filters_count[4], self.filters_count[3], 4, 1, 0)
         self.ctlstm7 = ConvTranspose2dLSTM_Cell(self.ctlstm6.output_shape, self.filters_count[3], self.filters_count[2], 3, 2, 0)
         self.ctlstm8 = ConvTranspose2dLSTM_Cell(self.ctlstm7.output_shape, self.filters_count[2], self.filters_count[1], 3, 2, 0)
-        self.ctlstm9 = ConvTranspose2dLSTM_Cell(self.ctlstm8.output_shape, self.filters_count[1], self.filters_count[0], 3, 2, 0)
-        self.ctlstm10 =ConvTranspose2dLSTM_Cell(self.ctlstm9.output_shape, self.filters_count[0], self.channels, 4, 2, 0)
+        self.ctlstm9 = ConvTranspose2dLSTM_Cell(self.ctlstm8.output_shape, self.filters_count[1], self.filters_count[0], 4, 2, 0)
+        self.ctlstm10 =ConvTranspose2dLSTM_Cell(self.ctlstm9.output_shape, self.filters_count[0], self.filters_count[0], 4, 2, 0)
+        self.clstm11 =Conv2dLSTM_Cell(self.ctlstm10.output_shape, self.filters_count[0], self.channels, 3, 1, 0)
         
         self.lstm_layers = nn.Sequential(
             self.clstm1, self.clstm2, self.clstm3, self.clstm4, self.clstm5,
-            self.ctlstm6, self.ctlstm7, self.ctlstm8, self.ctlstm9, self.ctlstm10
+            self.ctlstm6, self.ctlstm7, self.ctlstm8, self.ctlstm9, self.ctlstm10, self.clstm11
         )
         
         self.act_blocks = list()
@@ -284,7 +285,7 @@ class CLSTM_FULL_AE(nn.Module):
                 )
         )
         
-        for i in [3,2,1,0]:
+        for i in [3,2,1,0,0]:
             self.act_blocks.append(
                 nn.Sequential(
                     nn.BatchNorm2d(self.filters_count[i]),
@@ -318,8 +319,8 @@ class CLSTM_FULL_AE(nn.Module):
             reconstructions += [h_l]
         encodings = torch.stack(encodings).permute(1,2,0,3,4)
         reconstructions = torch.stack(reconstructions).permute(1,2,0,3,4)
-        return reconstructions, encodings    
-
+        return reconstructions, encodings
+    
 CONV2D_LSTM_DICT = {
     128: {
         "CLSTM_CTD": CLSTM_CTD_AE,

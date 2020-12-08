@@ -65,26 +65,27 @@ class C2D_AE_128_3x3(nn.Module):
     def __init__(
         self,
         channels = 3,
-        filters_count = [128,128,128,128,128,128],
+        filters_count = [64,64,64,64,96,128],
         conv_type = "conv2d"
     ):
         super(C2D_AE_128_3x3, self).__init__()
         self.__name__ = "C2D_3x3_128"
         self.channels = channels
         self.filters_count = filters_count
+        self.embedding_dim = [1,128,4,4]
         
         self.encoder = nn.Sequential(
             C2D_BN_A(self.channels, self.filters_count[0], 3, 2, conv_type = conv_type),
             C2D_BN_A(self.filters_count[0], self.filters_count[1], 3, 2, conv_type = conv_type),
             C2D_BN_A(self.filters_count[1], self.filters_count[2], 3, 2, conv_type = conv_type),
             C2D_BN_A(self.filters_count[2], self.filters_count[3], 3, 2, conv_type = conv_type),
-            C2D_BN_A(self.filters_count[3], self.filters_count[4], 3, 2, conv_type = conv_type),
-            C2D_BN_A(self.filters_count[4], self.filters_count[5], 2, 1, conv_type = conv_type, activation_type = "tanh"),
+            C2D_BN_A(self.filters_count[3], self.filters_count[4], 4, 1, conv_type = conv_type, activation_type = "tanh"),
+#             C2D_BN_A(self.filters_count[4], self.filters_count[5], 2, 1, conv_type = conv_type, activation_type = "tanh"),
         )
         
         self.decoder = nn.Sequential(
-            CT2D_BN_A(self.filters_count[5], self.filters_count[4], 2, 1),
-            CT2D_BN_A(self.filters_count[4], self.filters_count[3], 3, 2),
+#             CT2D_BN_A(self.filters_count[5], self.filters_count[4], 2, 1),
+            CT2D_BN_A(self.filters_count[4], self.filters_count[3], 4, 1),
             CT2D_BN_A(self.filters_count[3], self.filters_count[2], 3, 2),
             CT2D_BN_A(self.filters_count[2], self.filters_count[1], 3, 2),
             CT2D_BN_A(self.filters_count[1], self.filters_count[0], 4, 2),
@@ -101,25 +102,26 @@ class C2D_AE_128_5x5(nn.Module):
     def __init__(
         self,
         channels = 3,
-        filters_count = [128,128,128,128,128,128],
+        filters_count = [64,64,64,64,96,128],
         conv_type = "conv2d"
     ):
         super(C2D_AE_128_5x5, self).__init__()
         self.__name__ = "C2D_5x5_128"
         self.channels = channels
         self.filters_count = filters_count
+        self.embedding_dim = [1,128,4,4]
         
         self.encoder = nn.Sequential(
             C2D_BN_A(self.channels, self.filters_count[0], 5, 2, conv_type = conv_type),
             C2D_BN_A(self.filters_count[0], self.filters_count[1], 5, 2, conv_type = conv_type),
             C2D_BN_A(self.filters_count[1], self.filters_count[2], 5, 2, conv_type = conv_type),
-            C2D_BN_A(self.filters_count[2], self.filters_count[3], 5, 2, conv_type = conv_type),
-            C2D_BN_A(self.filters_count[3], self.filters_count[4], 3, 2, conv_type = conv_type, activation_type="tanh"),
+            C2D_BN_A(self.filters_count[2], self.filters_count[3], 4, 3, conv_type = conv_type, activation_type="tanh"),
+#             C2D_BN_A(self.filters_count[3], self.filters_count[4], 3, 2, conv_type = conv_type, activation_type="tanh"),
         )
         
         self.decoder = nn.Sequential(
-            CT2D_BN_A(self.filters_count[4], self.filters_count[3], 3, 2),
-            CT2D_BN_A(self.filters_count[3], self.filters_count[2], 5, 2),
+#             CT2D_BN_A(self.filters_count[4], self.filters_count[3], 3, 2),
+            CT2D_BN_A(self.filters_count[3], self.filters_count[2], 4, 3),
             CT2D_BN_A(self.filters_count[2], self.filters_count[1], 5, 2),
             CT2D_BN_A(self.filters_count[1], self.filters_count[0], 7, 2),
             CT2D_BN_A(self.filters_count[0], self.filters_count[0], 7, 2),
@@ -130,20 +132,19 @@ class C2D_AE_128_5x5(nn.Module):
         encodings = self.encoder(x)
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
-    
+
 class C2D_AE_128_3x3_VAE(C2D_AE_128_3x3):
     def __init__(
         self,
         isTrain = True,
         channels = 3,
-        filters_count = [128,128,128,128,128,128],
-        embedding_dim = [1,128,2,2],
+        filters_count = [64,64,64,64,96,128],
         conv_type = "conv2d"
     ):
         C2D_AE_128_3x3.__init__(self, channels = channels, filters_count = filters_count, conv_type = conv_type)
         self.__name__ = "C2D_3x3_128_VAE"
-        self.embedding_dim = np.product(embedding_dim)
-        self.view_shape = tuple([-1] + embedding_dim[1:])
+        self.view_shape = tuple([-1] + self.embedding_dim[1:])
+        self.embedding_dim = np.product(self.embedding_dim)
         self.isTrain = isTrain
         
         self.fc_mu = nn.Sequential(
@@ -183,14 +184,13 @@ class C2D_AE_128_5x5_VAE(C2D_AE_128_5x5):
         self,
         isTrain = True,
         channels = 3,
-        filters_count = [128,128,128,128,128,128],
-        embedding_dim = [1,128,2,2],
+        filters_count = [64,64,64,64,96,128],
         conv_type = "conv2d"
     ):
         C2D_AE_128_5x5.__init__(self, channels = channels, filters_count = filters_count, conv_type = conv_type)
         self.__name__ = "C2D_5x5_128_VAE"
-        self.embedding_dim = np.product(embedding_dim)
-        self.view_shape = tuple([-1] + embedding_dim[1:])
+        self.view_shape = tuple([-1] + self.embedding_dim[1:])
+        self.embedding_dim = np.product(self.embedding_dim)
         self.isTrain = isTrain
         
         self.fc_mu = nn.Sequential(
@@ -229,7 +229,7 @@ class C2D_AE_3x3_Res(nn.Module):
     def __init__(
         self,
         channels = 3,
-        filters_count = [64,128,128,256,128,128],
+        filters_count = [64,64,64,64,96,128],
         conv_type = "conv2d"
     ):
         super(C2D_AE_3x3_Res, self).__init__()
@@ -246,13 +246,13 @@ class C2D_AE_3x3_Res(nn.Module):
             C2D_Res(self.filters_count[2], 3),
             C2D_BN_A(self.filters_count[2], self.filters_count[3], 3, 2, conv_type = conv_type),
             C2D_Res(self.filters_count[3], 3),
-            C2D_BN_A(self.filters_count[3], self.filters_count[4], 3, 2, conv_type = conv_type),
-            C2D_BN_A(self.filters_count[4], self.filters_count[5], 2, 1, conv_type = conv_type, activation_type = "tanh"),
+            C2D_BN_A(self.filters_count[3], self.filters_count[4], 4, 1, conv_type = conv_type, activation_type = "tanh"),
+#             C2D_BN_A(self.filters_count[4], self.filters_count[5], 2, 1, conv_type = conv_type, activation_type = "tanh"),
         )
         
         self.decoder = nn.Sequential(
-            CT2D_BN_A(self.filters_count[5], self.filters_count[4], 2, 1),
-            CT2D_BN_A(self.filters_count[4], self.filters_count[3], 3, 2),
+#             CT2D_BN_A(self.filters_count[5], self.filters_count[4], 2, 1),
+            CT2D_BN_A(self.filters_count[4], self.filters_count[3], 4, 1),
             CT2D_Res(self.filters_count[3], 3),
             CT2D_BN_A(self.filters_count[3], self.filters_count[2], 3, 2),
             CT2D_Res(self.filters_count[2], 3),
@@ -273,7 +273,7 @@ class C2D_AE_ACB_128_3x3(nn.Module):
     def __init__(
         self,
         channels = 3,
-        filters_count = [128,128,128,128,128,128],
+        filters_count = [64,64,64,64,96,128],
         conv_type = "conv2d"
     ):
         super(C2D_AE_ACB_128_3x3, self).__init__()
@@ -286,17 +286,17 @@ class C2D_AE_ACB_128_3x3(nn.Module):
             C2D_ACB(self.filters_count[0], self.filters_count[1], 3, 2, conv_type = conv_type),
             C2D_ACB(self.filters_count[1], self.filters_count[2], 3, 2, conv_type = conv_type),
             C2D_ACB(self.filters_count[2], self.filters_count[3], 3, 2, conv_type = conv_type),
-            C2D_ACB(self.filters_count[3], self.filters_count[4], 3, 2, conv_type = conv_type),
-            C2D_BN_A(self.filters_count[4], self.filters_count[5], 3, 1, conv_type = conv_type, activation_type = "tanh"),
+            C2D_ACB(self.filters_count[3], self.filters_count[4], 3, 2, conv_type = conv_type, activation_type = "tanh"),
+#             C2D_BN_A(self.filters_count[4], self.filters_count[5], 3, 1, conv_type = conv_type, activation_type = "tanh"),
         )
         
         self.decoder = nn.Sequential(
-            CT2D_BN_A(self.filters_count[5], self.filters_count[4], 2, 1),
-            CT2D_ADB(self.filters_count[4], self.filters_count[3], 3, 2),
+#             CT2D_BN_A(self.filters_count[5], self.filters_count[4], 2, 1),
+            CT2D_ADB(self.filters_count[4], self.filters_count[3], 4, 1),
             CT2D_ADB(self.filters_count[3], self.filters_count[2], 3, 2),
             CT2D_ADB(self.filters_count[2], self.filters_count[1], 3, 2),
-            CT2D_ADB(self.filters_count[1], self.filters_count[0], 4, 2),
-            CT2D_ADB(self.filters_count[0], self.filters_count[0], 4, 2),
+            CT2D_ADB(self.filters_count[1], self.filters_count[0], 3, 2),
+            CT2D_ADB(self.filters_count[0], self.filters_count[0], 6, 2),
             C2D_BN_A(self.filters_count[0], self.channels, 3, 1, activation_type = "sigmoid")
         )
         
@@ -304,34 +304,34 @@ class C2D_AE_ACB_128_3x3(nn.Module):
         encodings = self.encoder(x)
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
-
+    
 class C2D_AE_ACB_128_5x5(nn.Module):
     def __init__(
         self,
         channels = 3,
-        filters_count = [64,64,128,256,128],
+        filters_count = [64,64,64,64,96,128],
         conv_type = "conv2d"
     ):
         super(C2D_AE_ACB_128_5x5, self).__init__()
         self.__name__ = "C2D_5x5_128_ACB"
         self.channels = channels
-        self.filters_count = filters_count
+        self.filters_count = filters_count[1:]
         
         self.encoder = nn.Sequential(
             C2D_ACB(self.channels, self.filters_count[0], 5, 2, conv_type = conv_type),
             C2D_ACB(self.filters_count[0], self.filters_count[1], 5, 2, conv_type = conv_type),
             C2D_ACB(self.filters_count[1], self.filters_count[2], 5, 2, conv_type = conv_type),
             C2D_ACB(self.filters_count[2], self.filters_count[3], 5, 2, conv_type = conv_type),
-            C2D_BN_A(self.filters_count[3], self.filters_count[4], 5, 2, conv_type = conv_type, activation_type = "tanh"),
+            C2D_BN_A(self.filters_count[3], self.filters_count[4], 5, 1, conv_type = conv_type, activation_type = "tanh"),
         )
         
         self.decoder = nn.Sequential(
-            CT2D_ADB(self.filters_count[4], self.filters_count[3], 3, 2),
-            CT2D_ADB(self.filters_count[3], self.filters_count[2], 5, 2),
+            CT2D_ADB(self.filters_count[4], self.filters_count[3], 3, 1),
+            CT2D_ADB(self.filters_count[3], self.filters_count[2], 4, 2),
             CT2D_ADB(self.filters_count[2], self.filters_count[1], 5, 2),
-            CT2D_ADB(self.filters_count[1], self.filters_count[0], 7, 2),
-            CT2D_ADB(self.filters_count[0], self.filters_count[0], 7, 2),
-            C2D_BN_A(self.filters_count[0], self.channels, 4, 1, activation_type = "sigmoid")
+            CT2D_ADB(self.filters_count[1], self.filters_count[0], 5, 2),
+            CT2D_ADB(self.filters_count[0], self.filters_count[0], 5, 2),
+            C2D_BN_A(self.filters_count[0], self.channels, 6, 1, activation_type = "sigmoid")
         )
         
     def forward(self, x):
@@ -339,7 +339,61 @@ class C2D_AE_ACB_128_5x5(nn.Module):
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
     
-
+class C2D_AE_128_PC(nn.Module):
+    def __init__(
+        self,
+        channels = 3,
+        filters_count = [64,64,64,64,96,128],
+        conv_type = "conv2d"
+    ):
+        super(C2D_AE_128_PC, self).__init__()
+        self.__name__ = "C2D_3x3_128_PC"
+        self.channels = channels
+        self.filters_count = filters_count[2:]
+        
+        self.el1 = C2D_BN_A(self.channels, self.filters_count[0]//2, 3, 2, conv_type = conv_type)
+        self.er1 = C2D_BN_A(self.channels, self.filters_count[0]//2, 4, 2, conv_type = conv_type)
+        
+        self.el2 = C2D_BN_A(self.filters_count[0], self.filters_count[1]//2, 3, 2, conv_type = conv_type)
+        self.er2 = C2D_BN_A(self.filters_count[0], self.filters_count[1]//2, 4, 2, padding = 1, conv_type = conv_type)
+        
+        self.el3 = C2D_BN_A(self.filters_count[1], self.filters_count[2]//2, 5, 3, conv_type = conv_type)
+        self.er3 = C2D_BN_A(self.filters_count[1], self.filters_count[2]//2, 7, 3, conv_type = conv_type)
+        
+        self.el4 = C2D_BN_A(self.filters_count[2], self.filters_count[3]//2, 3, 2, conv_type = conv_type, activation_type=False)
+        self.er4 = C2D_BN_A(self.filters_count[2], self.filters_count[3]//2, 4, 2, padding = 1, conv_type = conv_type, activation_type=False)
+        
+        self.e_act = nn.Tanh()
+        
+        self.dl1 = CT2D_BN_A(self.filters_count[3], self.filters_count[2]//2, 4, 2)
+        self.dr1 = CT2D_BN_A(self.filters_count[3], self.filters_count[2]//2, 6, 2, padding = 1)
+        
+        self.dl2 = CT2D_BN_A(self.filters_count[2], self.filters_count[1]//2, 5, 3)
+        self.dr2 = CT2D_BN_A(self.filters_count[2], self.filters_count[1]//2, 7, 3, padding = 1)
+        
+        self.dl3 = CT2D_BN_A(self.filters_count[1], self.filters_count[0]//2, 3, 2)
+        self.dr3 = CT2D_BN_A(self.filters_count[1], self.filters_count[0]//2, 5, 2, padding = 1)
+        
+        self.dl4 = CT2D_BN_A(self.filters_count[0], self.filters_count[0]//2, 3, 2)
+        self.dr4 = CT2D_BN_A(self.filters_count[0], self.filters_count[0]//2, 5, 2, padding = 1)
+        
+        self.d5 = CT2D_BN_A(self.filters_count[0], self.filters_count[0], 3, 1)
+        self.c6 = C2D_BN_A(self.filters_count[0], self.channels, 6, 1, activation_type = "sigmoid")
+        
+    def forward(self, x):
+        eo1 = torch.cat((self.el1(x), self.er1(x)), dim = 1)
+        eo2 = torch.cat((self.el2(eo1), self.er2(eo1)), dim = 1)
+        eo3 = torch.cat((self.el3(eo2), self.er3(eo2)), dim = 1)
+        encodings = self.e_act(torch.cat((self.el4(eo3), self.er4(eo3)), dim = 1))
+        
+        do1 = torch.cat((self.dl1(encodings), self.dr1(encodings)), dim = 1)
+        do2 = torch.cat((self.dl2(do1), self.dr2(do1)), dim = 1)
+        do3 = torch.cat((self.dl3(do2), self.dr3(do2)), dim = 1)
+        do4 = torch.cat((self.dl4(do3), self.dr4(do3)), dim = 1)
+        do5 = self.d5(do4)
+        reconstructions = self.c6(do5)
+        return reconstructions, encodings
+    
 C2D_MODELS_DICT = {
     128: {
         "vanilla": {
@@ -356,6 +410,9 @@ C2D_MODELS_DICT = {
         },
         "res": {
             "3x3": C2D_AE_3x3_Res
+        },
+        "parallel": {
+            "3x3": C2D_AE_128_PC
         }
     },
     

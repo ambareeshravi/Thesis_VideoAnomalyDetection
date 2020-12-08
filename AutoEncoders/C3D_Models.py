@@ -69,7 +69,7 @@ class C3D_AE_3x3(nn.Module):
     def __init__(
         self,
         channels = 3,
-        filter_count = [256,128,128,128,128,128],
+        filter_count = [64,64,64,96,96,128],
         conv_type = "conv3d"
     ):
         super(C3D_AE_3x3, self).__init__()
@@ -82,13 +82,13 @@ class C3D_AE_3x3(nn.Module):
             C3D_BN_A(self.filter_count[0], self.filter_count[1], 3, 2, conv_type = conv_type),
             C3D_BN_A(self.filter_count[1], self.filter_count[2], 3, 2, conv_type = conv_type),
             C3D_BN_A(self.filter_count[2], self.filter_count[3], (1,3,3), (1,2,2), conv_type = conv_type),
-            C3D_BN_A(self.filter_count[3], self.filter_count[4], (1,3,3), (1,2,2), conv_type = conv_type),
-            C3D_BN_A(self.filter_count[4], self.filter_count[5], (1,2,2), (1,1,1), conv_type = conv_type, activation_type="tanh"),
+            C3D_BN_A(self.filter_count[3], self.filter_count[4], (1,4,4), (1,1,1), conv_type = conv_type, activation_type="tanh"),
+#             C3D_BN_A(self.filter_count[4], self.filter_count[5], (1,2,2), (1,1,1), conv_type = conv_type),
         )
         
         self.decoder = nn.Sequential(
-            CT3D_BN_A(self.filter_count[5], self.filter_count[4], (1,2,2), (1,1,1)),
-            CT3D_BN_A(self.filter_count[4], self.filter_count[3], (1,3,3), (1,2,2)),
+#             CT3D_BN_A(self.filter_count[5], self.filter_count[4], (1,2,2), (1,1,1)),
+            CT3D_BN_A(self.filter_count[4], self.filter_count[3], (1,4,4), (1,1,1)),
             CT3D_BN_A(self.filter_count[3], self.filter_count[2], (1,3,3), (1,2,2)),
             CT3D_BN_A(self.filter_count[2], self.filter_count[1], 3, 2),
             CT3D_BN_A(self.filter_count[1], self.filter_count[0], 4, 2),
@@ -105,7 +105,7 @@ class C3D_AE_Res_3x3(nn.Module):
     def __init__(
         self,
         channels = 3,
-        filter_count = [256,128,128,128,128,128],
+        filter_count = [64,64,64,96,96,128],
         conv_type = "conv3d"
     ):
         super(C3D_AE_Res_3x3, self).__init__()
@@ -122,15 +122,15 @@ class C3D_AE_Res_3x3(nn.Module):
             C3D_Res(self.filter_count[2], 3),
             C3D_BN_A(self.filter_count[2], self.filter_count[3], (1,3,3), (1,2,2), conv_type = conv_type),
             C3D_Res(self.filter_count[3], 3),
-            C3D_BN_A(self.filter_count[3], self.filter_count[4], (1,3,3), (1,2,2), conv_type = conv_type),
-            C3D_Res(self.filter_count[4], 3),
-            C3D_BN_A(self.filter_count[4], self.filter_count[5], (1,2,2), (1,1,1), conv_type = conv_type, activation_type="tanh")
+            C3D_BN_A(self.filter_count[3], self.filter_count[4], (1,4,4), (1,1,1), conv_type = conv_type, activation_type="tanh"),
+#             C3D_Res(self.filter_count[4], 3),
+#             C3D_BN_A(self.filter_count[4], self.filter_count[5], (1,2,2), (1,1,1), conv_type = conv_type, activation_type="tanh")
         )
         
         self.decoder = nn.Sequential(
-            CT3D_BN_A(self.filter_count[5], self.filter_count[4], (1,2,2), (1,1,1)),
-            CT3D_Res(self.filter_count[4], 3),
-            CT3D_BN_A(self.filter_count[4], self.filter_count[3], (1,3,3), (1,2,2)),
+#             CT3D_BN_A(self.filter_count[5], self.filter_count[4], (1,2,2), (1,1,1)),
+#             CT3D_Res(self.filter_count[4], 3),
+            CT3D_BN_A(self.filter_count[4], self.filter_count[3], (1,4,4), (1,1,1)),
             CT3D_Res(self.filter_count[3], 3),
             CT3D_BN_A(self.filter_count[3], self.filter_count[2], (1,3,3), (1,2,2)),
             CT3D_Res(self.filter_count[2], 3),
@@ -151,7 +151,7 @@ class C3D2D_AE_3x3(nn.Module):
     def __init__(
         self,
         channels = 3,
-        filter_count = [256,128,128,128,128,128],
+        filter_count = [64,64,64,96,96,128],
         conv_type = "conv3d"
     ):
         super(C3D2D_AE_3x3, self).__init__()
@@ -165,11 +165,11 @@ class C3D2D_AE_3x3(nn.Module):
             C3D_BN_A(self.filter_count[1], self.filter_count[2], 3, 2, conv_type = conv_type),
             C3D_BN_A(self.filter_count[2], self.filter_count[3], (2,5,5), (1,3,3), conv_type = conv_type),
             nn.Flatten(start_dim=1, end_dim=2),
-            C2D_BN_A(self.filter_count[3], self.filter_count[4], 5, 3, activation_type = "tanh"),
+            C2D_BN_A(self.filter_count[3], self.filter_count[4], 5, 2, activation_type = "tanh"),
         )
         
         self.decoder1 = nn.Sequential(
-            CT2D_BN_A(self.filter_count[5], self.filter_count[4], 2, 1),
+#             CT2D_BN_A(self.filter_count[5], self.filter_count[4], 2, 1),
             CT2D_BN_A(self.filter_count[4], self.filter_count[3], 3, 2),
         )
         
@@ -187,7 +187,7 @@ class C3D2D_AE_3x3(nn.Module):
         prilim_out = prilim_out.unsqueeze(dim=2)
         reconstructions = self.decoder2(prilim_out)
         return reconstructions, encodings
-
+    
 C3D_MODELS_DICT = {
     128: {
         "generic": Generic_C3D_AE,
