@@ -7,7 +7,7 @@ from general.pl_callbacks import EpochChange
 
 from pytorch_lightning import Trainer
 from pytorch_lightning.core.lightning import LightningModule
-from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
+from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint, GPUStatsMonitor
 
 class AutoEncoderLM(LightningModule):
     def __init__(self,

@@ -95,7 +95,8 @@ if __name__ == '__main__':
     # Automated
     callbacks_list = [
         EpochChange(),
-        EarlyStopping('validation_loss', patience=16, verbose=True)
+        EarlyStopping('validation_loss', patience=16, verbose=True),
+        GPUStatsMonitor()
     ]
     
     trainer = Trainer(
