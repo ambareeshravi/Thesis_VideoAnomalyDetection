@@ -69,7 +69,7 @@ class C2D_AE_128_3x3(nn.Module):
         conv_type = "conv2d"
     ):
         super(C2D_AE_128_3x3, self).__init__()
-        self.__name__ = "C2D_128_3x3"
+        self.__name__ = "C2D_3x3_128"
         self.channels = channels
         self.filters_count = filters_count
         
@@ -105,7 +105,7 @@ class C2D_AE_128_5x5(nn.Module):
         conv_type = "conv2d"
     ):
         super(C2D_AE_128_5x5, self).__init__()
-        self.__name__ = "C2D_128_5x5"
+        self.__name__ = "C2D_5x5_128"
         self.channels = channels
         self.filters_count = filters_count
         
@@ -141,7 +141,7 @@ class C2D_AE_128_3x3_VAE(C2D_AE_128_3x3):
         conv_type = "conv2d"
     ):
         C2D_AE_128_3x3.__init__(self, channels = channels, filters_count = filters_count, conv_type = conv_type)
-        self.__name__ = "C2D_128_3x3_VAE"
+        self.__name__ = "C2D_3x3_128_VAE"
         self.embedding_dim = np.product(embedding_dim)
         self.view_shape = tuple([-1] + embedding_dim[1:])
         self.isTrain = isTrain
@@ -188,7 +188,7 @@ class C2D_AE_128_5x5_VAE(C2D_AE_128_5x5):
         conv_type = "conv2d"
     ):
         C2D_AE_128_5x5.__init__(self, channels = channels, filters_count = filters_count, conv_type = conv_type)
-        self.__name__ = "C2D_128_5x5_VAE"
+        self.__name__ = "C2D_5x5_128_VAE"
         self.embedding_dim = np.product(embedding_dim)
         self.view_shape = tuple([-1] + embedding_dim[1:])
         self.isTrain = isTrain
@@ -233,7 +233,7 @@ class C2D_AE_3x3_Res(nn.Module):
         conv_type = "conv2d"
     ):
         super(C2D_AE_3x3_Res, self).__init__()
-        self.__name__ = "C2D_128_3x3_RES"
+        self.__name__ = "C2D_3x3_128_RES"
         self.channels = channels
         self.filters_count = filters_count
         
@@ -277,7 +277,7 @@ class C2D_AE_ACB_128_3x3(nn.Module):
         conv_type = "conv2d"
     ):
         super(C2D_AE_ACB_128_3x3, self).__init__()
-        self.__name__ = "C2D_128_3x3_ACB"
+        self.__name__ = "C2D_3x3_128_ACB"
         self.channels = channels
         self.filters_count = filters_count
         
@@ -313,7 +313,7 @@ class C2D_AE_ACB_128_5x5(nn.Module):
         conv_type = "conv2d"
     ):
         super(C2D_AE_ACB_128_5x5, self).__init__()
-        self.__name__ = "C2D_128_5x5_ACB"
+        self.__name__ = "C2D_5x5_128_ACB"
         self.channels = channels
         self.filters_count = filters_count
         

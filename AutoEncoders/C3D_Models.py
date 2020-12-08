@@ -73,7 +73,7 @@ class C3D_AE_3x3(nn.Module):
         conv_type = "conv3d"
     ):
         super(C3D_AE_3x3, self).__init__()
-        self.__name__ = "C3D_128_3x3"
+        self.__name__ = "C3D_3x3_128"
         self.channels = channels
         self.filter_count = filter_count
         
@@ -109,7 +109,7 @@ class C3D_AE_Res_3x3(nn.Module):
         conv_type = "conv3d"
     ):
         super(C3D_AE_Res_3x3, self).__init__()
-        self.__name__ = "C3D_128_3x3_RES"
+        self.__name__ = "C3D_3x3_128_RES"
         self.channels = channels
         self.filter_count = filter_count
         
@@ -155,7 +155,7 @@ class C3D2D_AE_3x3(nn.Module):
         conv_type = "conv3d"
     ):
         super(C3D2D_AE_3x3, self).__init__()
-        self.__name__ = "C3D2D_128_3x3"
+        self.__name__ = "C3D2D_3x3_128"
         self.channels = channels
         self.filter_count = filter_count
         
