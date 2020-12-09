@@ -21,7 +21,7 @@ if __name__ == '__main__':
     
     # Editable
     IMAGE_SIZE = 128
-    EPOCHS = 300
+    EPOCHS = 150
     BATCH_SIZE = 16
     IMAGE_TYPE = "normal"
     MODEL_PATH = args.model_path

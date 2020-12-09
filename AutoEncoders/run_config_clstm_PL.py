@@ -20,7 +20,7 @@ if __name__ == '__main__':
     
     # Editable
     IMAGE_SIZE = 128
-    EPOCHS = 300
+    EPOCHS = 100
     BATCH_SIZE = 16
     IMAGE_TYPE = "normal"
     MODEL_PATH = args.model_path
@@ -83,7 +83,7 @@ if __name__ == '__main__':
         LOSS_TYPE,
         OPTIMIZER_TYPE,
         default_learning_rate = 5e-4,
-        max_epochs = 300,
+        max_epochs = EPOCHS,
         status_rate = 25,
         lr_scheduler_kwargs = {
             'factor': 0.5,
