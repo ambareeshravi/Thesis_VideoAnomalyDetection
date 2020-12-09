@@ -187,6 +187,41 @@ class C3D2D_AE_3x3(nn.Module):
         prilim_out = prilim_out.unsqueeze(dim=2)
         reconstructions = self.decoder2(prilim_out)
         return reconstructions, encodings
+
+class C3D_Multi_AE(nn.Module):
+    def __init__(
+        self,
+        channels = 3,
+        filter_count = [64,64,64,96,96,128],
+        conv_type = "conv3d"
+    ):
+        super(C3D_Multi_AE, self).__init__()
+        self.__name__ = "C3D_3x3_128"
+        self.channels = channels
+        self.filter_count = filter_count
+        
+        self.encoder = nn.Sequential(
+            C3D_BN_A(self.channels, self.filter_count[0], 3, 2, conv_type = conv_type),
+            C3D_BN_A(self.filter_count[0], self.filter_count[1], 3, 2, conv_type = conv_type),
+            C3D_BN_A(self.filter_count[1], self.filter_count[2], 3, 2, conv_type = conv_type),
+            C3D_BN_A(self.filter_count[2], self.filter_count[3], (1,3,3), (1,2,2), conv_type = conv_type),
+            C3D_BN_A(self.filter_count[3], self.filter_count[4], (1,3,3), (1,1,1), conv_type = conv_type, activation_type="tanh"),
+#             C3D_BN_A(self.filter_count[4], self.filter_count[5], (1,2,2), (1,1,1), conv_type = conv_type),
+        )
+        
+        self.decoder = nn.Sequential(
+#             CT3D_BN_A(self.filter_count[5], self.filter_count[4], (1,2,2), (1,1,1)),
+            CT3D_BN_A(self.filter_count[4], self.filter_count[3], (1,3,3), (1,1,1)),
+            CT3D_BN_A(self.filter_count[3], self.filter_count[2], (1,3,3), (1,2,2)),
+            CT3D_BN_A(self.filter_count[2], self.filter_count[1], 3, 2),
+            CT3D_BN_A(self.filter_count[1], self.filter_count[0], 3, 2),
+            CT3D_BN_A(self.filter_count[0], self.channels, 4, 2, activation_type="sigmoid")
+        )
+        
+    def forward(self, x):
+        encodings = self.encoder(x)
+        reconstructions = self.decoder(encodings)
+        return reconstructions, encodings
     
 C3D_MODELS_DICT = {
     128: {
@@ -197,6 +232,7 @@ C3D_MODELS_DICT = {
         "res": {
             "3x3": C3D_AE_Res_3x3
         },
-        "3D2D": C3D2D_AE_3x3
+        "3D2D": C3D2D_AE_3x3,
+        "multi_resolution": C3D_Multi_AE
     }
 }

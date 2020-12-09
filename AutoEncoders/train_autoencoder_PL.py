@@ -15,6 +15,7 @@ class AutoEncoderLM(LightningModule):
                  save_path,
                  loss_type,
                  optimizer_type,
+                 noise_var = 0.1,
                  default_learning_rate = 1e-3,
                  max_epochs = 300,
                  status_rate = 25,
@@ -55,6 +56,7 @@ class AutoEncoderLM(LightningModule):
         self.addNoise = False
         if "nois" in self.model_file.lower():
             self.addNoise = True
+            self.noise_var = noise_var
         if "patch" in self.model_file.lower():
             self.step = self.patch_step
         if "stack" in self.model_file.lower():
@@ -102,7 +104,7 @@ class AutoEncoderLM(LightningModule):
 
     def get_inputs(self, images):
         if self.addNoise:
-            return add_noise(images)
+            return add_noise(images, var = self.noise_var)
         return images
 
     def step(self, images):

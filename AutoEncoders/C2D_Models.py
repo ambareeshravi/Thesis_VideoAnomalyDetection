@@ -393,7 +393,87 @@ class C2D_AE_128_PC(nn.Module):
         do5 = self.d5(do4)
         reconstructions = self.c6(do5)
         return reconstructions, encodings
+
+class C2D_Multi_AE(nn.Module):
+    def __init__(self,
+                 channels = 3,
+                 filters_count = [64,64,96,96,128], 
+                 conv_type = "conv2d"
+                ):
+        super(C2D_Multi_AE, self).__init__()
+        self.channels = channels
+        self.filters_count = filters_count
+        self.__name__ = "C2D_Multi"
+        self.encoder = nn.Sequential(
+            C2D_BN_A(self.channels, self.filters_count[0], 3, 2),
+            C2D_BN_A(self.filters_count[0], self.filters_count[1], 3, 2),
+            C2D_BN_A(self.filters_count[1], self.filters_count[2], 3, 2),
+            C2D_BN_A(self.filters_count[2], self.filters_count[3], 3, 2),
+            C2D_BN_A(self.filters_count[3], self.filters_count[4], 3, 1, activation_type="tanh"),
+        )
+        
+        self.decoder = nn.Sequential(
+            CT2D_BN_A(self.filters_count[4], self.filters_count[3], 3, 1),
+            CT2D_BN_A(self.filters_count[3], self.filters_count[2], 3, 2),
+            CT2D_BN_A(self.filters_count[2], self.filters_count[1], 3, 2),
+            CT2D_BN_A(self.filters_count[1], self.filters_count[0], 3, 2),
+            CT2D_BN_A(self.filters_count[0], self.channels, 4, 2, activation_type="sigmoid"),
+        )
+        
+    def forward(self, x):
+        encodings = self.encoder(x)
+        reconstructions = self.decoder(encodings)
+        return reconstructions, encodings
+
+class C2D_Multi_VAE(C2D_Multi_AE):
+    def __init__(
+        self,
+        image_size,
+        isTrain = True,
+        channels = 3,
+        filters_count = [64,64,96,96,128],
+        conv_type = "conv2d"
+    ):
+        C2D_Multi_AE.__init__(self, channels = channels, filters_count = filters_count, conv_type = conv_type)
+        self.__name__ = "C2D_Multi_VAE"
+        self.image_size = image_size
+        self.embedding_dim = list(self.encoder(torch.rand(1, self.channels, self.image_size, self.image_size)).shape)
+        self.view_shape = tuple([-1] + self.embedding_dim[1:])
+        self.embedding_dim = np.product(self.embedding_dim)
+        self.isTrain = isTrain
+        
+        self.fc_mu = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(self.embedding_dim, self.embedding_dim)
+        )
+        self.fc_logvar = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(self.embedding_dim, self.embedding_dim)
+        )
+                
+    def latent_sample(self, mu, logvar):
+        if self.isTrain:
+            std = logvar.mul(0.5).exp_()
+            eps = torch.empty_like(std).normal_()
+            return eps.mul(std).add_(mu)
+        else:
+            return mu
     
+    def vae_loss(self, original, reconstruction, mu, logvar, variational_beta = 0.9):
+        recon_loss = F.binary_cross_entropy(reconstruction.flatten(), original.flatten(), reduction='mean')
+        kldivergence = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+        return recon_loss + (variational_beta * kldivergence)
+
+    def forward(self, x):
+        # Encoder
+        encodings = self.encoder(x)
+        mu = self.fc_mu(encodings)
+        logvar = self.fc_logvar(encodings)
+        
+        latent = self.latent_sample(mu, logvar)
+        reconstructions = self.decoder(latent.reshape(*self.view_shape))
+        return reconstructions, mu, logvar
+
 C2D_MODELS_DICT = {
     128: {
         "vanilla": {
@@ -406,7 +486,8 @@ C2D_MODELS_DICT = {
         },
         "vae": {
             "3x3": C2D_AE_128_3x3_VAE,
-            "5x5": C2D_AE_128_5x5_VAE
+            "5x5": C2D_AE_128_5x5_VAE,
+            "multi_resolution": C2D_Multi_VAE
         },
         "res": {
             "3x3": C2D_AE_3x3_Res
@@ -418,5 +499,7 @@ C2D_MODELS_DICT = {
     
     224: {
         "generic": Generic_C2D_AE
-    }
+    },
+    
+    "multi_resolution": C2D_Multi_AE
 }

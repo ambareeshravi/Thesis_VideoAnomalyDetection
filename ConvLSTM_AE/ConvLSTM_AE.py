@@ -320,13 +320,97 @@ class CLSTM_FULL_AE(nn.Module):
         encodings = torch.stack(encodings).permute(1,2,0,3,4)
         reconstructions = torch.stack(reconstructions).permute(1,2,0,3,4)
         return reconstructions, encodings
+
+class CLSTM_Multi_AE(nn.Module):
+    def __init__(
+        self,
+        image_size = 128,
+        channels = 3,
+        filters_count = [64,64,64,96,128]
+    ):
+        super(CLSTM_Multi_AE, self).__init__()
+        self.__name__ = "CLSTM_FULL_128"
+        self.image_size = image_size
+        self.channels = channels
+        self.filters_count = filters_count
+        
+        # Encoder
+        self.clstm1 = Conv2dLSTM_Cell(self.image_size, self.channels, self.filters_count[0], 3, 2, 0)
+        self.clstm2 = Conv2dLSTM_Cell(self.clstm1.output_shape, self.filters_count[0], self.filters_count[1], 3, 2, 0)
+        self.clstm3 = Conv2dLSTM_Cell(self.clstm2.output_shape, self.filters_count[1], self.filters_count[2], 3, 2, 0)
+        self.clstm4 = Conv2dLSTM_Cell(self.clstm3.output_shape, self.filters_count[2], self.filters_count[3], 3, 2, 0)
+        self.clstm5 = Conv2dLSTM_Cell(self.clstm4.output_shape, self.filters_count[3], self.filters_count[4], 3, 1, 0)
+        
+        # Decoder
+        self.ctlstm6 = ConvTranspose2dLSTM_Cell(self.clstm5.output_shape, self.filters_count[4], self.filters_count[3], 3, 1, 0)
+        self.ctlstm7 = ConvTranspose2dLSTM_Cell(self.ctlstm6.output_shape, self.filters_count[3], self.filters_count[2], 3, 2, 0)
+        self.ctlstm8 = ConvTranspose2dLSTM_Cell(self.ctlstm7.output_shape, self.filters_count[2], self.filters_count[1], 3, 2, 0)
+        self.ctlstm9 = ConvTranspose2dLSTM_Cell(self.ctlstm8.output_shape, self.filters_count[1], self.filters_count[0], 3, 2, 0)
+        self.ctlstm10 =ConvTranspose2dLSTM_Cell(self.ctlstm9.output_shape, self.filters_count[0], self.channels, 4, 2, 0)
+        
+        self.lstm_layers = nn.Sequential(
+            self.clstm1, self.clstm2, self.clstm3, self.clstm4, self.clstm5,
+            self.ctlstm6, self.ctlstm7, self.ctlstm8, self.ctlstm9, self.ctlstm10
+        )
+        
+        self.act_blocks = list()
+        for i in [0,1,2,3]:
+            self.act_blocks.append(
+                nn.Sequential(
+                    nn.BatchNorm2d(self.filters_count[i]),
+                    nn.LeakyReLU()
+                )
+            )
+        self.act_blocks.append(
+                nn.Sequential(
+                    nn.BatchNorm2d(self.filters_count[4]),
+                    nn.Tanh()
+                )
+        )
+        
+        for i in [3,2,1,0]:
+            self.act_blocks.append(
+                nn.Sequential(
+                    nn.BatchNorm2d(self.filters_count[i]),
+                    nn.LeakyReLU()
+                )
+            )
+        self.act_blocks.append(
+                nn.Sequential(
+                    nn.BatchNorm2d(self.channels),
+                    nn.Sigmoid()
+                )
+        )
+        self.act_blocks = nn.Sequential(*self.act_blocks)
+        
+    def forward(self, x):
+        b,c,t,w,h = x.shape
+        
+        hidden_list = [None]*len(self.lstm_layers)
+        
+        encodings = list()
+        reconstructions = list()
+        
+        for ts in range(t):
+            ts_input = x[:,:,ts,:,:]
+            for idx, layer in enumerate(self.lstm_layers):
+                h_l, c_l = layer(ts_input, hidden_list[idx])
+                h_l = self.act_blocks[idx](h_l)
+                hidden_list[idx] = [h_l, c_l]
+                ts_input = h_l
+                if idx == 4: encodings += [h_l]
+            reconstructions += [h_l]
+        encodings = torch.stack(encodings).permute(1,2,0,3,4)
+        reconstructions = torch.stack(reconstructions).permute(1,2,0,3,4)
+        return reconstructions, encodings
     
 CONV2D_LSTM_DICT = {
     128: {
         "CLSTM_CTD": CLSTM_CTD_AE,
         "CLSTM_FULL": CLSTM_FULL_AE,
         "CLSTM_C3D": CLSTM_C3D_AE,
-        "CLSTM_C2D": CLSTM_C2D_AE
+        "CLSTM_C2D": CLSTM_C2D_AE,
+        "CLSTM_Multi": CLSTM_Multi_AE
     }
 }
 

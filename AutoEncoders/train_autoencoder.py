@@ -9,6 +9,7 @@ class AutoEncoderModel:
                  save_path,
                  loss_criterion,
                  optimizer,
+                 noise_var = 0.1,
                  device = torch.device("cuda"),
                  lr_scheduler_params = {"factor": 0.75, "patience": 5, "threshold": 1e-4},
                  useHalfPrecision = False,
@@ -35,6 +36,7 @@ class AutoEncoderModel:
         self.addNoise = False
         if "nois" in self.model_file.lower():
             self.addNoise = True
+            self.noise_var = noise_var
         if "patch" in self.model_file.lower():
             self.step = self.patch_step
         if "stack" in self.model_file.lower():
@@ -62,7 +64,7 @@ class AutoEncoderModel:
         self.epoch_train_loss = list()
         self.epoch_validation_loss = list()
         
-        self.model.to(self.device)
+#         self.model.to(self.device)
         
         self.loss_criterion = loss_criterion
         self.optimizer = optimizer
@@ -114,7 +116,7 @@ class AutoEncoderModel:
     
     def get_inputs(self, images):
         if self.addNoise:
-            return add_noise(images)
+            return add_noise(images, var = self.noise_var)
         return images
         
     def step(self, images):
@@ -190,6 +192,7 @@ class AutoEncoder_Trainer:
                  epochs = 100,
                  status_rate = 1,
                  lr_scheduler_params = {"factor": 0.9, "patience": 5, "threshold": 5e-4},
+                 noise_var = 0.1,
                  useHalfPrecision = False,
                  run_status_file = "run_status.txt",
                  destructAll = True,
@@ -221,6 +224,7 @@ class AutoEncoder_Trainer:
                      loss_criterion[idx],
                      optimizer[idx],
                      device = self.device,
+                     noise_var = noise_var,
                      lr_scheduler_params = lr_scheduler_params,
                      useHalfPrecision = useHalfPrecision,
                      debug = debug
