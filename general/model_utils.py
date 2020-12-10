@@ -527,3 +527,15 @@ class ConvTranspose2dLSTM_Cell(nn.Module):
         o = self.sigmoid(o)
         h_n = o * self.tanh(c_n) 
         return h_n, c_n
+    
+class TimeDistributed(nn.Module):
+    def __init__(self, module):
+        # bs, ts, c, w, h
+        super(TimeDistributed, self).__init__()
+        self.module = module
+        
+    def forward(self, x):
+        outputs = list()
+        for i in range(x.size(0)):
+            outputs += [self.module(x[i])]
+        return torch.stack(outputs)

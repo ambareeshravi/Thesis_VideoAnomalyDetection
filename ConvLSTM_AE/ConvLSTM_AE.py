@@ -404,6 +404,58 @@ class CLSTM_Multi_AE(nn.Module):
         reconstructions = torch.stack(reconstructions).permute(1,2,0,3,4)
         return reconstructions, encodings
     
+class HashemCLSTM(nn.Module):
+    def __init__(self, image_size = 256, channels = 3, filters_count = [128,64,32]):
+        super(HashemCLSTM, self).__init__()
+        self.__name__ = 'HashemCLSTM_256'
+        self.image_size = image_size
+        self.channels = channels
+        self.filters_count = filters_count
+        
+        self.encoder_convs = nn.Sequential(
+            TimeDistributed(C2D_BN_A(self.channels, self.filters_count[0], 11, 4)),
+            TimeDistributed(C2D_BN_A(self.filters_count[0], self.filters_count[1], 5, 2)),
+        )
+        ec1_os = getConvOutputShape(self.image_size, 11, 4)
+        ec2_os = getConvOutputShape(ec1_os, 5, 2)
+        
+        self.clstm1 = Conv2dLSTM_Cell(ec2_os, self.filters_count[1], self.filters_count[1], 3, 1, 1)
+        self.clstm2 = Conv2dLSTM_Cell(self.clstm1.output_shape, self.filters_count[1], self.filters_count[2], 3, 1, 1)
+        self.clstm3 = Conv2dLSTM_Cell(self.clstm2.output_shape, self.filters_count[2], self.filters_count[1], 3, 1, 1)
+        
+        self.lstm_layers = nn.ModuleList([self.clstm1, self.clstm2, self.clstm3])
+        self.decoder_convs = nn.Sequential(
+            TimeDistributed(CT2D_BN_A(self.filters_count[1], self.filters_count[0], 7, 2)),
+            TimeDistributed(CT2D_BN_A(self.filters_count[0], self.channels, 12, 4)),
+            TimeDistributed(C2D_BN_A(self.channels, self.channels, 5, 1))
+        )
+        
+    def forward(self, x):
+        # x - bs,c,ts,w,h        
+        eo = self.encoder_convs(x.transpose(2,1))
+        
+        # eo - bs,ts,c,w,h
+        bs,ts,c,w,h = eo.shape
+        
+        hidden_states = [None]*len(self.lstm_layers)
+        outputs = list()
+        encodings = list()
+        for t in range(ts):
+            layer_input = eo[:,t,:,:,:]
+            for idx, layer in enumerate(self.lstm_layers):
+                h,c = layer(layer_input, hidden_states[idx])
+                hidden_states[idx] = [h,c]
+                if idx == 1: encodings += [h]
+                layer_input = h
+            outputs += [h]
+        encodings = torch.stack(encodings).permute(1,2,0,3,4) # ts,bs,c,w,h -> bs,c,ts,w,h
+        outputs = torch.stack(outputs) # ts,bs,c,w,h
+        lstm_outputs = outputs.transpose(0,1)
+        
+        reconstructions = self.decoder_convs(lstm_outputs) # bs,ts,c,w,h\
+        reconstructions = reconstructions.permute(0,2,1,3,4) # bs,c,ts,w,h
+        return reconstructions, encodings
+    
 CONV2D_LSTM_DICT = {
     128: {
         "CLSTM_CTD": CLSTM_CTD_AE,
@@ -411,6 +463,9 @@ CONV2D_LSTM_DICT = {
         "CLSTM_C3D": CLSTM_C3D_AE,
         "CLSTM_C2D": CLSTM_C2D_AE,
         "CLSTM_Multi": CLSTM_Multi_AE
+    },
+    256: {
+        "hashem": HashemCLSTM
     }
 }
 
