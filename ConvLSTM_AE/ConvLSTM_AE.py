@@ -81,14 +81,15 @@ class CLSTM_C2D_AE(nn.Module):
         self.channels = channels
         self.filters_count = filters_count
         
-        self.c2d_1 = C2D_BN_A(self.channels, self.filters_count[0], 3, 2)
-        self.c2d_1.output_shape = getConvOutputShape(self.image_size, 3, 2)
-        self.c2d_2 = C2D_BN_A(self.filters_count[0], self.filters_count[1], 3, 2)
-        self.c2d_2.output_shape = getConvOutputShape(self.c2d_1.output_shape, 3, 2)
+        self.c2d_encoder = nn.Sequential(
+            TimeDistributed(C2D_BN_A(self.channels, self.filters_count[0], 3, 2)),
+            TimeDistributed(C2D_BN_A(self.filters_count[0], self.filters_count[1], 3, 2))
+        )
         
-        self.c2d_encoder = nn.Sequential(self.c2d_1, self.c2d_2)
+        c2d_1_os = getConvOutputShape(self.image_size, 3, 2)
+        c2d_2_os = getConvOutputShape(c2d_1_os, 3, 2)
         
-        self.clstm1 = Conv2dLSTM_Cell(self.c2d_encoder[-1].output_shape, self.filters_count[1], self.filters_count[2], 5, 3)
+        self.clstm1 = Conv2dLSTM_Cell(c2d_2_os, self.filters_count[1], self.filters_count[2], 5, 3)
         self.clstm2 = Conv2dLSTM_Cell(self.clstm1.output_shape, self.filters_count[2], self.filters_count[3], 3, 2)
         # Decoding part       
         self.ctlstm1 = ConvTranspose2dLSTM_Cell(self.clstm2.output_shape, self.filters_count[3], self.filters_count[2], 4, 1)
@@ -116,17 +117,17 @@ class CLSTM_C2D_AE(nn.Module):
         
         self.lstm_layers = nn.Sequential(self.clstm1, self.clstm2, self.ctlstm1, self.ctlstm2)
         
-        self.ct2d_1 = CT2D_BN_A(self.filters_count[1], self.filters_count[0], 3, 2)
-        self.ct2d_2 = CT2D_BN_A(self.filters_count[0], self.filters_count[0], 4, 2)
-        self.ct2d_3 = CT2D_BN_A(self.filters_count[0], self.filters_count[0], 4, 2)
-        self.c2d_3 = C2D_BN_A(self.filters_count[0], self.channels, 3, 1, activation_type = "sigmoid")
-        self.ct2d_decoder = nn.Sequential(self.ct2d_1, self.ct2d_2, self.ct2d_3, self.c2d_3)
+        self.ct2d_decoder = nn.Sequential(
+            TimeDistributed(CT2D_BN_A(self.filters_count[1], self.filters_count[0], 3, 2)),
+            TimeDistributed(CT2D_BN_A(self.filters_count[0], self.filters_count[0], 4, 2)),
+            TimeDistributed(CT2D_BN_A(self.filters_count[0], self.filters_count[0], 4, 2)),
+            TimeDistributed(C2D_BN_A(self.filters_count[0], self.channels, 3, 1, activation_type = "sigmoid"))
+        )
         
     def forward(self, x):
-        bs, c, t, w, h = x.shape
-        x_c2d = x.transpose(1,2).flatten(0,1)
-        o_c2d = self.c2d_encoder(x_c2d)
-        o_c2d = o_c2d.reshape(bs, -1, t, self.c2d_encoder[-1].output_shape, self.c2d_encoder[-1].output_shape)
+        bs,c,t,w,h = x.shape
+        o_c2d = self.c2d_encoder(x.transpose(1,2)) # bs,t,c,w,h
+        o_c2d = o_c2d.transpose(1,2)
         
         hidden_list = [None]*len(self.lstm_layers)
         
@@ -143,9 +144,8 @@ class CLSTM_C2D_AE(nn.Module):
             outputs += [h_l]
         encodings = torch.stack(encodings).permute(1,2,0,3,4)
         lstm_outputs = torch.stack(outputs).permute(1,2,0,3,4)
-        lstm_flat = lstm_outputs.transpose(1,2).flatten(0,1)
-        reconstructions = self.ct2d_decoder(lstm_flat)
-        reconstructions = reconstructions.reshape(bs,t,c,w,h).transpose(1,2)
+        o_ct2d = self.ct2d_decoder(lstm_outputs.transpose(1,2))
+        reconstructions = o_ct2d.transpose(1,2)
         return reconstructions, encodings
     
 class CLSTM_C3D_AE(nn.Module):
