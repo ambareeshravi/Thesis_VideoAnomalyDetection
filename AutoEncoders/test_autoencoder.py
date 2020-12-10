@@ -315,6 +315,14 @@ class AutoEncoder_Tester:
         
         print("-"*20, "TEST RESULTS", "-"*20)
         pprint(self.results["AUC_ROC"])
+        for k, v in self.results["classification_reports"].items():
+            if "agg" in k:
+                print(k)
+                pprint(v)
+        for k, v in self.results["confusion_matrices"].items():
+            if "agg" in k:
+                print(k)
+                pprint(v)
         print("="*54)
                     
         if save_as:
