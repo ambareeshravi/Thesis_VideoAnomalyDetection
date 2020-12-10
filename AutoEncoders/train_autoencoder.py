@@ -11,7 +11,12 @@ class AutoEncoderModel:
                  optimizer,
                  noise_var = 0.1,
                  device = torch.device("cuda"),
-                 lr_scheduler_params = {"factor": 0.75, "patience": 5, "threshold": 1e-4},
+                 lr_scheduler_params = {
+                     "factor": 0.75,
+                     "patience": 3,
+                     "threshold": 1e-5,
+                     'verbose': True
+                 },
                  useHalfPrecision = False,
                  debug = True
                 ):
@@ -191,7 +196,12 @@ class AutoEncoder_Trainer:
                  loss_criterion,
                  epochs = 120,
                  status_rate = 20,
-                 lr_scheduler_params = {"factor": 0.75, "patience": 3, "threshold": 1e-5},
+                 lr_scheduler_params = {
+                     "factor": 0.75,
+                     "patience": 3,
+                     "threshold": 1e-5,
+                     'verbose': True
+                 },
                  noise_var = 0.1,
                  useHalfPrecision = False,
                  run_status_file = "run_status.txt",
