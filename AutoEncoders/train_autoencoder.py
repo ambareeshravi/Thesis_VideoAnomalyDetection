@@ -87,7 +87,7 @@ class AutoEncoderModel:
         train_loss = np.mean(self.epoch_train_loss)
         val_loss = np.mean(self.epoch_validation_loss)
         
-        if not ((self.history["validation_loss"][-1] - val_loss) > self.early_stopping_params["threshold"]):
+        if ((val_loss + self.early_stopping_params["threshold"]) < np.min(self.history["validation_loss"])):
             self.stop_count += 1
         else:
             self.stop_count = 0
