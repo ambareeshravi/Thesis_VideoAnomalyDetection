@@ -143,7 +143,7 @@ class UCSD(ImagesHandler, VideosHandler, Attributes):
                  n_frames = 16,
                  frame_strides = [1,2,4,8,16],
                  sample_stride = 1,
-                 useCorrectedAnnotations = True
+                 useCorrectedAnnotations = False
                 ):
         self.__name__ = "UCSD" + str(dataset_type)
         self.isTrain = isTrain
