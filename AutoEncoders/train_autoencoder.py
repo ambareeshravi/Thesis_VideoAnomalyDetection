@@ -87,10 +87,10 @@ class AutoEncoderModel:
         train_loss = np.mean(self.epoch_train_loss)
         val_loss = np.mean(self.epoch_validation_loss)
         
-        if (len(self.history["validation_loss"]) > 0) and ((val_loss + self.early_stopping_params["threshold"]) < np.min(self.history["validation_loss"])):
-            self.stop_count += 1
-        else:
-            self.stop_count = 0
+#         if (len(self.history["validation_loss"]) > 0) and ((val_loss + self.early_stopping_params["threshold"]) < np.min(self.history["validation_loss"])):
+#             self.stop_count += 1
+#         else:
+#             self.stop_count = 0
             
         self.history["train_loss"].append(train_loss)
         self.history["validation_loss"].append(val_loss)
@@ -98,9 +98,9 @@ class AutoEncoderModel:
         self.epoch_train_loss = list()
         self.epoch_validation_loss = list()
         
-        if self.stop_count == self.early_stopping_params["patience"]:
-            self.stopTraining = True
-            INFO("Early Stopping Training")
+#         if self.stop_count == self.early_stopping_params["patience"]:
+#             self.stopTraining = True
+#             INFO("Early Stopping Training")
         
     def epoch_status(self,):
         if not self.stopTraining:            
