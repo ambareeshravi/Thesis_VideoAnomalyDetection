@@ -13,9 +13,13 @@ class AutoEncoderModel:
                  device = torch.device("cuda"),
                  lr_scheduler_params = {
                      "factor": 0.75,
-                     "patience": 3,
-                     "threshold": 1e-5,
+                     "patience": 5,
+                     "threshold": 5e-5,
                      'verbose': True
+                 },
+                 early_stopping_params = {
+                     "threshold": 5e-5,
+                     "patience": 8
                  },
                  useHalfPrecision = False,
                  debug = True
@@ -29,6 +33,8 @@ class AutoEncoderModel:
             
         self.device = device
         self.lr_scheduler_params = lr_scheduler_params
+        self.early_stopping_params = early_stopping_params
+        self.stop_count = 0 
         self.debug = debug
         
         # Path
@@ -80,11 +86,21 @@ class AutoEncoderModel:
     def epoch_reset(self,):
         train_loss = np.mean(self.epoch_train_loss)
         val_loss = np.mean(self.epoch_validation_loss)
+        
+        if not ((self.history["validation_loss"][-1] - val_loss) > self.early_stopping_params["threshold"]):
+            self.stop_count += 1
+        else:
+            self.stop_count = 0
+            
         self.history["train_loss"].append(train_loss)
         self.history["validation_loss"].append(val_loss)
         self.lr_scheduler.step(val_loss)
         self.epoch_train_loss = list()
         self.epoch_validation_loss = list()
+        
+        if self.stop_count == self.early_stopping_params["patience"]:
+            self.stopTraining = True
+            INFO("Early Stopping Training")
         
     def epoch_status(self,):
         if not self.stopTraining:            
@@ -198,9 +214,13 @@ class AutoEncoder_Trainer:
                  status_rate = 20,
                  lr_scheduler_params = {
                      "factor": 0.75,
-                     "patience": 3,
-                     "threshold": 1e-5,
+                     "patience": 5,
+                     "threshold": 5e-5,
                      'verbose': True
+                 },
+                 early_stopping_params = {
+                     "threshold": 5e-5,
+                     "patience": 8
                  },
                  noise_var = 0.1,
                  useHalfPrecision = False,
@@ -236,6 +256,7 @@ class AutoEncoder_Trainer:
                      device = self.device,
                      noise_var = noise_var,
                      lr_scheduler_params = lr_scheduler_params,
+                     early_stopping_params = early_stopping_params,
                      useHalfPrecision = useHalfPrecision,
                      debug = debug
                     )                            
