@@ -40,7 +40,7 @@ if __name__ == '__main__':
         asImages = False
         
     # Manual
-    DATA_TYPE = "ucsd2" 
+    DATA_TYPE = "ucsd1" 
     
     # PL Params
     PRECISION = 32 # 32
@@ -57,7 +57,7 @@ if __name__ == '__main__':
         image_size = IMAGE_SIZE,
         image_type = IMAGE_TYPE,
         n_frames = 16,
-        frame_strides = [2,4,8,16],
+        frame_strides = [1,2,4,8,16],
         sample_stride = 1,
     )
 
@@ -65,7 +65,7 @@ if __name__ == '__main__':
     INFO("TRAINING DATA READY")
     
     # Manual
-    model = CLSTM_CTD_AE(image_size = IMAGE_SIZE, channels = CHANNELS)
+    model = CLSTM_C2D_AE(image_size = IMAGE_SIZE, channels = CHANNELS)
     
     # Automated model config
     model_file = "PL_%s_%s_%s_%s_%s_E%03d_BS%03d"%(model.__name__, DATA_TYPE.upper(), IMAGE_TYPE, OPTIMIZER_TYPE, LOSS_TYPE, EPOCHS, BATCH_SIZE)
@@ -86,9 +86,9 @@ if __name__ == '__main__':
         max_epochs = EPOCHS,
         status_rate = 25,
         lr_scheduler_kwargs = {
-            'factor': 0.5,
+            'factor': 0.75,
             'patience': 4,
-            'threshold': 1e-5,
+            'threshold': 1e-6,
             'verbose': True
          }
     )
@@ -97,7 +97,7 @@ if __name__ == '__main__':
     # Automated Trainer
     callbacks_list = [
         EpochChange(),
-        EarlyStopping('validation_loss', patience=16, verbose=True),
+        EarlyStopping('validation_loss', min_delta=1e-6, patience=16, mode="min", verbose=True),
         GPUStatsMonitor()
     ]
     
@@ -106,7 +106,7 @@ if __name__ == '__main__':
         gpus=GPUS,
         num_nodes = NODES,
         accelerator='ddp',
-        min_epochs = 75,
+        min_epochs = 50,
         max_epochs = EPOCHS,
         gradient_clip_val = GRAD_CLIP_VAL,
         precision = PRECISION,

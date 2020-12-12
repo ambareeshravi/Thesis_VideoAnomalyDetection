@@ -41,7 +41,7 @@ if __name__ == '__main__':
         asImages = False
         
     # Manual
-    DATA_TYPE = "ucsd2" 
+    DATA_TYPE = "ucsd1" 
     
     # PL Params
     PRECISION = 32 #16
@@ -84,9 +84,9 @@ if __name__ == '__main__':
         max_epochs = EPOCHS,
         status_rate = 25,
         lr_scheduler_kwargs = {
-            'factor': 0.5,
+            'factor': 0.75,
             'patience': 4,
-            'threshold': 1e-5,
+            'threshold': 1e-6,
             'verbose': True
          }
     )
@@ -95,7 +95,7 @@ if __name__ == '__main__':
     # Automated
     callbacks_list = [
         EpochChange(),
-        EarlyStopping('validation_loss', patience=16, verbose=True),
+        EarlyStopping('validation_loss', min_delta=1e-6, patience=16, mode="min", verbose=True),
         GPUStatsMonitor()
     ]
     
