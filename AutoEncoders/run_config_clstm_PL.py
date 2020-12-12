@@ -106,12 +106,12 @@ if __name__ == '__main__':
         gpus=GPUS,
         num_nodes = NODES,
         accelerator='ddp',
-        min_epochs = 50,
+        min_epochs = 75,
         max_epochs = EPOCHS,
-        gradient_clip_val = GRAD_CLIP_VAL,
+#         gradient_clip_val = GRAD_CLIP_VAL,
         precision = PRECISION,
         callbacks = callbacks_list,
-        accumulate_grad_batches={20: 2, 50: 4, 100: 8},
+        accumulate_grad_batches={50: 2, 100: 4},
         progress_bar_refresh_rate = 0,
 #         auto_lr_find=True
     )
