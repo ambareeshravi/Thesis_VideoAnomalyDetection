@@ -1,6 +1,6 @@
 from .all_imports import *
 from .utils import *
-from .optical_flow import OpticalFlow
+from .cv2_processing import OpticalFlow, BackgroundSubtraction
 
 from skimage import filters
 
@@ -40,6 +40,9 @@ class ImagesHandler:
         elif "mask" in image_type:
             self.image_type = "mask"
             self.read_frames = self.read_mask
+        elif "background" in image_type:
+            self.image_type = "background"
+            self.read_frames = self.read_background
         else:
             self.image_type = "normal"
             self.read_frames = self.read_normal
@@ -87,6 +90,14 @@ class ImagesHandler:
     
     def read_mask(self, files):
         return [self.data_transform(self.add_mask(read_image(image_path))) for image_path in files]
+    
+    def read_background(self, files):
+        bs = BackgroundSubtraction()
+        frames = [read_image(image_path) for image_path in files]
+        frames_arrays = [np.array(frame) for frame in frames]
+        combined = [np.concatenate((extend_gray(frame_array), extend_gray(bs(frame_array))), axis = -1) for frame_array in frames_arrays]
+        del bs
+        return [self.data_transform(Image.fromarray(cmbd_img)) for cmbd_img in combined]        
 
 # Handles Video data
 class VideosHandler:

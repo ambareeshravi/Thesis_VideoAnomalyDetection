@@ -25,3 +25,10 @@ class OpticalFlow:
         hsv[...,2] = optical_flow_mag
         rgb_flow = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
         return rgb_flow # returns 3 channel flow
+    
+class BackgroundSubtraction:
+    def __init__(self):
+        self.fgbg = cv2.createBackgroundSubtractorMOG2()
+        
+    def __call__(self, frame):
+        return self.fgbg.apply(frame)

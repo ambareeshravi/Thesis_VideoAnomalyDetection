@@ -39,8 +39,12 @@ def shrink_gray(image_array):
     assert len(image_array.shape) == 3 and (image_array.shape[-1] == 1), "image not in required format: h x w x 1"
     return image_array.squeeze(axis = -1)
 
-def array_3channels(image_array):
+def extend_gray(image_array):
     if len(image_array.shape) < 3: image_array = np.expand_dims(image_array, axis = -1)
+    return image_array
+    
+def array_3channels(image_array):
+    image_array = extend_gray(image_array)
     if image_array.shape[-1] == 1: image_array = np.repeat(image_array, 3, axis = -1)
     return image_array
 
