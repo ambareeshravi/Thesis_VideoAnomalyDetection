@@ -24,6 +24,10 @@ def image_1(image):
 def image_255(image):
     return (image*255).astype(np.uint8)
 
+def image_int(image):
+    if not image.max() >1: return image_255(image)
+    return np.uint8(image)
+
 def array_to_image(image_array):
     return Image.fromarray(image_array)
 
