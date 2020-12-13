@@ -20,7 +20,7 @@ if __name__ == '__main__':
     
     # Editable
     IMAGE_SIZE = 128
-    EPOCHS = 200
+    EPOCHS = 300
     BATCH_SIZE = 256
     IMAGE_TYPE = "normal"
     MODEL_PATH = args.model_path
@@ -38,7 +38,7 @@ if __name__ == '__main__':
         asImages = False
         
     # Manual
-    DATA_TYPE = "ucsd2" 
+    DATA_TYPE = "ucsd1" 
     
     # 1. Training
     train_data, CHANNELS = select_dataset(
@@ -58,10 +58,6 @@ if __name__ == '__main__':
     
     MODELS_LIST = [
         C2D_AE_128_3x3(channels = CHANNELS),
-        C2D_AE_128_5x5(channels = CHANNELS),
-        C2D_AE_ACB_128_3x3(channels = CHANNELS),
-        C2D_AE_ACB_128_5x5(channels = CHANNELS),
-        C2D_AE_3x3_Res(channels = CHANNELS),
     ]
     
     model_files = [
@@ -85,7 +81,7 @@ if __name__ == '__main__':
                      loss_criterion = LOSS_FUNCTIONS,
                      epochs = EPOCHS,
                      status_rate = 25,
-                     lr_scheduler_params = {"factor": 0.8, "patience": 5, "threshold": 5e-4},
+                     lr_scheduler_params = {"factor": 0.75, "patience": 4, "threshold": 1e-6},
                      useHalfPrecision = False,
                      run_status_file = "run_status_c2d.txt",
                      destructAll = True,

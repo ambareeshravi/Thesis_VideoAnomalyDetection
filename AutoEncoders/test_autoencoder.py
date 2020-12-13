@@ -277,6 +277,19 @@ class AutoEncoder_Tester:
         overall_sqr_eer = calculate_eer(FLT_targets, FLT_sqr_regularity)
         overall_sqr_report = classification_report(FLT_targets, np.round(FLT_sqr_regularity))
         
+        # threshold moving to find the best performance
+        abs_best_threshold = thresholdJ(FLT_targets, FLT_abs_regularity)
+        sqr_best_threshold = thresholdJ(FLT_targets, FLT_sqr_regularity)
+        
+        abs_best_labels = scores2labels(FLT_abs_regularity, abs_best_threshold)
+        sqr_best_labels = scores2labels(FLT_sqr_regularity, sqr_best_threshold)
+        
+        best_abs_report = classification_report(FLT_targets, abs_best_labels)
+        best_abs_conf_matrix = confusion_matrix(FLT_targets, abs_best_labels)
+        
+        best_sqr_report = classification_report(FLT_targets, sqr_best_labels)
+        best_sqr_conf_matrix = confusion_matrix(FLT_targets, sqr_best_labels)
+                
         self.results = {
             "AUC_ROC": {
                 "mean_abs_vid_aucroc": mean_abs_vid_aucroc,
@@ -288,17 +301,21 @@ class AutoEncoder_Tester:
                 "overall_abs_aucroc": overall_abs_aucroc,
                 "overall_sqr_aucroc": overall_sqr_aucroc,
                 "overall_abs_eer": overall_abs_eer,
-                "overall_sqr_eer": overall_sqr_eer
+                "overall_sqr_eer": overall_sqr_eer,
             },
             "classification_reports": {
                 "agg_abs_reg_report": agg_abs_reg_report,
                 "agg_sqr_reg_report": agg_sqr_reg_report,
                 "overall_abs_report": overall_abs_report,
-                "overall_sqr_report": overall_sqr_report
+                "overall_sqr_report": overall_sqr_report,
+                "best_abs_report": best_abs_report,
+                "best_sqr_report": best_sqr_report,
             },
             "confusion_matrices": {
                 "agg_abs_conf_matrix": agg_abs_conf_matrix,
                 "agg_sqr_conf_matrix": agg_sqr_conf_matrix,
+                "best_abs_conf_matrix": best_abs_conf_matrix,
+                "best_sqr_conf_matrix": best_sqr_conf_matrix,
             },
             "params": {
                 "targets": VL_targets,
@@ -308,7 +325,9 @@ class AutoEncoder_Tester:
                 "abs_regularity": VL_abs_regularity_scores,
                 "sqr_regularity": VL_sqr_regularity_scores,
                 "abs_rocauc": VL_abs_rocauc_scores,
-                "sqr_rocauc": VL_sqr_rocauc_scores
+                "sqr_rocauc": VL_sqr_rocauc_scores,
+                "abs_best_labels": abs_best_labels,
+                "sqr_best_labels": sqr_best_labels,
             },
             "OC_SVM_Score": svm_score
         }

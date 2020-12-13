@@ -179,3 +179,16 @@ def calculate_eer(y_true, y_score):
 
 def noise_input(images, NOISE_RATIO = 0.1):
     return images * (1 - NOISE_RATIO) + torch.rand(images.size()) * NOISE_RATIO
+
+def thresholdJ(y_true, y_scores):
+    fpr, tpr, thresholds = roc_curve(y_true, y_scores)
+    J = tpr - fpr
+    ix = np.argmax(J)
+    best_thresh = thresholds[ix]
+    return best_thresh
+
+def scores2labels(y_scores, threshold):
+    labels = y_scores.copy()
+    labels[labels>=threshold] = 1
+    labels[labels<threshold] = 0
+    return labels

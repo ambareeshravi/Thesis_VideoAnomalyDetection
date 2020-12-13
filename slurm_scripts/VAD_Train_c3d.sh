@@ -35,7 +35,7 @@ cd ~/workspace/Thesis_VideoAnomalyDetection/AutoEncoders/
 
 echo "[STATUS] Starting script at `date`"
 cp run_config_c3d.py $version_path
-python run_config_c3d.py --model_path $version_path --data_path $SLURM_TMPDIR/ --nodes 1
+python run_config_c3d.py --model_path $version_path --data_path $SLURM_TMPDIR/
 echo "[STATUS] Script completed at `date`" 
  
 cp ${project_dir}slurm_outputs/C3D_%u-%x-%j.txt $version_path
