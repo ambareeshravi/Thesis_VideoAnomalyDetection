@@ -7,7 +7,7 @@ class CLSTM_CTD_AE(nn.Module):
     def __init__(self,
                  image_size = 128,
                  channels = 3,
-                 filters_count = [64,64,96,128],
+                 filters_count = [64,64,64,128],
                 ):
         super(CLSTM_CTD_AE, self).__init__()
         self.__name__ = "CLSTM_CTD_128"
@@ -73,7 +73,7 @@ class CLSTM_C2D_AE(nn.Module):
     def __init__(self,
                  image_size = 128,
                  channels = 3,
-                 filters_count = [64,64,96,128],
+                 filters_count = [64,64,64,128],
                 ):
         super(CLSTM_C2D_AE, self).__init__()
         self.__name__ = "CLSTM_CTD_128"
@@ -153,7 +153,7 @@ class CLSTM_C3D_AE(nn.Module):
         self,
         image_size = 128,
         channels = 3,
-        filters_count = [64,64,64,96,128]
+        filters_count = [64,64,64,64,128]
     ):
         super(CLSTM_C3D_AE, self).__init__()
         self.__name__ = "CLSTM_C3D_128"
@@ -242,7 +242,7 @@ class CLSTM_FULL_AE(nn.Module):
         self,
         image_size = 128,
         channels = 3,
-        filters_count = [64,64,64,96,128]
+        filters_count = [64,64,64,64,128]
     ):
         super(CLSTM_FULL_AE, self).__init__()
         self.__name__ = "CLSTM_FULL_128"
@@ -326,7 +326,7 @@ class CLSTM_Multi_AE(nn.Module):
         self,
         image_size = 128,
         channels = 3,
-        filters_count = [64,64,64,96,128]
+        filters_count = [64,64,64,64,128]
     ):
         super(CLSTM_Multi_AE, self).__init__()
         self.__name__ = "CLSTM_FULL_128"
