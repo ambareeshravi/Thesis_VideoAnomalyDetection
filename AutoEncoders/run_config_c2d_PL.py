@@ -30,8 +30,8 @@ if __name__ == '__main__':
     OPTIMIZER_TYPE = "adam"
     LOSS_TYPE = "mse"
     DENOISING = False
-    STACKED = False
     PATCH_WISE = False
+    STACKED = False
     
     isVideo = False
     stackFrames = 1

@@ -29,6 +29,8 @@ if __name__ == '__main__':
     OPTIMIZER_TYPE = "adam"
     LOSS_TYPE = "mse"
     DENOISING = False
+    PATCH_WISE = False
+    STACKED = False
     
     isVideo = False
     stackFrames = 1
@@ -65,6 +67,9 @@ if __name__ == '__main__':
     ]
     
     if DENOISING: model_files = [mf + "_DeNoising" for mf in model_files]
+    if PATCH_WISE: model_files = [mf + "_PatchWise" for mf in model_files]
+    if STACKED: model_files = [mf + "_Stacked" for mf in model_files]
+        
     
     MODEL_PATHS = [os.path.join(MODEL_PATH, mf) for mf in model_files]
     OPTIMIZERS = [select_optimizer[OPTIMIZER_TYPE](m) for m in MODELS_LIST]
@@ -112,8 +117,10 @@ if __name__ == '__main__':
         tester = AutoEncoder_Tester(
             model = ae_model.model,
             dataset = test_data,
-            patchwise = False,
-            stacked = False,
+            patchwise = PATCH_WISE,
+            stacked = STACKED,
+            translative = False,
+            attentive = False,
             useGPU = True
         )
         results = tester.test(
