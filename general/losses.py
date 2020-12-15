@@ -109,6 +109,11 @@ class MANIFOLD_LOSS:
     def __call__(self, original, reconstruction, encoding):
         return (self.weights[0] * self.main_loss(original, reconstruction)) + (self.weights[1] * self.mahalanobis_loss(encoding))
     
+def max_norm(w, max_clip):
+    norms = torch.norm_except_dim(w, dim=0).flatten()
+    desired = torch.clip(norms, 0, max_clip)
+    w *= (desired / (1e-10 + norms))
+    return w
     
 select_loss = {
     "mse": MSE_LOSS(),

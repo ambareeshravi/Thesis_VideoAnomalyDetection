@@ -5,6 +5,7 @@ from torch.nn import functional as F
 
 from general import *
 from general.model_utils import *
+from general.losses import max_norm
 
 class Generic_C2D_AE(nn.Module):
     def __init__(self,
@@ -538,16 +539,19 @@ class AttentionWapper(nn.Module):
         
     def forward(self, x):
         x_a = self.attention_forward(x)
-        encodings = self.model.encoder(x)
+        encodings = self.model.encoder(x_a)
         reconstructions = self.model.decoder(encodings)
         return reconstructions, encodings, x_a
 
 class ConvAttentionWapper(nn.Module):
-    def __init__(self, model, kernel_sizes = (3,5), projection = 64):
+    def __init__(self, model, kernel_sizes = (3,5), projection = 64, lambda_ = 1e-7, max_norm_clip = 1):
         super(ConvAttentionWapper, self).__init__()
         self.model = model
         self.projection = projection
         self.kernel_sizes = kernel_sizes
+        self.lambda_ = lambda_
+        self.max_norm_clip = max_norm_clip
+        
         self.attention_conv = nn.Sequential(
             nn.Conv2d(self.model.channels, self.projection, self.kernel_sizes[0], 1, padding = self.kernel_sizes[0]//2),
             nn.Conv2d(self.projection, self.model.channels, self.kernel_sizes[1], 1, padding = self.kernel_sizes[1]//2),
@@ -559,15 +563,18 @@ class ConvAttentionWapper(nn.Module):
         )
     
     def attention_forward(self, x):
+#         x_a = self.attention_conv(x)
+#         return self.act_block(x_a)
         x_a = self.attention_conv(x)
         return self.act_block(torch.multiply(x, x_a))
     
-    def attention_loss(self, x):
-        return torch.sum(x**2)
+    def attention_loss(self, w):
+        return self.lambda_ * torch.sqrt(torch.sum(w**2))
+#         return torch.sum(max_norm(self.attention_conv[0].weight.data, self.max_norm_clip)) + torch.sum(max_norm(self.attention_conv[1].weight.data, self.max_norm_clip))
         
     def forward(self, x):
         x_a = self.attention_forward(x)
-        encodings = self.model.encoder(x)
+        encodings = self.model.encoder(x_a)
         reconstructions = self.model.decoder(encodings)
         return reconstructions, encodings, x_a
     

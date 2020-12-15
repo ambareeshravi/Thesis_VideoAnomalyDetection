@@ -16,6 +16,7 @@ class AutoEncoder_Tester:
         patchwise = False,
         stacked = False,
         translative = False,
+        attentive = False,
         useGPU = True
     ):
         self.model = model
