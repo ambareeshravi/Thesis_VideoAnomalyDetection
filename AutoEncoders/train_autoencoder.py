@@ -64,6 +64,8 @@ class AutoEncoderModel:
             self.et_criterion = nn.MSELoss()
             self.et_optimizer = torch.optim.Adam(self.et_model.parameters(), lr = 1e-4, weight_decay = 1e-5)
             self.et_model.to(self.device)
+        if "attention" in self.model_file.lower():
+            self.step = self.attention_step
         
         # Model Params
         self.stopTraining = False
@@ -177,6 +179,10 @@ class AutoEncoderModel:
             pass
         
         return self.loss_criterion(images, reconstructions)
+    
+    def attention_step(self, images):
+        reconstructions, encodings, attention_activations = self.model(self.get_inputs(images))
+        return self.loss_criterion(images, reconstructions) + self.model.attention_loss(attention_activations)
         
     def train_step(self, images):
         self.model.to(self.device)

@@ -36,14 +36,24 @@ class AutoEncoder_Tester:
             self.predict = self.predict_stacked
         if translative:
             self.predict = self.predict_translative
+        if attentive:
+            self.predict = self.predict_attention
        
     def regularity(self, x):
         return (1-normalize_error(x))
         
     def abs_loss(self, original, reconstruction):
+        '''
+        should actually be:
+        
+        torch.sum(torch.abs(a-b), dim = 0)
+        '''
         return [tensor_to_numpy(torch.norm((o-r), dim = 0)) for o,r in zip(original, reconstruction)]
     
     def sqr_loss(self, original, reconstruction):
+        '''
+        Similar to torch.sum((a-b)**2, dim = 0)
+        '''
         return [tensor_to_numpy(torch.norm((o-r), dim = 0)**2) for o,r in zip(original, reconstruction)]
     
     def predict(self, inputs):
@@ -70,6 +80,11 @@ class AutoEncoder_Tester:
             r,e = self.et_model(main_encodings)
             main_reconstructions = self.model.decoder(r)
             return main_reconstructions, main_encodings
+        
+    def predict_attention(self, inputs):
+        with torch.no_grad():
+            reconstructions, encodings, attention_activations = self.model(inputs.to(self.device))
+            return reconstructions, encodings
                     
     def plot_regularity(self, y_true, y_pred, file_name):
         x = np.array(range(len(y_true)))

@@ -517,6 +517,60 @@ class C2D_DP_AE_128_3x3(nn.Module):
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
 
+class AttentionWapper(nn.Module):
+    def __init__(self, image_size, model, projection_ratio = 4):
+        super(AttentionWapper, self).__init__()
+        self.image_size = image_size # w,h
+        self.model = model
+        self.projection_dim = (self.image_size[0] * projection_ratio, self.image_size[1] * projection_ratio)
+        self.__name__ = self.model.__name__ + "_ATTENTION"
+        
+        self.W_v = nn.Parameter(torch.randn((self.image_size[1], self.projection_dim[1]), requires_grad=True))
+        self.W_h = nn.Parameter(torch.randn((self.projection_dim[0], self.image_size[0]), requires_grad=True))
+        self.attention_activation = nn.Sigmoid()
+    
+    def attention_forward(self, x):
+        x_a = torch.matmul(torch.matmul(x, self.W_v), torch.matmul(self.W_h, x))
+        return self.attention_activation(torch.multiply(x, x_a))
+    
+    def attention_loss(self, x):
+        return torch.sum(x**2)
+        
+    def forward(self, x):
+        x_a = self.attention_forward(x)
+        encodings = self.model.encoder(x)
+        reconstructions = self.model.decoder(encodings)
+        return reconstructions, encodings, x_a
+
+class ConvAttentionWapper(nn.Module):
+    def __init__(self, model, kernel_sizes = (3,5), projection = 64):
+        super(ConvAttentionWapper, self).__init__()
+        self.model = model
+        self.projection = projection
+        self.kernel_sizes = kernel_sizes
+        self.attention_conv = nn.Sequential(
+            nn.Conv2d(self.model.channels, self.projection, self.kernel_sizes[0], 1, padding = self.kernel_sizes[0]//2),
+            nn.Conv2d(self.projection, self.model.channels, self.kernel_sizes[1], 1, padding = self.kernel_sizes[1]//2),
+        )
+        self.__name__ = self.model.__name__ + "_CONV_ATTENTION"
+        self.act_block = nn.Sequential(
+            nn.BatchNorm2d(self.model.channels),
+            nn.Sigmoid()
+        )
+    
+    def attention_forward(self, x):
+        x_a = self.attention_conv(x)
+        return self.act_block(torch.multiply(x, x_a))
+    
+    def attention_loss(self, x):
+        return torch.sum(x**2)
+        
+    def forward(self, x):
+        x_a = self.attention_forward(x)
+        encodings = self.model.encoder(x)
+        reconstructions = self.model.decoder(encodings)
+        return reconstructions, encodings, x_a
+    
 C2D_MODELS_DICT = {
     128: {
         "vanilla": {
