@@ -16,6 +16,7 @@ class AutoEncoder_Tester:
         model_file,
         stackFrames = 1,
         save_vis = True,
+        n_seed = 8,
         useGPU = True
     ):
         self.model = model
@@ -23,6 +24,7 @@ class AutoEncoder_Tester:
         self.model_file = model_file
         self.stackFrames = stackFrames
         self.save_vis = save_vis
+        self.n_seed = n_seed
         
         self.device = torch.device("cpu")
         if useGPU and torch.cuda.is_available():
