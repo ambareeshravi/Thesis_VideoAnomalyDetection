@@ -544,7 +544,7 @@ class AttentionWapper(nn.Module):
         return reconstructions, encodings, x_a
 
 class ConvAttentionWapper(nn.Module):
-    def __init__(self, model, kernel_sizes = (3,5), projection = 64, lambda_ = 1e-7, max_norm_clip = 1):
+    def __init__(self, model, kernel_sizes = (3,5), projection = 64, lambda_ = 1e-6, max_norm_clip = 1):
         super(ConvAttentionWapper, self).__init__()
         self.model = model
         self.projection = projection

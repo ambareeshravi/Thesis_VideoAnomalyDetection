@@ -14,8 +14,8 @@ class AutoEncoder_Tester:
         model,
         dataset,
         model_file,
-        stackFrames = 16,
-        save_vis = True
+        stackFrames = 1,
+        save_vis = True,
         useGPU = True
     ):
         self.model = model
@@ -47,6 +47,7 @@ class AutoEncoder_Tester:
             self.predict = self.predict_attention
         if "c3d" in self.model_file.lower() or "clstm" in self.model_file.lower():
             self.isVideo = True
+            self.stackFrames = 16
             
         self.save_as = ".pkl".join(self.model_file.split(".pth.tar"))
         self.save_path = os.path.split(self.save_as)[0]
@@ -126,7 +127,7 @@ class AutoEncoder_Tester:
         results = [np.hstack(visualize_anomalies(format_image(ip), format_image(re), lm)) for (ip, re, lm) in zip(inputs, reconstructions, loss_maps)]
         return results
         
-    def test(self,):
+    def test(self, return_results = False):
         results_visulization_path = join_paths([self.save_path, "results/"])
         if not os.path.exists(results_visulization_path):
             os.mkdir(results_visulization_path)
@@ -373,3 +374,5 @@ class AutoEncoder_Tester:
         if self.save_as:
             with open(self.save_as, "wb") as f:
                 pkl.dump(self.results, f)
+        
+        if return_results: return self.results
