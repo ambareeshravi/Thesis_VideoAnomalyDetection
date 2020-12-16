@@ -13,14 +13,17 @@ class AutoEncoder_Tester:
         self,
         model,
         dataset,
-        patchwise = False,
-        stacked = False,
-        translative = False,
-        attentive = False,
+        model_file,
+        stackFrames = 16,
+        save_vis = True
         useGPU = True
     ):
         self.model = model
         self.dataset = dataset
+        self.model_file = model_file
+        self.stackFrames = stackFrames
+        self.save_vis = save_vis
+        
         self.device = torch.device("cpu")
         if useGPU and torch.cuda.is_available():
             self.device = torch.device("cuda")
@@ -31,14 +34,22 @@ class AutoEncoder_Tester:
         self.NORMAL_LABEL = 1.0
         self.ABNORMAL_LABEL = 0.0
         
-        if patchwise:
+        self.isVideo = False
+        
+        if "patch" in self.model_file.lower():
             self.predict = self.predict_patchwise
-        if stacked:
+        if "stack" in self.model_file.lower():
+            self.isVideo = True
             self.predict = self.predict_stacked
-        if translative:
+        if "translat" in self.model_file.lower():
             self.predict = self.predict_translative
-        if attentive:
+        if "attention" in self.model_file.lower():
             self.predict = self.predict_attention
+        if "c3d" in self.model_file.lower() or "clstm" in self.model_file.lower():
+            self.isVideo = True
+            
+        self.save_as = ".pkl".join(self.model_file.split(".pth.tar"))
+        self.save_path = os.path.split(self.save_as)[0]
        
     def regularity(self, x):
         return (1-normalize_error(x))
@@ -115,9 +126,8 @@ class AutoEncoder_Tester:
         results = [np.hstack(visualize_anomalies(format_image(ip), format_image(re), lm)) for (ip, re, lm) in zip(inputs, reconstructions, loss_maps)]
         return results
         
-    def test(self, stackFrames = 1, isVideo = False, save_as = "./", save_vis = True):
-        save_path = os.path.split(save_as)[0]
-        results_visulization_path = join_paths([save_path, "results/"])
+    def test(self,):
+        results_visulization_path = join_paths([self.save_path, "results/"])
         if not os.path.exists(results_visulization_path):
             os.mkdir(results_visulization_path)
         
@@ -139,24 +149,24 @@ class AutoEncoder_Tester:
             FL_encodings = list()
             
             # check to save visualization
-            if save_vis or video_idx == 0:
+            if self.save_vis or video_idx == 0:
                 VIS_frames_abs = list()
                 VIS_frames_sqr = list()
 
             # iterating through the video frame by frame
-            for frame_idx in range(0, len(video_labels), stackFrames):
+            for frame_idx in range(0, len(video_labels), self.stackFrames):
                 # getting inputs as frames and labels correspondingly
-                test_inputs = torch.stack(video_inputs[frame_idx:(frame_idx + stackFrames)]) # T,C,W,H
-                test_labels = video_labels[frame_idx:(frame_idx + stackFrames)] # N,1
+                test_inputs = torch.stack(video_inputs[frame_idx:(frame_idx + self.stackFrames)]) # T,C,W,H
+                test_labels = video_labels[frame_idx:(frame_idx + self.stackFrames)] # N,1
                 
                 # correcting the shape of last_batch
                 n_frames = len(test_labels)
-                if n_frames < stackFrames:
-                    test_inputs = torch.stack(video_inputs[-stackFrames:])
-                    test_labels = video_labels[-stackFrames:]
+                if n_frames < self.stackFrames:
+                    test_inputs = torch.stack(video_inputs[-self.stackFrames:])
+                    test_labels = video_labels[-self.stackFrames:]
                 
                 # reshape if video
-                if isVideo:
+                if self.isVideo:
                     test_inputs = test_inputs.transpose(0,1).unsqueeze(dim = 0) # N,C,T,W,H
                     
                 # predict and get outputs
@@ -164,12 +174,12 @@ class AutoEncoder_Tester:
                 reconstructions = model_outputs[0]
                 
                 # reshape video to frames again
-                if isVideo:
+                if self.isVideo:
                     test_inputs = test_inputs.squeeze(dim=0).transpose(0,1) # N,C,W,H
                     reconstructions = reconstructions.squeeze(dim=0).transpose(0,1) # N,C,W,H
                 
                 # if last batch, only use the actual frames in the batch
-                if n_frames < stackFrames:
+                if n_frames < self.stackFrames:
                     test_inputs = test_inputs[-n_frames:]
                     test_labels = test_labels[-n_frames:]
                     reconstructions = reconstructions[-n_frames:]
@@ -177,7 +187,7 @@ class AutoEncoder_Tester:
                 # note encodings
                 try:
                     output_encodings = tensor_to_numpy(model_outputs[1])
-                    if n_frames < stackFrames:
+                    if n_frames < self.stackFrames:
                         output_encodings = output_encodings[-n_frames:]
                     FL_encodings.append(output_encodings)
                 except Exception as e:
@@ -205,7 +215,7 @@ class AutoEncoder_Tester:
                 FL_sqr_losses += frame_sqr_loss
                 
                 # get visualization results
-                if save_vis or video_idx == 0:
+                if self.save_vis or video_idx == 0:
                     try:                
                         VIS_frames_abs += self.visualize_results(test_inputs, reconstructions, pixel_regularity_abs_mask)
                         VIS_frames_sqr += self.visualize_results(test_inputs, reconstructions, pixel_regularity_sqr_mask)
@@ -229,7 +239,7 @@ class AutoEncoder_Tester:
             self.plot_regularity(FL_targets, VL_abs_regularity_scores[-1], join_paths([results_visulization_path, "%03d_R_abs.png"%(video_idx + 1)]))
             self.plot_regularity(FL_targets, VL_sqr_regularity_scores[-1], join_paths([results_visulization_path, "%03d_R_sqr.png"%(video_idx + 1)]))
             
-            if save_vis or video_idx == 0:            
+            if self.save_vis or video_idx == 0:            
                 try:
                     frames_to_video(VIS_frames_abs, join_paths([results_visulization_path, "%03d_AV_abs"%(video_idx + 1)]))
                     frames_to_video(VIS_frames_sqr, join_paths([results_visulization_path, "%03d_AV_sqr"%(video_idx + 1)]))
@@ -360,6 +370,6 @@ class AutoEncoder_Tester:
                 pprint(v)
         print("="*54)
                     
-        if save_as:
-            with open(save_as, "wb") as f:
+        if self.save_as:
+            with open(self.save_as, "wb") as f:
                 pkl.dump(self.results, f)
