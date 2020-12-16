@@ -143,15 +143,12 @@ if __name__ == '__main__':
     tester = AutoEncoder_Tester(
         model = model,
         dataset = test_data,
-        patchwise = PATCH_WISE,
-        stacked = STACKED,
+        model_file = model_file,
+        stackFrames = stackFrames,
+        save_vis = True,
         useGPU = True
     )
-    results = tester.test(
-        stackFrames = stackFrames,
-        isVideo = isVideo,
-        save_as = ".pkl".join(model_file.split(".pth.tar"))
-    )
+    results = tester.test()
     print("-"*40)
     try:
         del trainer, tester

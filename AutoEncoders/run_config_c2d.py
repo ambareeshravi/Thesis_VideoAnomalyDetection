@@ -117,17 +117,12 @@ if __name__ == '__main__':
         tester = AutoEncoder_Tester(
             model = ae_model.model,
             dataset = test_data,
-            patchwise = PATCH_WISE,
-            stacked = STACKED,
-            translative = False,
-            attentive = False,
+            model_file = ae_model.model_file,
+            stackFrames = stackFrames,
+            save_vis = True,
             useGPU = True
         )
-        results = tester.test(
-            stackFrames = stackFrames,
-            isVideo = isVideo,
-            save_as = ".pkl".join(ae_model.model_file.split(".pth.tar"))
-        )
+        results = tester.test()
         print("-"*40)
         del tester
     

@@ -376,3 +376,4 @@ class AutoEncoder_Tester:
                 pkl.dump(self.results, f)
         
         if return_results: return self.results
+        return True
