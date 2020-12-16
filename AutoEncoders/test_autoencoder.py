@@ -48,6 +48,9 @@ class AutoEncoder_Tester:
         if "c3d" in self.model_file.lower() or "clstm" in self.model_file.lower():
             self.isVideo = True
             self.stackFrames = 16
+        if "clstm" in self.model_file.lower() and "future" in self.model_file.lower():
+            self.predict = self.predict_future
+            self.n_seed = 4
             
         self.save_as = ".pkl".join(self.model_file.split(".pth.tar"))
         self.save_path = os.path.split(self.save_as)[0]
@@ -97,6 +100,13 @@ class AutoEncoder_Tester:
     def predict_attention(self, inputs):
         with torch.no_grad():
             reconstructions, encodings, attention_activations = self.model(inputs.to(self.device))
+            return reconstructions, encodings
+        
+    def predict_future(self, inputs, total_ts = 16):
+        with torch.no_grad():
+            predictions, encodings = self.model(inputs[:self.n_seed], future_steps = (total_ts - self.n_seed))
+            reconstructions = torch.cat((inputs[:1], predictions))
+            encodings = torch.cat((encodings[:1], encodings))
             return reconstructions, encodings
                     
     def plot_regularity(self, y_true, y_pred, file_name):

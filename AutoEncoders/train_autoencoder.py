@@ -66,6 +66,9 @@ class AutoEncoderModel:
             self.et_model.to(self.device)
         if "attention" in self.model_file.lower():
             self.step = self.attention_step
+            
+        if "clstm" in self.model_file.lower() and "future" in self.model_file.lower():
+            self.step = self.future_step
         
         # Model Params
         self.stopTraining = False
@@ -183,7 +186,11 @@ class AutoEncoderModel:
     def attention_step(self, images):
         reconstructions, encodings, attention_activations = self.model(self.get_inputs(images))
         return self.loss_criterion(images, reconstructions) + self.model.attention_loss(attention_activations)
-        
+    
+    def future_step(self, images):
+        reconstructions, encodings = self.model(self.get_inputs(images)[:-1,...])
+        return self.loss_criterion(images[1:,...], reconstructions)
+    
     def train_step(self, images):
         self.model.to(self.device)
         self.model.train()

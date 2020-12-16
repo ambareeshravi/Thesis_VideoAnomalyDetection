@@ -61,6 +61,23 @@ class AutoEncoderLM(LightningModule):
             self.step = self.patch_step
         if "stack" in self.model_file.lower():
             self.step = self.stack_step
+        if "noose" in self.model_file.lower():
+            self.noose_factor = 1.0
+            self.step = self.noose_step
+        self.isET = False
+        if "translat" in self.model_file.lower():
+            self.isET = True
+            self.step = self.double_translative_step
+            from AutoEncoders.embedding_translation import EmbeddingTranslator
+            self.et_model = EmbeddingTranslator()
+            self.et_criterion = nn.MSELoss()
+            self.et_optimizer = torch.optim.Adam(self.et_model.parameters(), lr = 1e-4, weight_decay = 1e-5)
+            self.et_model.to(self.device)
+        if "attention" in self.model_file.lower():
+            self.step = self.attention_step
+            
+        if "clstm" in self.model_file.lower() and "future" in self.model_file.lower():
+            self.step = self.future_step
         
     def epoch_reset(self,):
         train_loss = np.mean(self.epoch_train_loss)
@@ -124,7 +141,34 @@ class AutoEncoderLM(LightningModule):
 
     def vae_step(self, images):
         reconstructions, latent_mu, latent_logvar = self.model(self.get_inputs(images))
-        return self.model.vae_loss(images, reconstructions, latent_mu, latent_logvar)      
+        return self.model.vae_loss(images, reconstructions, latent_mu, latent_logvar)
+        
+    def noose_step(self, images):
+        reconstructions, encodings = self.model(self.get_inputs(images))
+        return self.loss_criterion(images, reconstructions) + (self.noose_factor * self.loss_criterion(encodings, encodings.mean(dim = 0)))
+    
+    def double_translative_step(self, images):
+        reconstructions, encodings = self.model(self.get_inputs(images))
+        
+        try:
+            self.et_model.zero_grad()
+            d_encodings = encodings.detach()
+            r, e = self.et_model(d_encodings)
+            et_loss = self.et_criterion(d_encodings, r)
+            et_loss.backward()
+            self.et_optimizer.step()
+        except:
+            pass
+        
+        return self.loss_criterion(images, reconstructions)
+    
+    def attention_step(self, images):
+        reconstructions, encodings, attention_activations = self.model(self.get_inputs(images))
+        return self.loss_criterion(images, reconstructions) + self.model.attention_loss(attention_activations)   
+    
+    def future_step(self, images):
+        reconstructions, encodings = self.model(self.get_inputs(images)[:-1,...])
+        return self.loss_criterion(images[1:,...], reconstructions)   
     
     # LM functions
     def configure_optimizers(self):

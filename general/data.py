@@ -15,8 +15,8 @@ class ImagesHandler:
         transforms_list = list()
         if self.isTrain and self.image_type == "normal":
             transforms_list += [
-            transforms.RandomRotation(10),
-            transforms.RandomHorizontalFlip(p=0.25),
+            transforms.RandomRotation(20),
+#             transforms.RandomHorizontalFlip(p=0.25),
             transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
             transforms.RandomGrayscale(p=0.2),
             ]
