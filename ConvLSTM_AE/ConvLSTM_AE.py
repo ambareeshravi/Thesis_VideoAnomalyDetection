@@ -300,7 +300,7 @@ class CLSTM_FULL_AE(nn.Module):
         )
         self.act_blocks = nn.Sequential(*self.act_blocks)
         
-    def forward(self, x):
+    def forward(self, x, future_steps = 0):
         b,c,t,w,h = x.shape
         
         hidden_list = [None]*len(self.lstm_layers)
@@ -308,8 +308,9 @@ class CLSTM_FULL_AE(nn.Module):
         encodings = list()
         reconstructions = list()
         
-        for ts in range(t):
-            ts_input = x[:,:,ts,:,:]
+        for ts in range(t + future_steps):
+            if ts < t: ts_input = x[:,:,ts,:,:]
+            else: ts_input = prev_output
             for idx, layer in enumerate(self.lstm_layers):
                 h_l, c_l = layer(ts_input, hidden_list[idx])
                 h_l = self.act_blocks[idx](h_l)
@@ -317,6 +318,7 @@ class CLSTM_FULL_AE(nn.Module):
                 ts_input = h_l
                 if idx == 4: encodings += [h_l]
             reconstructions += [h_l]
+            prev_output = h_l
         encodings = torch.stack(encodings).permute(1,2,0,3,4)
         reconstructions = torch.stack(reconstructions).permute(1,2,0,3,4)
         return reconstructions, encodings
@@ -383,7 +385,7 @@ class CLSTM_Multi_AE(nn.Module):
         )
         self.act_blocks = nn.Sequential(*self.act_blocks)
         
-    def forward(self, x):
+    def forward(self, x, future_steps = 0):
         b,c,t,w,h = x.shape
         
         hidden_list = [None]*len(self.lstm_layers)
@@ -391,8 +393,9 @@ class CLSTM_Multi_AE(nn.Module):
         encodings = list()
         reconstructions = list()
         
-        for ts in range(t):
-            ts_input = x[:,:,ts,:,:]
+        for ts in range(t + future_steps):
+            if ts < t: ts_input = x[:,:,ts,:,:]
+            else: ts_input = prev_output
             for idx, layer in enumerate(self.lstm_layers):
                 h_l, c_l = layer(ts_input, hidden_list[idx])
                 h_l = self.act_blocks[idx](h_l)
@@ -400,6 +403,7 @@ class CLSTM_Multi_AE(nn.Module):
                 ts_input = h_l
                 if idx == 4: encodings += [h_l]
             reconstructions += [h_l]
+            prev_output = h_l
         encodings = torch.stack(encodings).permute(1,2,0,3,4)
         reconstructions = torch.stack(reconstructions).permute(1,2,0,3,4)
         return reconstructions, encodings
@@ -440,7 +444,7 @@ class HashemCLSTM(nn.Module):
         hidden_states = [None]*len(self.lstm_layers)
         outputs = list()
         encodings = list()
-        for t in range(ts):
+        for t in range(ts + future_steps):
             layer_input = eo[:,t,:,:,:]
             for idx, layer in enumerate(self.lstm_layers):
                 h,c = layer(layer_input, hidden_states[idx])
@@ -459,9 +463,9 @@ class HashemCLSTM(nn.Module):
 CONV2D_LSTM_DICT = {
     128: {
         "CLSTM_CTD": CLSTM_CTD_AE,
-        "CLSTM_FULL": CLSTM_FULL_AE,
         "CLSTM_C3D": CLSTM_C3D_AE,
         "CLSTM_C2D": CLSTM_C2D_AE,
+        "CLSTM_FULL": CLSTM_FULL_AE,
         "CLSTM_Multi": CLSTM_Multi_AE
     },
     256: {
