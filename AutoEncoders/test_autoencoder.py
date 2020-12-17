@@ -66,13 +66,15 @@ class AutoEncoder_Tester:
         
         torch.sum(torch.abs(a-b), dim = 0)
         '''
-        return [tensor_to_numpy(torch.norm((o-r), dim = 0)) for o,r in zip(original, reconstruction)]
+#         return [tensor_to_numpy(torch.norm((o-r), dim = 0)) for o,r in zip(original, reconstruction)]
+        return [tensor_to_numpy(torch.sum(torch.abs(o-r), dim = 0)) for o,r in zip(original, reconstruction)]
     
     def sqr_loss(self, original, reconstruction):
         '''
         Similar to torch.sum((a-b)**2, dim = 0)
         '''
-        return [tensor_to_numpy(torch.norm((o-r), dim = 0)**2) for o,r in zip(original, reconstruction)]
+#         return [tensor_to_numpy(torch.norm((o-r), dim = 0)**2) for o,r in zip(original, reconstruction)]
+        return [tensor_to_numpy(torch.sum((o-r)**2, dim = 0)) for o,r in zip(original, reconstruction)]
     
     def predict(self, inputs):
         with torch.no_grad():
