@@ -380,62 +380,92 @@ class C2D_AE_128_PC(nn.Module):
         
         self.d5 = CT2D_BN_A(self.filters_count[0], self.filters_count[0], 3, 1)
         self.c6 = C2D_BN_A(self.filters_count[0], self.channels, 6, 1, activation_type = "sigmoid")
-        
-    def forward(self, x):
+    
+    def encoder(self, x):
         eo1 = torch.cat((self.el1(x), self.er1(x)), dim = 1)
         eo2 = torch.cat((self.el2(eo1), self.er2(eo1)), dim = 1)
         eo3 = torch.cat((self.el3(eo2), self.er3(eo2)), dim = 1)
         encodings = self.e_act(torch.cat((self.el4(eo3), self.er4(eo3)), dim = 1))
-        
+        return encodings
+    
+    def decoder(self, encodings):
         do1 = torch.cat((self.dl1(encodings), self.dr1(encodings)), dim = 1)
         do2 = torch.cat((self.dl2(do1), self.dr2(do1)), dim = 1)
         do3 = torch.cat((self.dl3(do2), self.dr3(do2)), dim = 1)
         do4 = torch.cat((self.dl4(do3), self.dr4(do3)), dim = 1)
         do5 = self.d5(do4)
         reconstructions = self.c6(do5)
-        return reconstructions, encodings
-
-class C2D_Multi_AE(nn.Module):
-    def __init__(self,
-                 channels = 3,
-                 filters_count = [64,64,96,96,128], 
-                 conv_type = "conv2d"
-                ):
-        super(C2D_Multi_AE, self).__init__()
-        self.channels = channels
-        self.filters_count = filters_count
-        self.__name__ = "C2D_Multi"
-        self.encoder = nn.Sequential(
-            C2D_BN_A(self.channels, self.filters_count[0], 3, 2),
-            C2D_BN_A(self.filters_count[0], self.filters_count[1], 3, 2),
-            C2D_BN_A(self.filters_count[1], self.filters_count[2], 3, 2),
-            C2D_BN_A(self.filters_count[2], self.filters_count[3], 3, 2),
-            C2D_BN_A(self.filters_count[3], self.filters_count[4], 3, 1, activation_type="tanh"),
-        )
-        
-        self.decoder = nn.Sequential(
-            CT2D_BN_A(self.filters_count[4], self.filters_count[3], 3, 1),
-            CT2D_BN_A(self.filters_count[3], self.filters_count[2], 3, 2),
-            CT2D_BN_A(self.filters_count[2], self.filters_count[1], 3, 2),
-            CT2D_BN_A(self.filters_count[1], self.filters_count[0], 3, 2),
-            CT2D_BN_A(self.filters_count[0], self.channels, 4, 2, activation_type="sigmoid"),
-        )
+        return reconstructions
         
     def forward(self, x):
         encodings = self.encoder(x)
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
 
+class C2D_Multi_AE(nn.Module):
+    def __init__(self,
+                 image_size = 128,
+                 channels = 3,
+                 filters_count = [64,64,96,96,128,128,256,256], 
+                 conv_type = "conv2d"
+                ):
+        super(C2D_Multi_AE, self).__init__()
+        self.image_size = image_size
+        self.channels = channels
+        self.filters_count = filters_count
+        self.__name__ = "C2D_Multi"
+        
+        encoder_layers = list()
+        new_image_size = self.image_size
+        new_in_channels = self.channels
+        idx = 0
+        while new_image_size > 10:
+            encoder_layers.append(
+                C2D_BN_A(new_in_channels, self.filters_count[idx], 3, 2)
+            )
+            new_image_size = getConvOutputShape(new_image_size, 3, 2)
+            new_in_channels = self.filters_count[idx]
+            idx += 1
+        encoder_layers.append(
+            C2D_BN_A(new_in_channels, self.filters_count[idx], 3, 1, activation_type="tanh")
+        )
+        new_in_channels = self.filters_count[idx]
+        new_image_size = getConvOutputShape(new_image_size, 3, 1)
+        self.encoder = nn.Sequential(*encoder_layers)
+        
+        decoder_layers = list()
+        decoder_layers.append(
+            CT2D_BN_A(new_in_channels, self.filters_count[idx-1], 3, 1)
+        )
+        new_image_size = getConvTransposeOutputShape(new_image_size, 3, 2)
+        new_in_channels = self.filters_count[idx-1]
+        idx -= 1
+        while idx > 0:
+            decoder_layers.append(
+                CT2D_BN_A(new_in_channels, self.filters_count[idx-1], 3, 2)
+            )
+            new_image_size = getConvTransposeOutputShape(new_image_size, 3, 2)
+            new_in_channels = self.filters_count[idx-1]
+            idx -= 1
+        decoder_layers.append(
+            CT2D_BN_A(new_in_channels, self.channels, 4, 2, activation_type="sigmoid")
+        )
+        self.decoder = nn.Sequential(*decoder_layers)
+        
+    def forward(self, x):
+        encodings = self.encoder(x)
+        reconstructions = self.decoder(encodings)
+        return reconstructions, encodings
+    
 class C2D_Multi_VAE(C2D_Multi_AE):
     def __init__(
         self,
-        image_size,
+        image_size = 128,
         isTrain = True,
         channels = 3,
-        filters_count = [64,64,96,96,128],
         conv_type = "conv2d"
     ):
-        C2D_Multi_AE.__init__(self, channels = channels, filters_count = filters_count, conv_type = conv_type)
+        C2D_Multi_AE.__init__(self, image_size = image_size, channels = channels, conv_type = conv_type)
         self.__name__ = "C2D_Multi_VAE"
         self.image_size = image_size
         self.embedding_dim = list(self.encoder(torch.rand(1, self.channels, self.image_size, self.image_size)).shape)

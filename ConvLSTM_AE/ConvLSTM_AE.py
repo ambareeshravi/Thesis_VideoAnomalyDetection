@@ -459,6 +459,56 @@ class HashemCLSTM(nn.Module):
         reconstructions = self.decoder_convs(lstm_outputs) # bs,ts,c,w,h\
         reconstructions = reconstructions.permute(0,2,1,3,4) # bs,c,ts,w,h
         return reconstructions, encodings
+
+class C2D_LSTM_EN(nn.Module):
+    def __init__(self, channels = 3, filters_count = [64,64,64,96,128], isBidirectional = False):
+        super(C2D_LSTM_EN, self).__init__()
+        self.__name__ = 'C2D_LSTM_EN'
+        self.channels = channels
+        self.filters_count = filters_count
+        self.isBidirectional = isBidirectional
+        
+        self.encoder = nn.Sequential(
+            TimeDistributed(C2D_BN_A(self.channels, self.filters_count[0], 3, 2)),
+            TimeDistributed(C2D_BN_A(self.filters_count[0], self.filters_count[1], 3, 2)),
+            TimeDistributed(C2D_BN_A(self.filters_count[1], self.filters_count[2], 3, 2)),
+            TimeDistributed(C2D_BN_A(self.filters_count[2], self.filters_count[3], 3, 2)),
+            TimeDistributed(C2D_BN_A(self.filters_count[3], self.filters_count[4], 3, 1, activation_type="tanh")),
+        )
+        
+        self.embedding_dim = [128, 5, 5]
+        self.lstm_input_size = np.product(self.embedding_dim)
+        self.lstm_hidden_size = np.product(self.embedding_dim)
+        if self.isBidirectional:
+            self.lstm_hidden_size = self.lstm_hidden_size // 2
+        self.lstm = nn.LSTM(
+            self.lstm_input_size,
+            self.lstm_hidden_size,
+            batch_first = True,
+            bidirectional = isBidirectional
+        )
+        
+        self.decoder = nn.Sequential(
+            TimeDistributed(CT2D_BN_A(self.filters_count[4], self.filters_count[3], 3, 1)),
+            TimeDistributed(CT2D_BN_A(self.filters_count[3], self.filters_count[2], 3, 2)),
+            TimeDistributed(CT2D_BN_A(self.filters_count[2], self.filters_count[1], 3, 2)),
+            TimeDistributed(CT2D_BN_A(self.filters_count[1], self.filters_count[0], 3, 2)),
+            TimeDistributed(CT2D_BN_A(self.filters_count[0], self.channels, 4, 2, activation_type="sigmoid")),
+        )
+        
+    def get_states(self, bs):
+        return torch.rand(bs, 1, np.product(self.embedding_dim)), torch.rand(bs, 1, np.product(self.embedding_dim))
+        
+    def forward(self, x):
+        xt = x.transpose(1,2)
+        encoder_out = self.encoder(xt)
+        lstm_in = encoder_out.flatten(start_dim=2, end_dim=-1)
+        
+        lstm_out, states = self.lstm(lstm_in, self.get_states(lstm_in.shape[0]))
+        encodings = lstm_out.reshape(encoder_out.shape).transpose(1,2)
+        reconstructions = self.decoder(encodings.transpose(1,2)).transpose(1,2)
+        
+        return reconstructions, encodings
     
 CONV2D_LSTM_DICT = {
     128: {
@@ -466,7 +516,8 @@ CONV2D_LSTM_DICT = {
         "CLSTM_C3D": CLSTM_C3D_AE,
         "CLSTM_C2D": CLSTM_C2D_AE,
         "CLSTM_FULL": CLSTM_FULL_AE,
-        "CLSTM_Multi": CLSTM_Multi_AE
+        "CLSTM_Multi": CLSTM_Multi_AE,
+        "C2D_LSTM_EN": C2D_LSTM_EN
     },
     256: {
         "hashem": HashemCLSTM

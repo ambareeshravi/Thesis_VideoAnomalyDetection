@@ -41,6 +41,7 @@ class AutoEncoder_Tester:
         if "patch" in self.model_file.lower():
             self.predict = self.predict_patchwise
         if "stack" in self.model_file.lower():
+            self.stackFrames = 16
             self.isVideo = True
             self.predict = self.predict_stacked
         if "translat" in self.model_file.lower():
