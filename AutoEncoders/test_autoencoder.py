@@ -39,8 +39,10 @@ class AutoEncoder_Tester:
         self.isVideo = False
         
         if "patch" in self.model_file.lower():
+            self.patchwise = True
             self.predict = self.predict_patchwise
         if "stack" in self.model_file.lower():
+            self.stacked = True
             self.stackFrames = 16
             self.isVideo = True
             self.predict = self.predict_stacked
@@ -89,7 +91,7 @@ class AutoEncoder_Tester:
             return (reconstructions, encodings)
     
     def predict_stacked(self, inputs):
-        stacked_images = inputs.squeeze(dim = -4)
+        stacked_images = inputs.flatten(start_dim=0, end_dim=1)
         with torch.no_grad():
             reconstructions, encodings = self.model(stacked_images.to(self.device))
             reconstructions = reconstructions.unsqueeze(dim = -4)
@@ -104,6 +106,8 @@ class AutoEncoder_Tester:
         
     def predict_attention(self, inputs):
         with torch.no_grad():
+            if self.patchwise: inputs = get_patches(inputs, 64, 64)
+            if self.stacked: inputs = inputs.flatten(start_dim=0, end_dim=1)
             reconstructions, encodings, attention_activations = self.model(inputs.to(self.device))
             return reconstructions, encodings
         

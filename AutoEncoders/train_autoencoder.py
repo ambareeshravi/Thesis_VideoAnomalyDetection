@@ -160,7 +160,7 @@ class AutoEncoderModel:
     
     def stack_step(self, images):
         # images 32x1x16x128x128
-        stacked_images = images.flatten(start_dim = 1, end_dim = 2)
+        stacked_images = images.flatten(start_dim = 0, end_dim = 1)
         reconstructions, encodings = self.model(stacked_images)
         return self.loss_criterion(stacked_images, reconstructions)
     
