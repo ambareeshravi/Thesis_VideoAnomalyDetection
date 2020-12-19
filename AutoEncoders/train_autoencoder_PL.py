@@ -57,9 +57,13 @@ class AutoEncoderLM(LightningModule):
         if "nois" in self.model_file.lower():
             self.addNoise = True
             self.noise_var = noise_var
+        self.patchwise = False
         if "patch" in self.model_file.lower():
+            self.patchwise = True
             self.step = self.patch_step
+        self.stacked = False
         if "stack" in self.model_file.lower():
+            self.stacked = True
             self.step = self.stack_step
         if "noose" in self.model_file.lower():
             self.noose_factor = 1.0
@@ -164,8 +168,10 @@ class AutoEncoderLM(LightningModule):
         return self.loss_criterion(images, reconstructions)
     
     def attention_step(self, images):
+        if self.patchwise: images = get_patches(images)
+        if self.stacked: images = images.flatten(start_dim = 0, end_dim = 1)
         reconstructions, encodings, attention_activations = self.model(self.get_inputs(images))
-        return self.loss_criterion(images, reconstructions) + self.model.attention_loss(attention_activations)   
+        return self.loss_criterion(images, reconstructions) + self.model.attention_loss(attention_activations)
     
     def future_step(self, images):
         reconstructions, encodings = self.model(self.get_inputs(images)[:-1,...])

@@ -189,7 +189,7 @@ class AutoEncoderModel:
     
     def attention_step(self, images):
         if self.patchwise: images = get_patches(images)
-        if self.stacked: images = images.flatten(start_dim = 1, end_dim = 2)
+        if self.stacked: images = images.flatten(start_dim = 0, end_dim = 1)
         reconstructions, encodings, attention_activations = self.model(self.get_inputs(images))
         return self.loss_criterion(images, reconstructions) + self.model.attention_loss(attention_activations)
     
