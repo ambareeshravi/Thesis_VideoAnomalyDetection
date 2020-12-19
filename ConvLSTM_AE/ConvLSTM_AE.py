@@ -497,7 +497,7 @@ class C2D_LSTM_EN(nn.Module):
         )
         
     def get_states(self, bs):
-        return torch.rand(bs, 1, np.product(self.embedding_dim)), torch.rand(bs, 1, np.product(self.embedding_dim))
+        return torch.rand(1, bs, np.product(self.embedding_dim), device = self.encoder[0].module[0].weight.device), torch.rand(1, bs, np.product(self.embedding_dim), device = self.encoder[0].module[0].weight.device)
         
     def forward(self, x):
         xt = x.transpose(1,2)

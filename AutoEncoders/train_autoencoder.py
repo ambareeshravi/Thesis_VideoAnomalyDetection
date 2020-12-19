@@ -48,9 +48,13 @@ class AutoEncoderModel:
         if "nois" in self.model_file.lower():
             self.addNoise = True
             self.noise_var = noise_var
+        self.patchwise = False
         if "patch" in self.model_file.lower():
+            self.patchwise = True
             self.step = self.patch_step
+        self.stacked = False
         if "stack" in self.model_file.lower():
+            self.stacked = True
             self.step = self.stack_step
         if "noose" in self.model_file.lower():
             self.noose_factor = 1.0
@@ -184,6 +188,8 @@ class AutoEncoderModel:
         return self.loss_criterion(images, reconstructions)
     
     def attention_step(self, images):
+        if self.patchwise: images = get_patches(images)
+        if self.stacked: images = images.flatten(start_dim = 1, end_dim = 2)
         reconstructions, encodings, attention_activations = self.model(self.get_inputs(images))
         return self.loss_criterion(images, reconstructions) + self.model.attention_loss(attention_activations)
     

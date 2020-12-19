@@ -48,7 +48,7 @@ class AutoEncoder_Tester:
             self.predict = self.predict_translative
         if "attention" in self.model_file.lower():
             self.predict = self.predict_attention
-        if "c3d" in self.model_file.lower() or "clstm" in self.model_file.lower():
+        if "c3d" in self.model_file.lower() or "lstm" in self.model_file.lower():
             self.isVideo = True
             self.stackFrames = 16
         if "clstm" in self.model_file.lower() and "future" in self.model_file.lower():
