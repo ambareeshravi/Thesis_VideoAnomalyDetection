@@ -40,10 +40,10 @@ if __name__ == '__main__':
         asImages = False
         
     # Manual
-    DATA_TYPE = "ucsd1" 
+    DATA_TYPE = "ucsd2" 
     
     # PL Params
-    PRECISION = 32 # 32
+    PRECISION = 16 # 32
     GPUS = -1
     GRAD_CLIP_VAL = 0
     NODES = args.nodes
@@ -65,7 +65,7 @@ if __name__ == '__main__':
     INFO("TRAINING DATA READY")
     
     # Manual
-    model = CLSTM_C2D_AE(image_size = IMAGE_SIZE, channels = CHANNELS)
+    model = C2D_LSTM_EN(image_size = IMAGE_SIZE, channels = CHANNELS)
     
     # Automated model config
     model_file = "PL_%s_%s_%s_%s_%s_E%03d_BS%03d"%(model.__name__, DATA_TYPE.upper(), IMAGE_TYPE, OPTIMIZER_TYPE, LOSS_TYPE, EPOCHS, BATCH_SIZE)
@@ -82,7 +82,7 @@ if __name__ == '__main__':
         MODEL_SAVE_PATH,
         LOSS_TYPE,
         OPTIMIZER_TYPE,
-        default_learning_rate = 5e-4,
+        default_learning_rate = 1e-4,
         max_epochs = EPOCHS,
         status_rate = 25,
         lr_scheduler_kwargs = {
@@ -129,7 +129,7 @@ if __name__ == '__main__':
         image_type = IMAGE_TYPE,
         n_frames = 16,
         frame_strides = [2,4,8,16],
-        sample_stride = 1,
+        sample_stride = 3,
     )
     INFO("TESTING DATA READY")
 
