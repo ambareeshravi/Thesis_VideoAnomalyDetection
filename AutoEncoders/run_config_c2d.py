@@ -21,7 +21,7 @@ if __name__ == '__main__':
     # Editable
     IMAGE_SIZE = 128
     EPOCHS = 300
-    BATCH_SIZE = 256
+    BATCH_SIZE = 72
     IMAGE_TYPE = "normal"
     MODEL_PATH = args.model_path
     if not os.path.exists(MODEL_PATH): os.mkdir(MODEL_PATH)
@@ -29,18 +29,18 @@ if __name__ == '__main__':
     OPTIMIZER_TYPE = "adam"
     LOSS_TYPE = "mse"
     DENOISING = False
-    PATCH_WISE = False
+    PATCH_WISE = True
     STACKED = False
     
     isVideo = False
     stackFrames = 1
     asImages = True
-    if isVideo:
+    if isVideo or STACKED:
         stackFrames = 16
         asImages = False
         
     # Manual
-    DATA_TYPE = "ucsd1" 
+    DATA_TYPE = "avenue" 
     
     # 1. Training
     train_data, CHANNELS = select_dataset(
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     INFO("TRAINING DATA READY")
     
     MODELS_LIST = [
-        C2D_AE_128_3x3(channels = CHANNELS),
+        ConvAttentionWapper(PatchWise_C2D(channels = CHANNELS)),
     ]
     
     model_files = [
