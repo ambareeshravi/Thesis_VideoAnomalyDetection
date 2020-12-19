@@ -111,6 +111,8 @@ class AutoEncoder_Tester:
             if self.patchwise: inputs = get_patches(inputs, 64, 64)
             if self.stacked: inputs = inputs.flatten(start_dim=0, end_dim=1)
             reconstructions, encodings, attention_activations = self.model(inputs.to(self.device))
+            if self.stacked: reconstructions = reconstructions.unsqueeze(dim = -4)
+            if self.patchwise: reconstructions = merge_patches(reconstructions)
             return reconstructions, encodings
         
     def predict_future(self, inputs, total_ts = 16):
