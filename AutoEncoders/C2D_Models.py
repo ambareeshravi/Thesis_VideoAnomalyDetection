@@ -77,7 +77,7 @@ class C2D_AE_128_3x3(nn.Module):
         self.__name__ = "C2D_3x3_128"
         self.channels = channels
         self.filters_count = filters_count
-        self.embedding_dim = [1,128,4,4]
+        self.embedding_dim = [1,self.filters_count[4],4,4]
         
         self.encoder = nn.Sequential(
             C2D_BN_A(self.channels, self.filters_count[0], 3, 2, conv_type = conv_type),
@@ -114,7 +114,7 @@ class C2D_AE_128_5x5(nn.Module):
         self.__name__ = "C2D_5x5_128"
         self.channels = channels
         self.filters_count = filters_count
-        self.embedding_dim = [1,128,4,4]
+        self.embedding_dim = [1,self.filters_count[4],4,4]
         
         self.encoder = nn.Sequential(
             C2D_BN_A(self.channels, self.filters_count[0], 5, 2, conv_type = conv_type),
@@ -520,7 +520,7 @@ class C2D_DP_AE_128_3x3(nn.Module):
         self.__name__ = "C2D_DP_3x3_128"
         self.channels = channels
         self.filters_count = filters_count
-        self.embedding_dim = [1,128,4,4]
+        self.embedding_dim = [1,self.filters_count[4],4,4]
         
         self.encoder = nn.Sequential(
             C2D_BN_A(self.channels, self.filters_count[0], 3, 2, conv_type = conv_type),
@@ -622,7 +622,7 @@ class AAC_AE(nn.Module):
         self.__name__ = "AAC_AE"
         self.channels = channels
         self.filters_count = filters_count
-        self.embedding_dim = [1,128,4,4]
+        self.embedding_dim = [1,self.filters_count[4],4,4]
         
         self.encoder = nn.Sequential(
             AugmentedConv(in_channels=self.channels, out_channels=self.filters_count[0]//4, kernel_size=3, dk = self.filters_count[0]//8, dv = 1, Nh = 1,  stride = 2),
@@ -667,7 +667,7 @@ class C2D_AE_128_WIDE(nn.Module):
         self.__name__ = "C2D_AE_128_WIDE"
         self.channels = channels
         self.filters_count = filters_count
-        self.embedding_dim = [1,128,4,4]
+        self.embedding_dim = [1,self.filters_count[4],4,4]
         
         self.encoder = nn.ModuleList([
             self.get_parallel_conv_blocks(self.channels, self.filters_count[0], [3,5,7,9], 2),

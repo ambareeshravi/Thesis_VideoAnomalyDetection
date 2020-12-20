@@ -43,6 +43,9 @@ class ImagesHandler:
         elif "background" in image_type:
             self.image_type = "background"
             self.read_frames = self.read_background
+        elif "grayscale" in image_type:
+            self.image_type = "grayscale"
+            self.read_frames = self.read_gray
         else:
             self.image_type = "normal"
             self.read_frames = self.read_normal
