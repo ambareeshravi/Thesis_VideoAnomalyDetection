@@ -7,6 +7,8 @@ from general import *
 from general.model_utils import *
 from general.losses import max_norm
 
+from attention_conv import AugmentedConv
+
 class Generic_C2D_AE(nn.Module):
     def __init__(self,
                  encoder_layer_info=[
@@ -66,7 +68,7 @@ class C2D_AE_128_3x3(nn.Module):
     def __init__(
         self,
         channels = 3,
-        filters_count = [64,64,64,64,96,128],
+        filters_count = [64,64,96,96,128,128],
         conv_type = "conv2d"
     ):
         super(C2D_AE_128_3x3, self).__init__()
@@ -103,7 +105,7 @@ class C2D_AE_128_5x5(nn.Module):
     def __init__(
         self,
         channels = 3,
-        filters_count = [64,64,64,64,96,128],
+        filters_count = [64,64,96,96,128,128],
         conv_type = "conv2d"
     ):
         super(C2D_AE_128_5x5, self).__init__()
@@ -139,7 +141,7 @@ class C2D_AE_128_3x3_VAE(C2D_AE_128_3x3):
         self,
         isTrain = True,
         channels = 3,
-        filters_count = [64,64,64,64,96,128],
+        filters_count = [64,64,96,96,128,128],
         conv_type = "conv2d"
     ):
         C2D_AE_128_3x3.__init__(self, channels = channels, filters_count = filters_count, conv_type = conv_type)
@@ -185,7 +187,7 @@ class C2D_AE_128_5x5_VAE(C2D_AE_128_5x5):
         self,
         isTrain = True,
         channels = 3,
-        filters_count = [64,64,64,64,96,128],
+        filters_count = [64,64,96,96,128,128],
         conv_type = "conv2d"
     ):
         C2D_AE_128_5x5.__init__(self, channels = channels, filters_count = filters_count, conv_type = conv_type)
@@ -230,7 +232,7 @@ class C2D_AE_3x3_Res(nn.Module):
     def __init__(
         self,
         channels = 3,
-        filters_count = [64,64,64,64,96,128],
+        filters_count = [64,64,96,96,128,128],
         conv_type = "conv2d"
     ):
         super(C2D_AE_3x3_Res, self).__init__()
@@ -274,7 +276,7 @@ class C2D_AE_ACB_128_3x3(nn.Module):
     def __init__(
         self,
         channels = 3,
-        filters_count = [64,64,64,64,96,128],
+        filters_count = [64,64,96,96,128,128],
         conv_type = "conv2d"
     ):
         super(C2D_AE_ACB_128_3x3, self).__init__()
@@ -310,7 +312,7 @@ class C2D_AE_ACB_128_5x5(nn.Module):
     def __init__(
         self,
         channels = 3,
-        filters_count = [64,64,64,64,96,128],
+        filters_count = [64,64,96,96,128,128],
         conv_type = "conv2d"
     ):
         super(C2D_AE_ACB_128_5x5, self).__init__()
@@ -344,7 +346,7 @@ class C2D_AE_128_PC(nn.Module):
     def __init__(
         self,
         channels = 3,
-        filters_count = [64,64,64,64,96,128],
+        filters_count = [64,64,96,96,128,128],
         conv_type = "conv2d"
     ):
         super(C2D_AE_128_PC, self).__init__()
@@ -509,7 +511,7 @@ class C2D_DP_AE_128_3x3(nn.Module):
     def __init__(
         self,
         channels = 3,
-        filters_count = [64,64,64,64,96,128],
+        filters_count = [64,64,96,96,128,128],
         conv_type = "conv2d"
     ):
         super(C2D_DP_AE_128_3x3, self).__init__()
@@ -607,6 +609,119 @@ class ConvAttentionWapper(nn.Module):
         encodings = self.model.encoder(x_a)
         reconstructions = self.model.decoder(encodings)
         return reconstructions, encodings, x_a
+
+class AAC_AE(nn.Module):
+    def __init__(
+        self,
+        channels = 3,
+        filters_count = [64,64,64,128,128],
+    ):
+        super(AAC_AE, self).__init__()
+        self.__name__ = "AAC_AE"
+        self.channels = channels
+        self.filters_count = filters_count
+        self.embedding_dim = [1,128,4,4]
+        
+        self.encoder = nn.Sequential(
+            AugmentedConv(in_channels=self.channels, out_channels=self.filters_count[0]//4, kernel_size=3, dk = self.filters_count[0]//8, dv = 1, Nh = 1,  stride = 2),
+            nn.BatchNorm2d(self.filters_count[0]//4),
+            nn.ReLU(),
+            AugmentedConv(in_channels=self.filters_count[0]//4, out_channels=self.filters_count[1]//4, kernel_size=3, dk = self.filters_count[1]//8, dv = 1, Nh = 1,  stride = 2),
+            nn.BatchNorm2d(self.filters_count[1]//4),
+            nn.ReLU(),
+            AugmentedConv(in_channels=self.filters_count[1]//4, out_channels=self.filters_count[2]//4, kernel_size=3, dk = self.filters_count[2]//8, dv = 1, Nh = 1,  stride = 2),
+            nn.BatchNorm2d(self.filters_count[2]//4),
+            nn.ReLU(),
+            AugmentedConv(in_channels=self.filters_count[2]//4, out_channels=self.filters_count[3]//4, kernel_size=3, dk = self.filters_count[4]//8, dv = 1, Nh = 1,  stride = 2),
+            nn.BatchNorm2d(self.filters_count[3]//4),
+            nn.ReLU(),
+            nn.Conv2d(self.filters_count[3]//4, self.filters_count[4], 5, 1),
+            nn.BatchNorm2d(self.filters_count[4]),
+            nn.Tanh(),
+        )
+        
+        self.decoder = nn.Sequential(
+#             CT2D_BN_A(self.filters_count[5], self.filters_count[4], 2, 1),
+            CT2D_BN_A(self.filters_count[4], self.filters_count[3], 4, 1),
+            CT2D_BN_A(self.filters_count[3], self.filters_count[2], 3, 2),
+            CT2D_BN_A(self.filters_count[2], self.filters_count[1], 3, 2),
+            CT2D_BN_A(self.filters_count[1], self.filters_count[0], 4, 2),
+            CT2D_BN_A(self.filters_count[0], self.filters_count[0], 4, 2),
+            C2D_BN_A(self.filters_count[0], self.channels, 3, 1, activation_type = "sigmoid")
+        )
+        
+    def forward(self, x):
+        encodings = self.encoder(x)
+        reconstructions = self.decoder(encodings)
+        return reconstructions, encodings
+    
+class C2D_AE_128_WIDE(nn.Module):
+    def __init__(
+        self,
+        channels = 3,
+        filters_count = [48,48,96,96,128,128]
+    ):
+        super(C2D_AE_128_WIDE, self).__init__()
+        self.__name__ = "C2D_AE_128_WIDE"
+        self.channels = channels
+        self.filters_count = filters_count
+        self.embedding_dim = [1,128,4,4]
+        
+        self.encoder =[
+            self.get_parallel_conv_blocks(self.channels, self.filters_count[0], [3,5,7,9], 2),
+            self.get_parallel_conv_blocks(self.filters_count[0], self.filters_count[1], [3,5,7,9], 2),
+            self.get_parallel_conv_blocks(self.filters_count[1], self.filters_count[2], [3,5,7], 2),
+            self.get_parallel_conv_blocks(self.filters_count[2], self.filters_count[3], [3,5,], 2),
+            self.get_parallel_conv_blocks(self.filters_count[3], self.filters_count[4], [4], 2),
+        ]
+        
+        self.encoder_act_blocks = [
+            BN_A(self.filters_count[0], is3d=False),
+            BN_A(self.filters_count[1], is3d=False),
+            BN_A(self.filters_count[2], is3d=False),
+            BN_A(self.filters_count[3], is3d=False),
+            BN_A(self.filters_count[4], is3d=False),
+        ]
+        
+        self.decoder = [
+            self.get_parallel_deconv_blocks(self.filters_count[4], self.filters_count[3], [3], 2, padding_factor = 1),
+            self.get_parallel_deconv_blocks(self.filters_count[3], self.filters_count[2], [3,5,], 2),
+            self.get_parallel_deconv_blocks(self.filters_count[2], self.filters_count[1], [3,5,7], 2),
+            self.get_parallel_deconv_blocks(self.filters_count[1], self.filters_count[0], [3,5,7,9], 2),
+            self.get_parallel_deconv_blocks(self.filters_count[0], self.channels, [4], 2, padding_factor = 4),
+        ]
+        
+        self.decoder_act_blocks = [
+            BN_A(self.filters_count[3], is3d=False),
+            BN_A(self.filters_count[2], is3d=False),
+            BN_A(self.filters_count[1], is3d=False),
+            BN_A(self.filters_count[0], is3d=False),
+            BN_A(self.channels, is3d=False),
+        ]
+        
+    def get_parallel_conv_blocks(self, in_channels, out_channels, kernel_sizes, stride, padding_factor = 1):
+        return [nn.Conv2d(in_channels, out_channels // len(kernel_sizes), k, stride, padding = (k-padding_factor)//2) for k in kernel_sizes]
+        
+    def get_parallel_deconv_blocks(self, in_channels, out_channels, kernel_sizes, stride, padding_factor = 2):
+        return [nn.ConvTranspose2d(in_channels, out_channels // len(kernel_sizes), k, stride, padding = (k-padding_factor)//2) for k in kernel_sizes]
+        
+    def forward(self, x):
+        layer_input = x
+        
+        for layer, layer_act in zip(self.encoder, self.encoder_act_blocks):
+            layer_output = torch.cat([l(layer_input) for l in layer], dim = 1)
+            layer_input = layer_act(layer_output)
+            
+        encodings = layer_input
+        
+        print(encodings.shape)
+        
+        for layer, layer_act in zip(self.decoder, self.decoder_act_blocks):
+            layer_output = torch.cat([l(layer_input) for l in layer], dim = 1)
+            layer_input = layer_act(layer_output)
+            
+        reconstructions = layer_input
+        return reconstructions, encodings
     
 C2D_MODELS_DICT = {
     128: {
@@ -631,6 +746,9 @@ C2D_MODELS_DICT = {
         },
         "dropout": {
             "3x3": C2D_DP_AE_128_3x3
+        },
+        "wide": {
+            "3x3": C2D_AE_128_WIDE
         }
     },
     
