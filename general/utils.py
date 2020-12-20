@@ -18,6 +18,12 @@ def read_image(image_path, asGray = False):
     if asGray: return Image.open(image_path).convert('L')
     return Image.open(image_path)
 
+def image_cwh(image):
+    return image.transpose(0,1).transpose(1,2)
+
+def image_whc(image):
+    return image.transpose(1,2).transpose(0,1)
+
 def image_1(image):
     return image/255.
 

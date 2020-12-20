@@ -88,7 +88,7 @@ class AutoEncoderModel:
         
         self.loss_criterion = loss_criterion
         self.optimizer = optimizer
-        self.lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, factor = self.lr_scheduler_params["factor"], patience = self.lr_scheduler_params["patience"], threshold = self.lr_scheduler_params["threshold"])
+        self.lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, **self.lr_scheduler_params)
         with open(os.path.join(self.save_path, "model.txt"), "w") as f:
             f.write(str(self.model))
         
@@ -103,7 +103,6 @@ class AutoEncoderModel:
             
         self.history["train_loss"].append(train_loss)
         self.history["validation_loss"].append(val_loss)
-        self.lr_scheduler.step(val_loss)
         self.epoch_train_loss = list()
         self.epoch_validation_loss = list()
         
@@ -326,6 +325,7 @@ class AutoEncoder_Trainer:
                 
             for model in self.autoencoder_models:
                 if model.stopTraining: continue
+                model.lr_scheduler.step(torch.tensor(model.epoch_validation_loss).mean())
                 model.epoch_reset()
                 if "stop" in read_txt(self.run_status_file).lower(): stopTraining = True
                 if print_status:
