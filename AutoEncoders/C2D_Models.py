@@ -669,43 +669,43 @@ class C2D_AE_128_WIDE(nn.Module):
         self.filters_count = filters_count
         self.embedding_dim = [1,128,4,4]
         
-        self.encoder =[
+        self.encoder = nn.ModuleList([
             self.get_parallel_conv_blocks(self.channels, self.filters_count[0], [3,5,7,9], 2),
             self.get_parallel_conv_blocks(self.filters_count[0], self.filters_count[1], [3,5,7,9], 2),
             self.get_parallel_conv_blocks(self.filters_count[1], self.filters_count[2], [3,5,7], 2),
             self.get_parallel_conv_blocks(self.filters_count[2], self.filters_count[3], [3,5,], 2),
             self.get_parallel_conv_blocks(self.filters_count[3], self.filters_count[4], [4], 2),
-        ]
+        ])
         
-        self.encoder_act_blocks = [
+        self.encoder_act_blocks = nn.ModuleList([
             BN_A(self.filters_count[0], is3d=False),
             BN_A(self.filters_count[1], is3d=False),
             BN_A(self.filters_count[2], is3d=False),
             BN_A(self.filters_count[3], is3d=False),
             BN_A(self.filters_count[4], is3d=False),
-        ]
+        ])
         
-        self.decoder = [
+        self.decoder = nn.ModuleList([
             self.get_parallel_deconv_blocks(self.filters_count[4], self.filters_count[3], [3], 2, padding_factor = 1),
             self.get_parallel_deconv_blocks(self.filters_count[3], self.filters_count[2], [3,5,], 2),
             self.get_parallel_deconv_blocks(self.filters_count[2], self.filters_count[1], [3,5,7], 2),
             self.get_parallel_deconv_blocks(self.filters_count[1], self.filters_count[0], [3,5,7,9], 2),
             self.get_parallel_deconv_blocks(self.filters_count[0], self.channels, [4], 2, padding_factor = 4),
-        ]
+        ])
         
-        self.decoder_act_blocks = [
+        self.decoder_act_blocks = nn.ModuleList([
             BN_A(self.filters_count[3], is3d=False),
             BN_A(self.filters_count[2], is3d=False),
             BN_A(self.filters_count[1], is3d=False),
             BN_A(self.filters_count[0], is3d=False),
             BN_A(self.channels, is3d=False),
-        ]
+        ])
         
     def get_parallel_conv_blocks(self, in_channels, out_channels, kernel_sizes, stride, padding_factor = 1):
-        return [nn.Conv2d(in_channels, out_channels // len(kernel_sizes), k, stride, padding = (k-padding_factor)//2) for k in kernel_sizes]
+        return nn.ModuleList([nn.Conv2d(in_channels, out_channels // len(kernel_sizes), k, stride, padding = (k-padding_factor)//2) for k in kernel_sizes])
         
     def get_parallel_deconv_blocks(self, in_channels, out_channels, kernel_sizes, stride, padding_factor = 2):
-        return [nn.ConvTranspose2d(in_channels, out_channels // len(kernel_sizes), k, stride, padding = (k-padding_factor)//2) for k in kernel_sizes]
+        return nn.ModuleList([nn.ConvTranspose2d(in_channels, out_channels // len(kernel_sizes), k, stride, padding = (k-padding_factor)//2) for k in kernel_sizes])
         
     def forward(self, x):
         layer_input = x
@@ -715,9 +715,7 @@ class C2D_AE_128_WIDE(nn.Module):
             layer_input = layer_act(layer_output)
             
         encodings = layer_input
-        
-        print(encodings.shape)
-        
+                
         for layer, layer_act in zip(self.decoder, self.decoder_act_blocks):
             layer_output = torch.cat([l(layer_input) for l in layer], dim = 1)
             layer_input = layer_act(layer_output)
