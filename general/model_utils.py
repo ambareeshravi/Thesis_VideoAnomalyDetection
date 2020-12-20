@@ -543,7 +543,7 @@ class TimeDistributed(nn.Module):
 class SE_Block(nn.Module):
     "credits: https://github.com/moskomule/senet.pytorch/blob/master/senet/se_module.py#L4"
     def __init__(self, c, r=16):
-        super().__init__()
+        super(SE_Block, self).__init__()
         self.squeeze = nn.AdaptiveAvgPool2d(1)
         self.excitation = nn.Sequential(
             nn.Linear(c, c // r, bias=False),
