@@ -767,6 +767,66 @@ class C2D_AE_128_3x3_SE(nn.Module):
         encodings = self.encoder(x)
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings    
+
+class C2D_DoubleHead(nn.Module):
+    def __init__(
+        self,
+        image_channels = 3,
+        flow_channels = 3, 
+        filters_count = [64,64,64,96,96,128],
+        conv_type = "conv2d"
+    ):
+        super(C2D_DoubleHead, self).__init__()
+        self.__name__ = "C2D_DoubleHead"
+        self.image_channels = image_channels
+        self.flow_channels = flow_channels
+        self.filters_count = filters_count
+        
+        self.image_encoder = nn.Sequential(
+            C2D_BN_A(self.image_channels, self.filters_count[0], 3, 2, conv_type = conv_type),
+            C2D_BN_A(self.filters_count[0], self.filters_count[1], 3, 2, conv_type = conv_type),
+            C2D_BN_A(self.filters_count[1], self.filters_count[2], 3, 2, conv_type = conv_type),
+            C2D_BN_A(self.filters_count[2], self.filters_count[3], 3, 2, conv_type = conv_type),
+            C2D_BN_A(self.filters_count[3], self.filters_count[4], 4, 1, conv_type = conv_type),
+        )
+        
+        self.flow_encoder = nn.Sequential(
+            C2D_BN_A(self.flow_channels, self.filters_count[0], 5, 3, conv_type = conv_type),
+            C2D_BN_A(self.filters_count[0], self.filters_count[1], 5, 3, conv_type = conv_type),
+            C2D_BN_A(self.filters_count[1], self.filters_count[4], 4, 3, conv_type = conv_type),
+        )
+        
+        self.image_decoder = nn.Sequential(
+            CT2D_BN_A(self.filters_count[4], self.filters_count[3], 4, 1),
+            CT2D_BN_A(self.filters_count[3], self.filters_count[2], 3, 2),
+            CT2D_BN_A(self.filters_count[2], self.filters_count[1], 3, 2),
+            CT2D_BN_A(self.filters_count[1], self.filters_count[0], 3, 2),
+            CT2D_BN_A(self.filters_count[0], self.image_channels, 4, 2),
+        )
+        
+        self.flow_decoder = nn.Sequential(
+            CT2D_BN_A(self.filters_count[4], self.filters_count[1], 5, 3),
+            CT2D_BN_A(self.filters_count[1], self.filters_count[0], 5, 3),
+            CT2D_BN_A(self.filters_count[0], self.filters_count[0], 5, 3),
+            C2D_BN_A(self.filters_count[0], self.flow_channels, 7, 1, conv_type = conv_type)
+        )
+        
+        self.bottleneck_squeeze = nn.AdaptiveAvgPool2d(4)
+        self.bottleneck_expand = nn.UpsamplingBilinear2d((4,8))
+        
+    def forward(self, x):
+        image_encodings = self.image_encoder(x[:,:self.image_channels,...])
+        flow_encodings = self.flow_encoder(x[:,self.image_channels:,...])
+        
+        encodings = self.bottleneck_squeeze(torch.cat((image_encodings, flow_encodings), dim = -1))
+        decodings = self.bottleneck_expand(encodings)
+        image_decodings, flow_decodings = torch.split(decodings, 4, dim = -1)
+        
+        image_reconstructions = self.image_decoder(image_decodings)
+        flow_reconstructions = self.flow_decoder(flow_decodings)
+        
+        reconstructions = torch.cat((image_reconstructions, flow_reconstructions), dim = 1)
+        return reconstructions, encodings
     
 C2D_MODELS_DICT = {
     128: {
@@ -797,6 +857,9 @@ C2D_MODELS_DICT = {
         },
         "squeeze_excitation": {
             "3x3": C2D_AE_128_3x3_SE
+        },
+        "double_head": {
+            "3x3": C2D_DoubleHead
         }
     },
     
