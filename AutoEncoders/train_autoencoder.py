@@ -29,7 +29,7 @@ class AutoEncoderModel:
         if self.isHalfPrecision:
             HalfPrecision(self.model)
             
-        self.model = DataParallel(self.model)
+#         self.model = DataParallel(self.model)
             
         self.device = device
         self.lr_scheduler_params = lr_scheduler_params
