@@ -65,7 +65,7 @@ if __name__ == '__main__':
     INFO("TRAINING DATA READY")
     
     # Manual
-    model = C2D_LSTM_EN(image_size = IMAGE_SIZE, channels = CHANNELS)
+    model = C2D_LSTM_EN(channels = CHANNELS)
     
     # Automated model config
     model_file = "PL_%s_%s_%s_%s_%s_E%03d_BS%03d"%(model.__name__, DATA_TYPE.upper(), IMAGE_TYPE, OPTIMIZER_TYPE, LOSS_TYPE, EPOCHS, BATCH_SIZE)
