@@ -31,7 +31,9 @@ class ImagesHandler:
         if "flow" in image_type:
             self.image_type = "flow"
             self.n_frames += 1
-            self.opt_flow = OpticalFlow()
+            returnMag = True
+            if "clr" in image_type: returnMag = False
+            self.opt_flow = OpticalFlow(returnMag = returnMag)
             self.read_frames = self.read_flow
         elif "difference" in image_type:
             self.image_type = "difference"
@@ -60,13 +62,7 @@ class ImagesHandler:
     
     def read_gray(self, files):
         return [self.data_transform(read_image(image_path, asGray = True)) for image_path in files]
-        
-#     def read_flow(self, files):
-#         frames = [np.array(read_image(image_path)) for image_path in files]
-#         flow_frames = [self.opt_flow.get_optical_flow(frames[idx-1], frames[idx]) for idx in range(1, len(frames))]
-#         flow_frames = [self.data_transform(Image.fromarray(fr)) for fr in flow_frames]
-#         return flow_frames
-    
+            
     def read_flow(self, files):
         frames = [read_image(image_path) for image_path in files]
         frame_arrays = [np.array(frame) for frame in frames]
