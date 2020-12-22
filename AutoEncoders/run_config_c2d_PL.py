@@ -137,7 +137,13 @@ if __name__ == '__main__':
     model_file = getModelFileName(MODEL_SAVE_PATH)
     load_model(model, model_file)
     print(model_file)
-    if "vae" in model_file.lower(): model.isTrain = False
+    if "vae" in model_file.lower():
+        try:
+            model.isTrain = False
+            if "attention" in model_file.lower():
+                model.model.isTrain = False
+        except:
+            pass
     tester = AutoEncoder_Tester(
         model = model,
         dataset = test_data,
