@@ -827,6 +827,43 @@ class C2D_DoubleHead(nn.Module):
         
         reconstructions = torch.cat((image_reconstructions, flow_reconstructions), dim = 1)
         return reconstructions, encodings
+
+class C2D_AE_128_OriginPush(nn.Module):
+    def __init__(
+        self,
+        channels = 3,
+        filters_count = [64,64,64,96,96,128],
+        conv_type = "conv2d"
+    ):
+        super(C2D_AE_128_OriginPush, self).__init__()
+        self.__name__ = "C2D_AE_128_OriginPush"
+        self.channels = channels
+        self.filters_count = filters_count
+        self.embedding_dim = [1,self.filters_count[4],4,4]
+        
+        self.encoder = nn.Sequential(
+            C2D_BN_A(self.channels, self.filters_count[0], 3, 2, conv_type = conv_type),
+            C2D_BN_A(self.filters_count[0], self.filters_count[1], 3, 2, conv_type = conv_type),
+            C2D_BN_A(self.filters_count[1], self.filters_count[2], 3, 2, conv_type = conv_type),
+            C2D_BN_A(self.filters_count[2], self.filters_count[3], 3, 2, conv_type = conv_type),
+            C2D_BN_A(self.filters_count[3], self.filters_count[4], 4, 1, conv_type = conv_type, activation_type = "sigmoid"),
+#             C2D_BN_A(self.filters_count[4], self.filters_count[5], 2, 1, conv_type = conv_type, activation_type = "tanh"),
+        )
+        
+        self.decoder = nn.Sequential(
+#             CT2D_BN_A(self.filters_count[5], self.filters_count[4], 2, 1),
+            CT2D_BN_A(self.filters_count[4], self.filters_count[3], 4, 1),
+            CT2D_BN_A(self.filters_count[3], self.filters_count[2], 3, 2),
+            CT2D_BN_A(self.filters_count[2], self.filters_count[1], 3, 2),
+            CT2D_BN_A(self.filters_count[1], self.filters_count[0], 4, 2),
+            CT2D_BN_A(self.filters_count[0], self.filters_count[0], 4, 2),
+            C2D_BN_A(self.filters_count[0], self.channels, 3, 1, activation_type = "sigmoid")
+        )
+        
+    def forward(self, x):
+        encodings = self.encoder(x)
+        reconstructions = self.decoder(encodings)
+        return reconstructions, encodings
     
 C2D_MODELS_DICT = {
     128: {
