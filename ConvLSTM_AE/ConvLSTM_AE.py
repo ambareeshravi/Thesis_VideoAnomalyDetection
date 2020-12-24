@@ -509,6 +509,123 @@ class C2D_LSTM_EN(nn.Module):
         reconstructions = self.decoder(encodings.transpose(1,2)).transpose(1,2)
         
         return reconstructions, encodings
+
+class CLSTM_E1(nn.Module):
+    def __init__(
+        self,
+        image_size = 128,
+        channels = 3,
+        filters_count = [64,64,96,128]
+    ):
+        super(CLSTM_E1, self).__init__()
+        self.__name__ = "CLSTM_E1"
+        self.image_size = image_size
+        self.channels = channels
+        self.filters_count = filters_count
+        
+        # Encoder
+        self.encoder = nn.Sequential(
+            TimeDistributed(C2D_BN_A(self.channels, self.filters_count[0], 3, 2)),
+            TimeDistributed(C2D_BN_A(self.filters_count[0], self.filters_count[1], 3, 2)),
+            TimeDistributed(C2D_BN_A(self.filters_count[1], self.filters_count[2], 3, 2)),
+        )
+        
+        # CLSTM Encoder
+        self.clstm1 = Conv2dLSTM_Cell(15, self.filters_count[2], self.filters_count[3], 5, 3, 0)
+        self.clstm1_act_block = nn.Sequential(
+            nn.BatchNorm2d(self.filters_count[3]),
+            nn.Tanh()
+        )
+        
+        # Decoder
+        self.decoder = nn.Sequential(
+            TimeDistributed(CT2D_BN_A(self.filters_count[3], self.filters_count[2], 6,3)),
+            TimeDistributed(CT2D_BN_A(self.filters_count[2], self.filters_count[1], 3,2)),
+            TimeDistributed(CT2D_BN_A(self.filters_count[1], self.filters_count[0], 3,2)),
+            TimeDistributed(CT2D_BN_A(self.filters_count[0], self.channels, 4,2, activation_type="sigmoid")),
+        )
+        
+    def forward(self, x, future_steps = 0):
+        b,c,t,w,h = x.shape
+        
+        c2d_encodings = self.encoder(x.transpose(1,2)) # bs, ts, nc, wn, hn
+        c2d_encodings = c2d_encodings.transpose(1,2) # bs, nc, ts, wn, hn
+        
+        hidden_states = None
+        encodings = list()
+        for ts in range(c2d_encodings.shape[-3]):
+            [h, c] = self.clstm1(c2d_encodings[:,:,ts,:,:], hidden_states)
+            h = self.clstm1_act_block(h)
+            hidden_states = [h, c]
+            encodings += [h]
+        
+        encodings = torch.stack(encodings).permute(1,2,0,3,4)
+        reconstructions = self.decoder(encodings.transpose(1,2)).transpose(1,2)
+        return reconstructions, encodings
+    
+class CLSTM_E2(nn.Module):
+    def __init__(
+        self,
+        image_size = 128,
+        channels = 3,
+        filters_count = [64,64,96,128]
+    ):
+        super(CLSTM_E2, self).__init__()
+        self.__name__ = "CLSTM_E2"
+        self.image_size = image_size
+        self.channels = channels
+        self.filters_count = filters_count
+        
+        # Encoder
+        self.encoder = nn.Sequential(
+            TimeDistributed(C2D_BN_A(self.channels, self.filters_count[0], 3, 2)),
+            TimeDistributed(C2D_BN_A(self.filters_count[0], self.filters_count[1], 3, 2)),
+        )
+        
+        # CLSTM Encoder
+        self.clstm1 = Conv2dLSTM_Cell(31, self.filters_count[1], self.filters_count[2], 3, 2, 0)
+        self.clstm1_act_block = nn.Sequential(
+            nn.BatchNorm2d(self.filters_count[2]),
+            nn.LeakyReLU()
+        )
+        self.clstm2 = Conv2dLSTM_Cell(self.clstm1.output_shape, self.filters_count[2], self.filters_count[3], 5, 3, 0)
+        self.clstm2_act_block = nn.Sequential(
+            nn.BatchNorm2d(self.filters_count[3]),
+            nn.Tanh()
+        )
+        
+        self.clstm_layers = nn.ModuleList([self.clstm1, self.clstm2])
+        self.clstm_act_blocks = nn.ModuleList([self.clstm1_act_block, self.clstm2_act_block])
+        
+        # Decoder
+        self.decoder = nn.Sequential(
+            TimeDistributed(CT2D_BN_A(self.filters_count[3], self.filters_count[2], 6,3)),
+            TimeDistributed(CT2D_BN_A(self.filters_count[2], self.filters_count[1], 3,2)),
+            TimeDistributed(CT2D_BN_A(self.filters_count[1], self.filters_count[0], 3,2)),
+            TimeDistributed(CT2D_BN_A(self.filters_count[0], self.channels, 4,2, activation_type="sigmoid")),
+        )
+        
+    def forward(self, x, future_steps = 0):
+        b,c,t,w,h = x.shape
+        
+        c2d_encodings = self.encoder(x.transpose(1,2)) # bs, ts, nc, wn, hn
+        c2d_encodings = c2d_encodings.transpose(1,2) # bs, nc, ts, wn, hn
+        
+        hidden_states = [None] * len(self.clstm_layers)
+        encodings = list()
+        
+        for ts in range(t):
+            layer_inputs = c2d_encodings[:,:,ts,:,:]
+            for idx, (layer, layer_act_block) in enumerate(zip(self.clstm_layers, self.clstm_act_blocks)):
+                [h, c] = layer(layer_inputs, hidden_states[idx])
+                h = layer_act_block(h)
+                hidden_states[idx] = [h, c]
+                layer_inputs = h
+            encodings += [h]
+        
+        encodings = torch.stack(encodings).permute(1,2,0,3,4)
+        reconstructions = self.decoder(encodings.transpose(1,2)).transpose(1,2)
+        return reconstructions, encodings
     
 CONV2D_LSTM_DICT = {
     128: {
@@ -517,7 +634,9 @@ CONV2D_LSTM_DICT = {
         "CLSTM_C2D": CLSTM_C2D_AE,
         "CLSTM_FULL": CLSTM_FULL_AE,
         "CLSTM_Multi": CLSTM_Multi_AE,
-        "C2D_LSTM_EN": C2D_LSTM_EN
+        "C2D_LSTM_EN": C2D_LSTM_EN,
+        "CLSTM_E1": CLSTM_E1,
+        "CLSTM_E2": CLSTM_E2
     },
     256: {
         "hashem": HashemCLSTM
