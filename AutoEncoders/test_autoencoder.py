@@ -93,10 +93,13 @@ class AutoEncoder_Tester:
             return (reconstructions, encodings)
     
     def predict_stacked(self, inputs):
+        print("inputs.shape", inputs.shape)
         stacked_images = inputs.flatten(start_dim=0, end_dim=1)
+        print("stacked_images.shape", stacked_images.shape)
         with torch.no_grad():
             reconstructions, encodings = self.model(stacked_images.to(self.device))
             reconstructions = reconstructions.unsqueeze(dim = -4)
+            print("reconstructions.shape", reconstructions.shape)
             return (reconstructions, encodings)
         
     def predict_translative(self, inputs):
