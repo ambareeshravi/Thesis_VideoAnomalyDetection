@@ -1,0 +1,78 @@
+[STATUS] Created version: CLSTM_25_12_2020_07_10
+              total        used        free      shared  buff/cache   available
+Mem:            187          11         113           6          62         167
+Swap:             0           0           0
+Fri Dec 25 07:10:22 2020       
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 455.45.01    Driver Version: 455.45.01    CUDA Version: 11.1     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|                               |                      |               MIG M. |
+|===============================+======================+======================|
+|   0  Tesla V100-SXM2...  On   | 00000000:18:00.0 Off |                    0 |
+| N/A   34C    P0    44W / 300W |      0MiB / 32510MiB |      0%      Default |
+|                               |                      |                  N/A |
++-------------------------------+----------------------+----------------------+
+                                                                               
++-----------------------------------------------------------------------------+
+| Processes:                                                                  |
+|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
+|        ID   ID                                                   Usage      |
+|=============================================================================|
+|  No running processes found                                                 |
++-----------------------------------------------------------------------------+
+[STATUS] Created data directory
+[STATUS] Python environment ready
+[STATUS] Starting script at Fri Dec 25 07:10:40 PST 2020
+0it [00:00, ?it/s]1it [00:06,  6.83s/it]2it [00:16,  7.72s/it]3it [00:26,  8.40s/it]4it [00:39,  9.68s/it]5it [00:51, 10.58s/it]6it [01:01, 10.34s/it]7it [01:11, 10.18s/it]8it [01:18,  9.11s/it]9it [01:30, 10.18s/it]10it [01:43, 11.00s/it]11it [01:57, 11.68s/it]12it [02:10, 12.13s/it]13it [02:23, 12.48s/it]14it [02:33, 11.74s/it]15it [02:43, 11.19s/it]16it [02:53, 10.84s/it]16it [02:53, 10.84s/it]----------------------------------------
+[INFO]: TRAINING DATA READY
+----------------------------------------
+----------------------------------------
+[INFO]: MODEL, OPTIM, LOSS ARE READY
+----------------------------------------
+----------------------------------------
+[INFO]: STARTING THE TRAINING
+----------------------------------------
+
+Maximum estimated Time: 28.74 hours | Will be completed by: 2020-12-26 12:07
+------------------------------------------------------------
+Epoch: [001/200] | time/epoch: 519.96 seconds
+------------------------------------------------------------
+Model: /localscratch/a24ravi.58121668.0/CLSTM_25_12_2020_07_10/CLSTM_C3D_128_UCSD2_normal_adam_mse_E200_BS008_DeNoising/CLSTM_C3D_128_UCSD2_normal_adam_mse_E200_BS008_DeNoising.pth.tar
+               Loss
+Training    0.00318
+Validation  0.00248
+----------------------------------------
+------------------------------------------------------------
+Epoch: [025/200] | time/epoch: 506.52 seconds
+------------------------------------------------------------
+Model: /localscratch/a24ravi.58121668.0/CLSTM_25_12_2020_07_10/CLSTM_C3D_128_UCSD2_normal_adam_mse_E200_BS008_DeNoising/CLSTM_C3D_128_UCSD2_normal_adam_mse_E200_BS008_DeNoising.pth.tar
+             Loss -2   Loss -1    Loss *
+Training    0.000405  0.000403  0.000402
+Validation  0.022644  0.028413  0.024330
+----------------------------------------
+------------------------------------------------------------
+Epoch: [050/200] | time/epoch: 506.12 seconds
+------------------------------------------------------------
+Model: /localscratch/a24ravi.58121668.0/CLSTM_25_12_2020_07_10/CLSTM_C3D_128_UCSD2_normal_adam_mse_E200_BS008_DeNoising/CLSTM_C3D_128_UCSD2_normal_adam_mse_E200_BS008_DeNoising.pth.tar
+             Loss -2   Loss -1    Loss *
+Training    0.000282  0.000282  0.000282
+Validation  0.028873  0.028015  0.031205
+----------------------------------------
+------------------------------------------------------------
+Epoch: [075/200] | time/epoch: 507.56 seconds
+------------------------------------------------------------
+Model: /localscratch/a24ravi.58121668.0/CLSTM_25_12_2020_07_10/CLSTM_C3D_128_UCSD2_normal_adam_mse_E200_BS008_DeNoising/CLSTM_C3D_128_UCSD2_normal_adam_mse_E200_BS008_DeNoising.pth.tar
+             Loss -2   Loss -1    Loss *
+Training    0.000239  0.000239  0.000239
+Validation  0.018226  0.019199  0.017016
+----------------------------------------
+------------------------------------------------------------
+Epoch: [100/200] | time/epoch: 506.46 seconds
+------------------------------------------------------------
+Model: /localscratch/a24ravi.58121668.0/CLSTM_25_12_2020_07_10/CLSTM_C3D_128_UCSD2_normal_adam_mse_E200_BS008_DeNoising/CLSTM_C3D_128_UCSD2_normal_adam_mse_E200_BS008_DeNoising.pth.tar
+             Loss -2   Loss -1    Loss *
+Training    0.000226  0.000226  0.000226
+Validation  0.016262  0.015045  0.015388
+----------------------------------------

@@ -1,0 +1,39 @@
+[STATUS] Created version: C2D_23_12_2020_09_21
+              total        used        free      shared  buff/cache   available
+Mem:            125          21          99           2           4         100
+Swap:             0           0           0
+Wed Dec 23 09:21:23 2020       
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 455.45.01    Driver Version: 455.45.01    CUDA Version: 11.1     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|                               |                      |               MIG M. |
+|===============================+======================+======================|
+|   0  Tesla P100-PCIE...  On   | 00000000:03:00.0 Off |                    0 |
+| N/A   27C    P0    24W / 250W |      0MiB / 12198MiB |      0%      Default |
+|                               |                      |                  N/A |
++-------------------------------+----------------------+----------------------+
+|   1  Tesla P100-PCIE...  On   | 00000000:82:00.0 Off |                    0 |
+| N/A   30C    P0    23W / 250W |      0MiB / 12198MiB |      0%      Default |
+|                               |                      |                  N/A |
++-------------------------------+----------------------+----------------------+
+                                                                               
++-----------------------------------------------------------------------------+
+| Processes:                                                                  |
+|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
+|        ID   ID                                                   Usage      |
+|=============================================================================|
+|  No running processes found                                                 |
++-----------------------------------------------------------------------------+
+[STATUS] Created data directory
+[STATUS] Python environment ready
+[STATUS] Starting script at Wed Dec 23 09:21:42 PST 2020
+  File "run_config_c2d.py", line 41
+    BATCH_SIZE = 32
+                  ^
+TabError: inconsistent use of tabs and spaces in indentation
+[STATUS] Script completed at Wed Dec 23 09:21:43 PST 2020
+cp: cannot stat '/home/a24ravi/projects/def-karray/a24ravi/slurm_outputs/C2D_%u-%x-%j.txt': No such file or directory
+[STATUS] Models copied safely
+[STATUS] Deactivate python environment. EXITING ...

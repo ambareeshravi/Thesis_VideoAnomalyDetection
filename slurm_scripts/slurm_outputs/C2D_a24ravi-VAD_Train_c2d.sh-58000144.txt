@@ -1,0 +1,492 @@
+[STATUS] Created version: C2D_23_12_2020_11_58
+              total        used        free      shared  buff/cache   available
+Mem:            187          19         155           2          12         163
+Swap:             0           0           0
+Wed Dec 23 11:58:49 2020       
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 455.45.01    Driver Version: 455.45.01    CUDA Version: 11.1     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|                               |                      |               MIG M. |
+|===============================+======================+======================|
+|   0  Tesla V100-SXM2...  On   | 00000000:18:00.0 Off |                    0 |
+| N/A   33C    P0    42W / 300W |      0MiB / 32510MiB |      0%      Default |
+|                               |                      |                  N/A |
++-------------------------------+----------------------+----------------------+
+                                                                               
++-----------------------------------------------------------------------------+
+| Processes:                                                                  |
+|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
+|        ID   ID                                                   Usage      |
+|=============================================================================|
+|  No running processes found                                                 |
++-----------------------------------------------------------------------------+
+[STATUS] Created data directory
+[STATUS] Python environment ready
+[STATUS] Starting script at Wed Dec 23 11:59:07 PST 2020
+0it [00:00, ?it/s]1it [00:12, 12.20s/it]2it [00:25, 12.56s/it]3it [00:38, 12.76s/it]4it [00:52, 12.94s/it]5it [00:59, 11.23s/it]6it [01:12, 11.82s/it]7it [01:22, 11.22s/it]8it [01:31, 10.59s/it]9it [01:43, 11.11s/it]10it [01:54, 11.04s/it]11it [02:01,  9.80s/it]12it [02:02,  7.24s/it]13it [02:06,  6.06s/it]14it [02:10,  5.61s/it]15it [02:14,  4.92s/it]16it [02:16,  4.11s/it]16it [02:16,  8.52s/it]----------------------------------------
+[INFO]: TRAINING DATA READY
+----------------------------------------
+----------------------------------------
+[INFO]: MODEL, OPTIM, LOSS ARE READY
+----------------------------------------
+----------------------------------------
+[INFO]: STARTING THE TRAINING
+----------------------------------------
+
+Maximum estimated Time: 4.06 hours | Will be completed by: 2020-12-23 16:06
+------------------------------------------------------------
+Epoch: [001/300] | time/epoch: 48.88 seconds
+------------------------------------------------------------
+Model: /localscratch/a24ravi.58000144.0/C2D_23_12_2020_11_58/C2D_3x3_128_VAE_CONV_ATTENTION_AVENUE_normal_adam_mse_E300_BS064/C2D_3x3_128_VAE_CONV_ATTENTION_AVENUE_normal_adam_mse_E300_BS064.pth.tar
+                Loss
+Training    0.014413
+Validation  0.008161
+----------------------------------------
+Model: /localscratch/a24ravi.58000144.0/C2D_23_12_2020_11_58/C2D_3x3_128_SE_AVENUE_normal_adam_mse_E300_BS064/C2D_3x3_128_SE_AVENUE_normal_adam_mse_E300_BS064.pth.tar
+                Loss
+Training    0.014613
+Validation  0.003766
+----------------------------------------
+------------------------------------------------------------
+Epoch: [025/300] | time/epoch: 42.10 seconds
+------------------------------------------------------------
+Model: /localscratch/a24ravi.58000144.0/C2D_23_12_2020_11_58/C2D_3x3_128_VAE_CONV_ATTENTION_AVENUE_normal_adam_mse_E300_BS064/C2D_3x3_128_VAE_CONV_ATTENTION_AVENUE_normal_adam_mse_E300_BS064.pth.tar
+            Loss -2   Loss -1    Loss *
+Training    0.00044  0.000445  0.000436
+Validation  0.00146  0.002803  0.001586
+----------------------------------------
+Model: /localscratch/a24ravi.58000144.0/C2D_23_12_2020_11_58/C2D_3x3_128_SE_AVENUE_normal_adam_mse_E300_BS064/C2D_3x3_128_SE_AVENUE_normal_adam_mse_E300_BS064.pth.tar
+             Loss -2   Loss -1    Loss *
+Training    0.000366  0.000377  0.000366
+Validation  0.000513  0.000420  0.000449
+----------------------------------------
+------------------------------------------------------------
+Epoch: [050/300] | time/epoch: 42.26 seconds
+------------------------------------------------------------
+Model: /localscratch/a24ravi.58000144.0/C2D_23_12_2020_11_58/C2D_3x3_128_VAE_CONV_ATTENTION_AVENUE_normal_adam_mse_E300_BS064/C2D_3x3_128_VAE_CONV_ATTENTION_AVENUE_normal_adam_mse_E300_BS064.pth.tar
+             Loss -2   Loss -1    Loss *
+Training    0.000305  0.000304  0.000306
+Validation  0.000512  0.000465  0.000373
+----------------------------------------
+Model: /localscratch/a24ravi.58000144.0/C2D_23_12_2020_11_58/C2D_3x3_128_SE_AVENUE_normal_adam_mse_E300_BS064/C2D_3x3_128_SE_AVENUE_normal_adam_mse_E300_BS064.pth.tar
+             Loss -2   Loss -1    Loss *
+Training    0.000248  0.000247  0.000246
+Validation  0.000299  0.000313  0.000338
+----------------------------------------
+------------------------------------------------------------
+Epoch: [075/300] | time/epoch: 42.09 seconds
+------------------------------------------------------------
+Model: /localscratch/a24ravi.58000144.0/C2D_23_12_2020_11_58/C2D_3x3_128_VAE_CONV_ATTENTION_AVENUE_normal_adam_mse_E300_BS064/C2D_3x3_128_VAE_CONV_ATTENTION_AVENUE_normal_adam_mse_E300_BS064.pth.tar
+             Loss -2   Loss -1    Loss *
+Training    0.000268  0.000268  0.000267
+Validation  0.000369  0.000469  0.000311
+----------------------------------------
+Model: /localscratch/a24ravi.58000144.0/C2D_23_12_2020_11_58/C2D_3x3_128_SE_AVENUE_normal_adam_mse_E300_BS064/C2D_3x3_128_SE_AVENUE_normal_adam_mse_E300_BS064.pth.tar
+             Loss -2   Loss -1    Loss *
+Training    0.000176  0.000174  0.000175
+Validation  0.000186  0.000209  0.000197
+----------------------------------------
+------------------------------------------------------------
+Epoch: [100/300] | time/epoch: 42.36 seconds
+------------------------------------------------------------
+Model: /localscratch/a24ravi.58000144.0/C2D_23_12_2020_11_58/C2D_3x3_128_VAE_CONV_ATTENTION_AVENUE_normal_adam_mse_E300_BS064/C2D_3x3_128_VAE_CONV_ATTENTION_AVENUE_normal_adam_mse_E300_BS064.pth.tar
+             Loss -2   Loss -1    Loss *
+Training    0.000239  0.000239  0.000238
+Validation  0.000262  0.000260  0.000269
+----------------------------------------
+Model: /localscratch/a24ravi.58000144.0/C2D_23_12_2020_11_58/C2D_3x3_128_SE_AVENUE_normal_adam_mse_E300_BS064/C2D_3x3_128_SE_AVENUE_normal_adam_mse_E300_BS064.pth.tar
+             Loss -2   Loss -1    Loss *
+Training    0.000152  0.000151  0.000150
+Validation  0.000155  0.000164  0.000167
+----------------------------------------
+------------------------------------------------------------
+Epoch: [125/300] | time/epoch: 42.47 seconds
+------------------------------------------------------------
+Model: /localscratch/a24ravi.58000144.0/C2D_23_12_2020_11_58/C2D_3x3_128_VAE_CONV_ATTENTION_AVENUE_normal_adam_mse_E300_BS064/C2D_3x3_128_VAE_CONV_ATTENTION_AVENUE_normal_adam_mse_E300_BS064.pth.tar
+             Loss -2   Loss -1    Loss *
+Training    0.000227  0.000227  0.000226
+Validation  0.000230  0.000231  0.000228
+----------------------------------------
+Model: /localscratch/a24ravi.58000144.0/C2D_23_12_2020_11_58/C2D_3x3_128_SE_AVENUE_normal_adam_mse_E300_BS064/C2D_3x3_128_SE_AVENUE_normal_adam_mse_E300_BS064.pth.tar
+             Loss -2   Loss -1    Loss *
+Training    0.000139  0.000139  0.000139
+Validation  0.000143  0.000142  0.000139
+----------------------------------------
+------------------------------------------------------------
+Epoch: [150/300] | time/epoch: 42.21 seconds
+------------------------------------------------------------
+Model: /localscratch/a24ravi.58000144.0/C2D_23_12_2020_11_58/C2D_3x3_128_VAE_CONV_ATTENTION_AVENUE_normal_adam_mse_E300_BS064/C2D_3x3_128_VAE_CONV_ATTENTION_AVENUE_normal_adam_mse_E300_BS064.pth.tar
+             Loss -2   Loss -1    Loss *
+Training    0.000221  0.000220  0.000221
+Validation  0.000221  0.000228  0.000222
+----------------------------------------
+Model: /localscratch/a24ravi.58000144.0/C2D_23_12_2020_11_58/C2D_3x3_128_SE_AVENUE_normal_adam_mse_E300_BS064/C2D_3x3_128_SE_AVENUE_normal_adam_mse_E300_BS064.pth.tar
+             Loss -2   Loss -1    Loss *
+Training    0.000135  0.000135  0.000135
+Validation  0.000135  0.000136  0.000136
+----------------------------------------
+------------------------------------------------------------
+Epoch: [175/300] | time/epoch: 42.11 seconds
+------------------------------------------------------------
+Model: /localscratch/a24ravi.58000144.0/C2D_23_12_2020_11_58/C2D_3x3_128_VAE_CONV_ATTENTION_AVENUE_normal_adam_mse_E300_BS064/C2D_3x3_128_VAE_CONV_ATTENTION_AVENUE_normal_adam_mse_E300_BS064.pth.tar
+             Loss -2   Loss -1    Loss *
+Training    0.000218  0.000217  0.000217
+Validation  0.000220  0.000218  0.000217
+----------------------------------------
+Model: /localscratch/a24ravi.58000144.0/C2D_23_12_2020_11_58/C2D_3x3_128_SE_AVENUE_normal_adam_mse_E300_BS064/C2D_3x3_128_SE_AVENUE_normal_adam_mse_E300_BS064.pth.tar
+             Loss -2   Loss -1    Loss *
+Training    0.000133  0.000133  0.000133
+Validation  0.000133  0.000133  0.000133
+----------------------------------------
+------------------------------------------------------------
+Epoch: [200/300] | time/epoch: 42.36 seconds
+------------------------------------------------------------
+Model: /localscratch/a24ravi.58000144.0/C2D_23_12_2020_11_58/C2D_3x3_128_VAE_CONV_ATTENTION_AVENUE_normal_adam_mse_E300_BS064/C2D_3x3_128_VAE_CONV_ATTENTION_AVENUE_normal_adam_mse_E300_BS064.pth.tar
+             Loss -2   Loss -1    Loss *
+Training    0.000216  0.000216  0.000215
+Validation  0.000217  0.000216  0.000216
+----------------------------------------
+Model: /localscratch/a24ravi.58000144.0/C2D_23_12_2020_11_58/C2D_3x3_128_SE_AVENUE_normal_adam_mse_E300_BS064/C2D_3x3_128_SE_AVENUE_normal_adam_mse_E300_BS064.pth.tar
+             Loss -2   Loss -1    Loss *
+Training    0.000131  0.000131  0.000132
+Validation  0.000132  0.000132  0.000132
+----------------------------------------
+------------------------------------------------------------
+Epoch: [225/300] | time/epoch: 41.86 seconds
+------------------------------------------------------------
+Model: /localscratch/a24ravi.58000144.0/C2D_23_12_2020_11_58/C2D_3x3_128_VAE_CONV_ATTENTION_AVENUE_normal_adam_mse_E300_BS064/C2D_3x3_128_VAE_CONV_ATTENTION_AVENUE_normal_adam_mse_E300_BS064.pth.tar
+             Loss -2   Loss -1    Loss *
+Training    0.000214  0.000215  0.000215
+Validation  0.000215  0.000215  0.000216
+----------------------------------------
+Model: /localscratch/a24ravi.58000144.0/C2D_23_12_2020_11_58/C2D_3x3_128_SE_AVENUE_normal_adam_mse_E300_BS064/C2D_3x3_128_SE_AVENUE_normal_adam_mse_E300_BS064.pth.tar
+             Loss -2   Loss -1    Loss *
+Training    0.000130  0.000130  0.000130
+Validation  0.000131  0.000131  0.000131
+----------------------------------------
+------------------------------------------------------------
+Epoch: [250/300] | time/epoch: 41.59 seconds
+------------------------------------------------------------
+Model: /localscratch/a24ravi.58000144.0/C2D_23_12_2020_11_58/C2D_3x3_128_VAE_CONV_ATTENTION_AVENUE_normal_adam_mse_E300_BS064/C2D_3x3_128_VAE_CONV_ATTENTION_AVENUE_normal_adam_mse_E300_BS064.pth.tar
+             Loss -2   Loss -1    Loss *
+Training    0.000214  0.000215  0.000214
+Validation  0.000215  0.000215  0.000215
+----------------------------------------
+Model: /localscratch/a24ravi.58000144.0/C2D_23_12_2020_11_58/C2D_3x3_128_SE_AVENUE_normal_adam_mse_E300_BS064/C2D_3x3_128_SE_AVENUE_normal_adam_mse_E300_BS064.pth.tar
+             Loss -2   Loss -1    Loss *
+Training    0.000130  0.000130  0.000130
+Validation  0.000131  0.000131  0.000131
+----------------------------------------
+------------------------------------------------------------
+Epoch: [275/300] | time/epoch: 41.93 seconds
+------------------------------------------------------------
+Model: /localscratch/a24ravi.58000144.0/C2D_23_12_2020_11_58/C2D_3x3_128_VAE_CONV_ATTENTION_AVENUE_normal_adam_mse_E300_BS064/C2D_3x3_128_VAE_CONV_ATTENTION_AVENUE_normal_adam_mse_E300_BS064.pth.tar
+             Loss -2   Loss -1    Loss *
+Training    0.000214  0.000214  0.000214
+Validation  0.000215  0.000215  0.000215
+----------------------------------------
+Model: /localscratch/a24ravi.58000144.0/C2D_23_12_2020_11_58/C2D_3x3_128_SE_AVENUE_normal_adam_mse_E300_BS064/C2D_3x3_128_SE_AVENUE_normal_adam_mse_E300_BS064.pth.tar
+             Loss -2   Loss -1    Loss *
+Training    0.000130  0.000130  0.000130
+Validation  0.000131  0.000131  0.000131
+----------------------------------------
+../general/data.py:403: VisibleDeprecationWarning: Creating an ndarray from ragged nested sequences (which is a list-or-tuple of lists-or-tuples-or ndarrays with different lengths or shapes) is deprecated. If you meant to do this, you must specify 'dtype=object' when creating the ndarray
+  temporal_labels = np.array(temporal_labels)
+0it [00:00, ?it/s]1it [00:12, 12.98s/it]2it [00:23, 12.24s/it]3it [00:31, 10.93s/it]4it [00:39, 10.15s/it]5it [00:48,  9.74s/it]6it [00:59, 10.17s/it]7it [01:04,  8.69s/it]8it [01:05,  6.18s/it]9it [01:15,  7.42s/it]10it [01:22,  7.39s/it]11it [01:26,  6.42s/it]12it [01:37,  7.77s/it]13it [01:42,  6.84s/it]14it [01:46,  6.10s/it]15it [01:55,  6.91s/it]16it [02:02,  6.75s/it]17it [02:05,  5.85s/it]18it [02:08,  4.87s/it]19it [02:10,  4.07s/it]20it [02:13,  3.56s/it]21it [02:13,  2.69s/it]21it [02:13,  6.37s/it]
+0it [00:00, ?it/s]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+1it [00:23, 23.25s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+2it [00:42, 22.09s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+3it [00:55, 19.29s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+4it [01:08, 17.50s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+5it [01:23, 16.70s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+6it [01:42, 17.42s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+7it [01:52, 15.09s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+8it [01:53, 10.84s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+9it [02:11, 13.06s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+10it [02:25, 13.31s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+11it [02:33, 11.69s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+12it [02:52, 13.94s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+13it [03:01, 12.41s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+14it [03:09, 11.16s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+15it [03:23, 12.14s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+16it [03:35, 11.86s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+17it [03:42, 10.47s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+18it [03:47,  8.88s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+19it [03:52,  7.57s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+20it [03:56,  6.69s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+21it [03:58,  5.17s/it]21it [03:58, 11.35s/it]
+/home/a24ravi/ENV/lib/python3.7/site-packages/numpy/core/_asarray.py:83: VisibleDeprecationWarning: Creating an ndarray from ragged nested sequences (which is a list-or-tuple of lists-or-tuples-or ndarrays with different lengths or shapes) is deprecated. If you meant to do this, you must specify 'dtype=object' when creating the ndarray
+  return array(a, dtype, copy=False, order=order)
+0it [00:00, ?it/s]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+1it [00:27, 27.16s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+2it [00:49, 25.79s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+3it [01:05, 22.69s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+4it [01:21, 20.71s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+5it [01:38, 19.77s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+6it [02:01, 20.63s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+7it [02:12, 17.64s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+8it [02:13, 12.67s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+9it [02:34, 15.29s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+10it [02:50, 15.40s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+11it [02:58, 13.33s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+12it [03:20, 15.79s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+13it [03:29, 13.95s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+14it [03:39, 12.51s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+15it [03:55, 13.76s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+16it [04:08, 13.47s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+17it [04:16, 11.74s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+18it [04:21,  9.89s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+19it [04:26,  8.33s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+20it [04:31,  7.37s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
+OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
+21it [04:33,  5.69s/it]21it [04:33, 13.02s/it]
+/home/a24ravi/ENV/lib/python3.7/site-packages/numpy/core/_asarray.py:83: VisibleDeprecationWarning: Creating an ndarray from ragged nested sequences (which is a list-or-tuple of lists-or-tuples-or ndarrays with different lengths or shapes) is deprecated. If you meant to do this, you must specify 'dtype=object' when creating the ndarray
+  return array(a, dtype, copy=False, order=order)
+------------------------------------------------------------
+Epoch: [300/300] | time/epoch: 41.84 seconds
+------------------------------------------------------------
+Model: /localscratch/a24ravi.58000144.0/C2D_23_12_2020_11_58/C2D_3x3_128_VAE_CONV_ATTENTION_AVENUE_normal_adam_mse_E300_BS064/C2D_3x3_128_VAE_CONV_ATTENTION_AVENUE_normal_adam_mse_E300_BS064.pth.tar
+             Loss -2   Loss -1    Loss *
+Training    0.000214  0.000214  0.000214
+Validation  0.000215  0.000215  0.000215
+----------------------------------------
+Model: /localscratch/a24ravi.58000144.0/C2D_23_12_2020_11_58/C2D_3x3_128_SE_AVENUE_normal_adam_mse_E300_BS064/C2D_3x3_128_SE_AVENUE_normal_adam_mse_E300_BS064.pth.tar
+             Loss -2   Loss -1    Loss *
+Training    0.000130  0.000129  0.000130
+Validation  0.000131  0.000131  0.000131
+----------------------------------------
+----------------------------------------
+[INFO]: TESTING DATA READY
+----------------------------------------
+----------------------------------------
+/localscratch/a24ravi.58000144.0/C2D_23_12_2020_11_58/C2D_3x3_128_VAE_CONV_ATTENTION_AVENUE_normal_adam_mse_E300_BS064/C2D_3x3_128_VAE_CONV_ATTENTION_AVENUE_normal_adam_mse_E300_BS064.pth.tar
+Calculation of AUC-ROC score Only one class present in y_true. ROC AUC score is not defined in that case.
+Calculation of AUC-ROC score Only one class present in y_true. ROC AUC score is not defined in that case.
+Calculation of AUC-ROC score Only one class present in y_true. ROC AUC score is not defined in that case.
+Calculation of AUC-ROC score Only one class present in y_true. ROC AUC score is not defined in that case.
+Calculation of AUC-ROC score Only one class present in y_true. ROC AUC score is not defined in that case.
+Calculation of AUC-ROC score Only one class present in y_true. ROC AUC score is not defined in that case.
+Calculation of AUC-ROC score Only one class present in y_true. ROC AUC score is not defined in that case.
+Calculation of AUC-ROC score Only one class present in y_true. ROC AUC score is not defined in that case.
+Calculation of AUC-ROC score Only one class present in y_true. ROC AUC score is not defined in that case.
+AUC-ROC Score of  OneClassSVM: 0.6739044133816172
+-------------------- TEST RESULTS --------------------
+{'agg_abs_eer': 0.3623166938231374,
+ 'agg_abs_reg_aucroc': 0.6752106988552122,
+ 'agg_sqr_eer': 0.25895252536864966,
+ 'agg_sqr_reg_aucroc': 0.821258695028017,
+ 'mean_abs_vid_aucroc': 0.8413231354669412,
+ 'mean_sqr_vid_aucroc': 0.8366674498186697,
+ 'overall_abs_aucroc': 0.938675190198244,
+ 'overall_abs_eer': 0.11761220559934975,
+ 'overall_sqr_aucroc': 0.9692835617770672,
+ 'overall_sqr_eer': 0.08923364050028794}
+agg_abs_reg_report
+('              precision    recall  f1-score   support\n'
+ '\n'
+ '           0       0.84      0.24      0.37      8573\n'
+ '           1       0.49      0.94      0.65      6751\n'
+ '\n'
+ '    accuracy                           0.55     15324\n'
+ '   macro avg       0.67      0.59      0.51     15324\n'
+ 'weighted avg       0.69      0.55      0.49     15324\n')
+agg_sqr_reg_report
+('              precision    recall  f1-score   support\n'
+ '\n'
+ '           0       0.91      0.17      0.29      8573\n'
+ '           1       0.48      0.98      0.65      6751\n'
+ '\n'
+ '    accuracy                           0.53     15324\n'
+ '   macro avg       0.70      0.57      0.47     15324\n'
+ 'weighted avg       0.72      0.53      0.44     15324\n')
+agg_abs_conf_matrix
+array([[2023, 6550],
+       [ 377, 6374]])
+agg_sqr_conf_matrix
+array([[1455, 7118],
+       [ 137, 6614]])
+======================================================
+----------------------------------------
+----------------------------------------
+/localscratch/a24ravi.58000144.0/C2D_23_12_2020_11_58/C2D_3x3_128_SE_AVENUE_normal_adam_mse_E300_BS064/C2D_3x3_128_SE_AVENUE_normal_adam_mse_E300_BS064.pth.tar
+Calculation of AUC-ROC score Only one class present in y_true. ROC AUC score is not defined in that case.
+Calculation of AUC-ROC score Only one class present in y_true. ROC AUC score is not defined in that case.
+Calculation of AUC-ROC score Only one class present in y_true. ROC AUC score is not defined in that case.
+Calculation of AUC-ROC score Only one class present in y_true. ROC AUC score is not defined in that case.
+Calculation of AUC-ROC score Only one class present in y_true. ROC AUC score is not defined in that case.
+Calculation of AUC-ROC score Only one class present in y_true. ROC AUC score is not defined in that case.
+Calculation of AUC-ROC score Only one class present in y_true. ROC AUC score is not defined in that case.
+Calculation of AUC-ROC score Only one class present in y_true. ROC AUC score is not defined in that case.
+Calculation of AUC-ROC score Only one class present in y_true. ROC AUC score is not defined in that case.
+AUC-ROC Score of  OneClassSVM: 0.674550601633763
+-------------------- TEST RESULTS --------------------
+{'agg_abs_eer': 0.35816916012425026,
+ 'agg_abs_reg_aucroc': 0.6837320245793777,
+ 'agg_sqr_eer': 0.2453039342145101,
+ 'agg_sqr_reg_aucroc': 0.8249949551909163,
+ 'mean_abs_vid_aucroc': 0.8392002089500638,
+ 'mean_sqr_vid_aucroc': 0.8345927970272796,
+ 'overall_abs_aucroc': 0.9413237257660615,
+ 'overall_abs_eer': 0.09914848944506516,
+ 'overall_sqr_aucroc': 0.96872334132215,
+ 'overall_sqr_eer': 0.08695008146947222}
+agg_abs_reg_report
+('              precision    recall  f1-score   support\n'
+ '\n'
+ '           0       0.85      0.26      0.40      8573\n'
+ '           1       0.50      0.94      0.65      6751\n'
+ '\n'
+ '    accuracy                           0.56     15324\n'
+ '   macro avg       0.68      0.60      0.52     15324\n'
+ 'weighted avg       0.70      0.56      0.51     15324\n')
+agg_sqr_reg_report
+('              precision    recall  f1-score   support\n'
+ '\n'
+ '           0       0.90      0.19      0.31      8573\n'
+ '           1       0.48      0.97      0.65      6751\n'
+ '\n'
+ '    accuracy                           0.53     15324\n'
+ '   macro avg       0.69      0.58      0.48     15324\n'
+ 'weighted avg       0.72      0.53      0.46     15324\n')
+agg_abs_conf_matrix
+array([[2205, 6368],
+       [ 378, 6373]])
+agg_sqr_conf_matrix
+array([[1592, 6981],
+       [ 182, 6569]])
+======================================================
+----------------------------------------
+----------------------------------------
+[INFO]: ** Sucessfully Completed Execution **
+----------------------------------------
+[STATUS] Script completed at Wed Dec 23 16:32:18 PST 2020
+cp: cannot stat '/home/a24ravi/projects/def-karray/a24ravi/slurm_outputs/C2D_%u-%x-%j.txt': No such file or directory
+[STATUS] Models copied safely
+[STATUS] Deactivate python environment. EXITING ...

@@ -4,12 +4,12 @@
 # ---------------------------------------------------------------------
 #SBATCH --account=def-karray
 #SBATCH --nodes=1
-#SBATCH --gres=gpu:2   # Request GPU "generic resources" [--gres=gpu:2]
-#SBATCH --cpus-per-task=32  # Cores proportional to GPUs: 6 on Cedar, 16 on Graham. [--ntasks-per-node=32]
-#SBATCH --mem=120G        # Memory proportional to GPUs: 31500 Cedar, 63500 Graham. [--mem=127G ]
+#SBATCH --gres=gpu:v100l:1   # Request GPU "generic resources" [--gres=gpu:2]
+#SBATCH --cpus-per-task=8  # Cores proportional to GPUs: 6 on Cedar, 16 on Graham. [--ntasks-per-node=32]
+#SBATCH --mem=64G        # Memory proportional to GPUs: 31500 Cedar, 63500 Graham. [--mem=127G ]
 
 #SBATCH --time=0-36:00      # time (DD-HH:MM)
-#SBATCH --output=../../../projects/def-karray/a24ravi/slurm_outputs/C2D_%u-%x-%j.txt
+#SBATCH --output=slurm_outputs/C2D_%u-%x-%j.txt
 
 #SBATCH --mail-user=ambareesh.ravi@uwaterloo.ca
 #SBATCH --mail-type=ALL
@@ -31,14 +31,14 @@ module load python/3.7.4
 source /home/$USER/ENV/bin/activate
 echo "[STATUS] Python environment ready"
 
-cd ~/workspace/Thesis_VideoAnomalyDetection/AutoEncoders/
+cd ~/scratch/Thesis_VideoAnomalyDetection/AutoEncoders/
 
 echo "[STATUS] Starting script at `date`"
 cp run_config_c2d.py $version_path
 python run_config_c2d.py --model_path $version_path --data_path $SLURM_TMPDIR/
 echo "[STATUS] Script completed at `date`" 
 
-cp ${project_dir}slurm_outputs/C2D_%u-%x-%j.txt $version_path
+cp slurm_outputs/C2D_%u-%x-%j.txt $version_path
 tar -cjf ${project_dir}trained_models/${version}.tar -C $version_path $(ls $version_path)
 echo "[STATUS] Models copied safely"
 
