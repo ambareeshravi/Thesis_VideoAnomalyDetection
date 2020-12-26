@@ -434,7 +434,7 @@ class HashemCLSTM(nn.Module):
             TimeDistributed(C2D_BN_A(self.channels, self.channels, 5, 1))
         )
         
-    def forward(self, x):
+    def forward(self, x, future_steps = 0):
         # x - bs,c,ts,w,h        
         eo = self.encoder_convs(x.transpose(2,1))
         

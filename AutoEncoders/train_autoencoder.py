@@ -174,9 +174,9 @@ class AutoEncoderModel:
         reconstructions, encodings = self.model(self.get_inputs(images))
         return self.loss_criterion(images, reconstructions) + (self.noose_factor * self.loss_criterion(encodings, encodings.mean(dim = 0)))
     
-    def origin_push(self, images, lambda_ = 1e-4):
+    def origin_push(self, images, lambda_ = 1e-10):
         reconstructions, encodings = self.model(self.get_inputs(images))
-        return self.loss_criterion(image, reconstructions) - (lambda_ * torch.sum(encodings))
+        return self.loss_criterion(images, reconstructions) - (lambda_ * torch.sum(encodings))
     
     def double_translative_step(self, images):
         reconstructions, encodings = self.model(self.get_inputs(images))

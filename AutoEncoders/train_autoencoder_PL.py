@@ -80,6 +80,9 @@ class AutoEncoderLM(LightningModule):
         if "attention" in self.model_file.lower():
             self.step = self.attention_step
             
+        if "origin" in self.model_file.lower():
+            self.step = self.origin_push
+            
         if "clstm" in self.model_file.lower() and "future" in self.model_file.lower():
             self.step = self.future_step
         
@@ -151,6 +154,10 @@ class AutoEncoderLM(LightningModule):
     def noose_step(self, images):
         reconstructions, encodings = self.model(self.get_inputs(images))
         return self.loss_criterion(images, reconstructions) + (self.noose_factor * self.loss_criterion(encodings, encodings.mean(dim = 0)))
+    
+    def origin_push(self, images, lambda_ = 1e-8):
+        reconstructions, encodings = self.model(self.get_inputs(images))
+        return self.loss_criterion(images, reconstructions) - (lambda_ * torch.sum(encodings))
     
     def double_translative_step(self, images):
         reconstructions, encodings = self.model(self.get_inputs(images))
