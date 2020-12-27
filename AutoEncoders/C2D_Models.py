@@ -894,7 +894,7 @@ class C2D_AE_224(nn.Module):
             self.__name__ += "_DP"
         if add_res:
             self.__name__ += "_Res"
-        if add_res:
+        if add_sqzex:
             self.__name__ += "_SE"
         
         assert add_res != add_sqzex, "Either Squeeze Excitation Block or Residual Block. Not both"
