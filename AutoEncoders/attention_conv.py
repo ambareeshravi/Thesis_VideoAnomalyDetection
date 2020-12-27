@@ -3,12 +3,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class AugmentedConv(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, dk, dv, Nh, shape=0, relative=False, stride=1):
+    def __init__(self, in_channels, out_channels, kernel_size, dk = 1, dv = 1, Nh = 1, shape=0, relative=False, stride=1):
         super(AugmentedConv, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
         self.dk = dk
+        if self.dk == 1: self.dk = self.out_channels // 8
         self.dv = dv
         self.Nh = Nh
         self.shape = shape
