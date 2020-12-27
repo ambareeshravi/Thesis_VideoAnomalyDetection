@@ -19,7 +19,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     # Editable
-    IMAGE_SIZE = 128
+    IMAGE_SIZE = 224
     EPOCHS = 300
     BATCH_SIZE = 128
     IMAGE_TYPE = "normal"
@@ -59,12 +59,24 @@ if __name__ == '__main__':
     INFO("TRAINING DATA READY")
     
     MODELS_LIST = [
-        ConvAttentionWrapper(C2D_AE_128_3x3(channels = CHANNELS)),
-	ConvAttentionWrapper(C2D_AE_3x3_Res(channels = CHANNELS)),
-	ConvAttentionWrapper(C2D_AE_ACB_128_3x3(channels = CHANNELS)),
-	ConvAttentionWrapper(C2D_AE_128_3x3_VAE(channels = CHANNELS))
+        C2D_AE_224(channels = CHANNELS),
+        ConvAttentionWrapper(C2D_AE_224(channels = CHANNELS)),
+
+        C2D_AE_224(channels = CHANNELS),
+        ConvAttentionWrapper(C2D_AE_224(channels = CHANNELS)),
+
+        C2D_AE_224(channels = CHANNELS, add_dropouts = True),
+        ConvAttentionWrapper(C2D_AE_224(channels = CHANNELS, add_dropouts = True)),
+
+        C2D_AE_224(channels = CHANNELS, add_sqzex = True),
+        ConvAttentionWrapper(C2D_AE_224(channels = CHANNELS, add_sqzex = True)),
     ]
     
+    # weighted
+    # psnr
+    # dropout
+    # se
+
     model_files = [
         "%s_%s_%s_%s_%s_E%03d_BS%03d"%(m.__name__, DATA_TYPE.upper(), IMAGE_TYPE, OPTIMIZER_TYPE, LOSS_TYPE, EPOCHS, BATCH_SIZE) for m in MODELS_LIST
     ]
@@ -72,11 +84,18 @@ if __name__ == '__main__':
     if DENOISING: model_files = [mf + "_DeNoising" for mf in model_files]
     if PATCH_WISE: model_files = [mf + "_PatchWise" for mf in model_files]
     if STACKED: model_files = [mf + "_Stacked" for mf in model_files]
-        
     
     MODEL_PATHS = [os.path.join(MODEL_PATH, mf) for mf in model_files]
     OPTIMIZERS = [select_optimizer[OPTIMIZER_TYPE](m) for m in MODELS_LIST]
-    LOSS_FUNCTIONS = [select_loss[LOSS_TYPE] for m in MODELS_LIST]
+    # LOSS_FUNCTIONS = [select_loss[LOSS_TYPE] for m in MODELS_LIST]
+
+    model_files[0] += "_WEIGHTED"
+    model_files[1] += "_WEIGHTED"
+    model_files[2] += "_PSNR"
+    model_files[3] += "_PSNR"
+    
+    LOSS_FUNCTIONS = [select_loss["weighted"], select_loss["weighted"], select_loss["psnr"], select_loss["psnr"], select_loss["mse"], select_loss["mse"], select_loss["mse"], select_loss["mse"]] # change
+
     INFO("MODEL, OPTIM, LOSS ARE READY")
     
     # Automated
