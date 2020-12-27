@@ -62,14 +62,13 @@ class ImagesHandler:
     
     def read_gray(self, files):
         return [self.data_transform(read_image(image_path, asGray = True)) for image_path in files]
-            
+        
     def read_flow(self, files):
         frames = [read_image(image_path) for image_path in files]
         frame_arrays = [np.array(frame) for frame in frames]
-        flows = [self.opt_flow.get_optical_flow(frame_array, frame_arrays[idx+1]) for idx, frame_array in enumerate(frame_arrays[:-1])] # 1 channel
-        combined = [np.concatenate((extend_gray(frame), extend_gray(image_int(flow))), axis=-1) for frame, flow in zip(frame_arrays[:-1], flows)]
-        flow_images = [self.data_transform(Image.fromarray(cmb_img)) for cmb_img in combined]
-        return flow_images
+        frame_flows = [self.opt_flow.get_optical_flow(frame_array, frame_arrays[idx+1]) for idx, frame_array in enumerate(frame_arrays[:-1])]
+        flow_combined = [torch.cat((self.data_transform(Image.fromarray(image_255(frame))), self.data_transform(Image.fromarray(image_255(flow)))), dim = 0) for idx, (frame, flow) in enumerate(zip(frame_arrays[:-1], frame_flows))]
+        return flow_combined
         
     def get_difference(self, frame1, frame2):
         difference = (np.asarray(frame1.covert('L')) - np.asarray(frame2.covert('L')))*255

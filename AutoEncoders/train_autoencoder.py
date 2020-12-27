@@ -183,9 +183,9 @@ class AutoEncoderModel:
         return self.loss_criterion(images, reconstructions) - (lambda_ * torch.sum(encodings))
     
     def gaussian(self, x):
-        return torch.exp(-torch.norm(x - x.mean())**2 / (2 * self.sigma))
+        return torch.exp(-torch.norm(x - x.mean())**2 / (2 * self.sigma**2))
     
-    def gaussian_push(self, images, lambda_ = 1e-2):
+    def gaussian_push(self, images, lambda_ = 1e-4):
         reconstructions, encodings = self.model(self.get_inputs(images))
         return self.loss_criterion(images, reconstructions) + (lambda_ * (1 - self.gaussian(encodings)))
     

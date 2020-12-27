@@ -138,7 +138,7 @@ class C2D_AE_128_5x5(nn.Module):
         encodings = self.encoder(x)
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
-
+    
 class C2D_AE_128_3x3_VAE(C2D_AE_128_3x3):
     def __init__(
         self,
@@ -553,9 +553,9 @@ class C2D_DP_AE_128_3x3(nn.Module):
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
 
-class AttentionWapper(nn.Module):
+class AttentionWrapper(nn.Module):
     def __init__(self, image_size, model, projection_ratio = 4):
-        super(AttentionWapper, self).__init__()
+        super(AttentionWrapper, self).__init__()
         self.image_size = image_size # w,h
         self.model = model
         self.projection_dim = (self.image_size[0] * projection_ratio, self.image_size[1] * projection_ratio)
@@ -612,6 +612,8 @@ class ConvAttentionWapper(nn.Module):
         encodings = self.model.encoder(x_a)
         reconstructions = self.model.decoder(encodings)
         return reconstructions, encodings, x_a
+
+ConvAttentionWrapper = ConvAttentionWapper
 
 class AAC_AE(nn.Module):
     def __init__(
@@ -866,6 +868,190 @@ class C2D_AE_128_OriginPush(nn.Module):
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
     
+class C2D_AE_224(nn.Module):
+    def __init__(
+        self,
+        channels = 3,
+        filters_count = [64,64,96,96,128],
+        conv_type = "conv2d",
+        encoder_activation = "tanh",
+        use_aug_conv = False,
+        add_sqzex = False,
+        add_dropouts = False,
+        add_res = False
+    ):
+        super(C2D_AE_224, self).__init__()
+        self.__name__ = "C2D_AE_224"
+        self.channels = channels
+        self.filters_count = filters_count
+        self.embedding_dim = [1, self.filters_count[4], 4, 4] # check and change
+        self.conv_layer = C2D_BN_A
+        if use_aug_conv:
+            self.__name__ += "_AAC"
+            self.conv_layer = self.get_AAC
+            add_res = False # change
+        if add_dropouts:
+            self.__name__ += "_DP"
+        if add_res:
+            self.__name__ += "_Res"
+        
+        assert add_res != add_sqzex, "Either Squeeze Excitation Block or Residual Block. Not both"
+        
+        self.encoder_layers = [
+            self.conv_layer(self.channels, self.filters_count[0], 3, 2, conv_type = conv_type),
+            self.conv_layer(self.filters_count[0], self.filters_count[1], 5, 2, conv_type = conv_type),
+            self.conv_layer(self.filters_count[1], self.filters_count[2], 5, 2, conv_type = conv_type),
+            self.conv_layer(self.filters_count[2], self.filters_count[3], 5, 2, conv_type = conv_type),
+            C2D_BN_A(self.filters_count[3], self.filters_count[4], 7 if use_aug_conv else 5, 2, conv_type = conv_type, activation_type = encoder_activation),
+        ]
+        
+        if add_sqzex:
+            modified_layers = list()
+            for (layer, output_filters) in zip(self.encoder_layers, self.filters_count):
+                modified_layers.append(layer)
+                modified_layers.append(SE_Block(output_filters))
+            self.encoder_layers = modified_layers[:-1]
+            
+        if add_res:
+            modified_layers = list()
+            for (layer, output_filters) in zip(self.encoder_layers, self.filters_count):
+                modified_layers.append(layer)
+                modified_layers.append(C2D_Res(output_filters, 5))
+            self.encoder_layers = modified_layers[:-1]
+            
+        if add_dropouts:
+            modified_layers = list()
+            for layer in self.encoder_layers:
+                modified_layers.append(layer)
+                modified_layers.append(nn.Dropout2d(0.2))
+            self.encoder_layers = modified_layers[:-1]
+        
+        self.encoder = nn.Sequential(*self.encoder_layers)
+        
+        self.decoder_layers = [
+            CT2D_BN_A(self.filters_count[4], self.filters_count[3], 5, 2),
+            CT2D_BN_A(self.filters_count[3], self.filters_count[2], 5, 2),
+            CT2D_BN_A(self.filters_count[2], self.filters_count[1], 6, 2),
+            CT2D_BN_A(self.filters_count[1], self.filters_count[0], 5, 2),
+            CT2D_BN_A(self.filters_count[0], self.channels, 4, 2, activation_type = "sigmoid"),
+        ]
+        
+        if add_sqzex:
+            modified_layers = list()
+            for layer, output_filters in zip(self.decoder_layers, self.filters_count[::-1][1:] + [self.channels]):
+                modified_layers.append(layer)
+                if output_filters != self.channels:
+                    modified_layers.append(SE_Block(output_filters))
+            self.decoder_layers = modified_layers
+            
+        if add_res:
+            modified_layers = list()
+            for layer, output_filters in zip(self.decoder_layers, self.filters_count[::-1][1:] + [self.channels]):
+                modified_layers.append(layer)
+                modified_layers.append(CT2D_Res(output_filters, 5))
+            self.decoder_layers = modified_layers[:-1]
+            
+        if add_dropouts:
+            modified_layers = list()
+            for layer in self.decoder_layers:
+                modified_layers.append(layer)
+                modified_layers.append(nn.Dropout2d(0.2))
+            self.decoder_layers = modified_layers[:-1]
+        
+        self.decoder = nn.Sequential(*self.decoder_layers)
+    
+    def get_AAC(self, in_channels, out_channels, kernel_size = 3, stride = 2, padding = 0, conv_type = None, activation_type="leaky_relu"):
+        return nn.Sequential(
+            AugmentedConv(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, stride=stride),
+            BN_A(out_channels, activation_type = activation_type, is3d=False)
+        )
+    
+    def forward(self, x):
+        encodings = self.encoder(x)
+        reconstructions = self.decoder(encodings)
+        return reconstructions, encodings
+    
+class C2D_AE_224_VAE(C2D_AE_224):
+    def __init__(
+        self,
+        isTrain = True,
+        channels = 3,
+        filters_count = [64,64,96,96,128],
+        conv_type = "conv2d"
+    ):
+        C2D_AE_224.__init__(self, channels = channels, filters_count = filters_count, conv_type = conv_type)
+        self.__name__ = "C2D_AE_224_VAE"
+        self.view_shape = tuple([-1] + self.embedding_dim[1:])
+        self.embedding_dim = np.product(self.embedding_dim)
+        self.isTrain = isTrain
+        
+        self.fc_mu = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(self.embedding_dim, self.embedding_dim)
+        )
+        self.fc_logvar = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(self.embedding_dim, self.embedding_dim)
+        )
+                
+    def latent_sample(self, mu, logvar):
+        if self.isTrain:
+            std = logvar.mul(0.5).exp_()
+            eps = torch.empty_like(std).normal_()
+            return eps.mul(std).add_(mu)
+        else:
+            return mu
+    
+    def vae_loss(self, original, reconstruction, mu, logvar, variational_beta = 1.0):
+        recon_loss = F.binary_cross_entropy(reconstruction.flatten(), original.flatten(), reduction='sum')
+        kldivergence = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+        return recon_loss + (variational_beta * kldivergence)
+
+    def forward(self, x):
+        # Encoder
+        encodings = self.encoder(x)
+        mu = self.fc_mu(encodings)
+        logvar = self.fc_logvar(encodings)
+        
+        latent = self.latent_sample(mu, logvar)
+        reconstructions = self.decoder(latent.reshape(*self.view_shape))
+        return reconstructions, mu, logvar
+    
+class C2D_AE_ACB_224(nn.Module):
+    def __init__(
+        self,
+        channels = 3,
+        filters_count = [64,64,96,96,128],
+        conv_type = "conv2d",
+        encoder_activation = "tanh"
+    ):
+        super(C2D_AE_ACB_224, self).__init__()
+        self.__name__ = "C2D_AE_224_ACB"
+        self.channels = channels
+        self.filters_count = filters_count
+        self.embedding_dim = [1, self.filters_count[4], 4, 4] # check and change
+        
+        self.encoder = nn.Sequential(
+            C2D_ACB(self.channels, self.filters_count[0], 3, 2),
+            C2D_ACB(self.filters_count[0], self.filters_count[1], 5, 2),
+            C2D_ACB(self.filters_count[1], self.filters_count[2], 5, 2),
+            C2D_ACB(self.filters_count[2], self.filters_count[3], 5, 2),
+            C2D_BN_A(self.filters_count[3], self.filters_count[4], 5, 3, activation_type = encoder_activation),
+        )
+        
+        self.decoder = nn.Sequential(
+            CT2D_BN_A(self.filters_count[4], self.filters_count[3], 5, 2),
+            CT2D_ADB(self.filters_count[3], self.filters_count[2], 5, 2),
+            CT2D_ADB(self.filters_count[2], self.filters_count[1], 6, 2),
+            CT2D_ADB(self.filters_count[1], self.filters_count[0], 5, 2),
+            CT2D_ADB(self.filters_count[0], self.channels, 4, 2, activation_type = "sigmoid"),
+        )
+        
+    def forward(self, x):
+        encodings = self.encoder(x)
+        reconstructions = self.decoder(encodings)
+        return reconstructions, encodings
+        
 C2D_MODELS_DICT = {
     128: {
         "vanilla": {
@@ -902,7 +1088,10 @@ C2D_MODELS_DICT = {
     },
     
     224: {
-        "generic": Generic_C2D_AE
+        "generic": Generic_C2D_AE,
+        "vanilla": C2D_AE_224,
+        "acb": C2D_AE_ACB_224,
+        "vae": C2D_AE_224_VAE,
     },
     
     "multi_resolution": C2D_Multi_AE

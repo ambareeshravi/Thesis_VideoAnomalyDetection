@@ -28,6 +28,7 @@ def image_1(image):
     return image/255.
 
 def image_255(image):
+    if image.max() > 1: return image.astype(np.uint8)
     return (image*255).astype(np.uint8)
 
 def image_int(image):
