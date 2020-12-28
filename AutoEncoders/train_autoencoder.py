@@ -79,7 +79,7 @@ class AutoEncoderModel:
             if "zero" in self.model_file.lower():
                 self.is_zero_push = True
             self.step = self.gaussian_push
-            self.sigma = 0.2
+            self.sigma = 0.1
             
         if "clstm" in self.model_file.lower() and "future" in self.model_file.lower():
             self.step = self.future_step
@@ -186,16 +186,17 @@ class AutoEncoderModel:
         return self.loss_criterion(images, reconstructions) - (lambda_ * torch.sum(encodings))
     
     def gaussian(self, x):
-        to_push = x.flatten().mean(dim=0)
-        if self.is_zero_push: to_push = torch.zeros_like(x)
-        return torch.exp(-torch.norm(x.flatten() - to_push)**2 / (2 * self.sigma**2))
+        x = x.flatten(start_dim = 1, end_dim = -1)
+        to_push = x.mean(dim=0)
+        if is_zero_push: to_push = torch.zeros_like(x)
+        return torch.exp(-torch.norm((x-to_push), dim = -1)**2 / (2 * self.sigma**2))
     
     def gaussian_push_loss(self, encodings):
-        pass
+        return torch.sum(1 - self.gaussian(encodings))
     
     def gaussian_push(self, images, lambda_ = 1e-4):
         reconstructions, encodings = self.model(self.get_inputs(images))
-        return self.loss_criterion(images, reconstructions) + (lambda_ * (1 - self.gaussian(encodings)))
+        return self.loss_criterion(images, reconstructions) + (lambda_ * self.gaussian_push_loss(encodings))
     
     def double_translative_step(self, images):
         reconstructions, encodings = self.model(self.get_inputs(images))
