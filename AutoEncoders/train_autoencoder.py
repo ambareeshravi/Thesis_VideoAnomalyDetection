@@ -75,6 +75,9 @@ class AutoEncoderModel:
             self.step = self.origin_push
             
         if "gaussian" in self.model_file.lower():
+            self.is_zero_push = False
+            if "zero" in self.model_file.lower():
+                self.is_zero_push = True
             self.step = self.gaussian_push
             self.sigma = 0.2
             
@@ -183,7 +186,12 @@ class AutoEncoderModel:
         return self.loss_criterion(images, reconstructions) - (lambda_ * torch.sum(encodings))
     
     def gaussian(self, x):
-        return torch.exp(-torch.norm(x - x.mean())**2 / (2 * self.sigma**2))
+        to_push = x.flatten().mean(dim=0)
+        if self.is_zero_push: to_push = torch.zeros_like(x)
+        return torch.exp(-torch.norm(x.flatten() - to_push)**2 / (2 * self.sigma**2))
+    
+    def gaussian_push_loss(self, encodings):
+        
     
     def gaussian_push(self, images, lambda_ = 1e-4):
         reconstructions, encodings = self.model(self.get_inputs(images))

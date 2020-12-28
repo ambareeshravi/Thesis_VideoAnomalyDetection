@@ -897,7 +897,7 @@ class C2D_AE_224(nn.Module):
         if add_sqzex:
             self.__name__ += "_SE"
         
-        assert (add_res and add_sqzex) == True, "Either Squeeze Excitation Block or Residual Block. Not both"
+        assert (add_res and add_sqzex) != True, "Either Squeeze Excitation Block or Residual Block. Not both"
         
         self.encoder_layers = [
             self.conv_layer(self.channels, self.filters_count[0], 3, 2, conv_type = conv_type),
