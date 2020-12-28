@@ -72,13 +72,11 @@ if __name__ == '__main__':
         ConvAttentionWrapper(C2D_AE_224(channels = CHANNELS, add_sqzex = True)),
     ]
     
-    # weighted
-    # psnr
-    # dropout
-    # se
-
+    # LOSS_TYPES = [LOSS_TYPE] * len(MODELS_LIST)
+    OPTIMIZERS_TYPES = [OPTIMIZER_TYPE] * len(MODELS_LIST)
+    LOSS_TYPES = ["weighted", "weighted", "psnr", "psnr", "mse", "mse", "mse", "mse"]
     model_files = [
-        "%s_%s_%s_%s_%s_E%03d_BS%03d"%(m.__name__, DATA_TYPE.upper(), IMAGE_TYPE, OPTIMIZER_TYPE, LOSS_TYPE, EPOCHS, BATCH_SIZE) for m in MODELS_LIST
+        "%s_%s_%s_%s_%s_E%03d_BS%03d"%(m.__name__, DATA_TYPE.upper(), IMAGE_TYPE, OPTIMIZER_TYPE, LOSS_TYPE, EPOCHS, BATCH_SIZE) for m, LOSS_TYPE, OPTIMIZERS_TYPE in zip(MODELS_LIST, LOSS_TYPES, OPTIMIZERS_TYPES)
     ]
     
     if DENOISING: model_files = [mf + "_DeNoising" for mf in model_files]
@@ -86,15 +84,10 @@ if __name__ == '__main__':
     if STACKED: model_files = [mf + "_Stacked" for mf in model_files]
     
     MODEL_PATHS = [os.path.join(MODEL_PATH, mf) for mf in model_files]
-    OPTIMIZERS = [select_optimizer[OPTIMIZER_TYPE](m) for m in MODELS_LIST]
+    OPTIMIZERS = [select_optimizer[opt](m) for m,opt in zip(MODELS_LIST, OPTIMIZERS_TYPES)]
     # LOSS_FUNCTIONS = [select_loss[LOSS_TYPE] for m in MODELS_LIST]
-
-    model_files[0] += "_WEIGHTED"
-    model_files[1] += "_WEIGHTED"
-    model_files[2] += "_PSNR"
-    model_files[3] += "_PSNR"
     
-    LOSS_FUNCTIONS = [select_loss["weighted"], select_loss["weighted"], select_loss["psnr"], select_loss["psnr"], select_loss["mse"], select_loss["mse"], select_loss["mse"], select_loss["mse"]] # change
+    LOSS_FUNCTIONS = [select_loss[l] for l in LOSS_TYPES] # change
 
     INFO("MODEL, OPTIM, LOSS ARE READY")
     
