@@ -71,14 +71,14 @@ class AutoEncoderModel:
         if "attention" in self.model_file.lower():
             self.step = self.attention_step
             
-        if "origin" in self.model_file.lower():
+        if "origin_push" in self.model_file.lower():
             self.step = self.origin_push
             
         if "gaussian" in self.model_file.lower():
+            self.step = self.gaussian_push
             self.is_zero_push = False
             if "zero" in self.model_file.lower():
                 self.is_zero_push = True
-            self.step = self.gaussian_push
             self.sigma = 0.1
             
         if "clstm" in self.model_file.lower() and "future" in self.model_file.lower():

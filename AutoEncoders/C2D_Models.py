@@ -71,7 +71,7 @@ class C2D_AE_128_3x3(nn.Module):
         self,
         channels = 3,
         filters_count = [64,64,64,96,96,128],
-        encoding_activation = "tanh",
+        encoder_activation = "tanh",
         conv_type = "conv2d"
     ):
         super(C2D_AE_128_3x3, self).__init__()
@@ -85,7 +85,7 @@ class C2D_AE_128_3x3(nn.Module):
             C2D_BN_A(self.filters_count[0], self.filters_count[1], 3, 2, conv_type = conv_type),
             C2D_BN_A(self.filters_count[1], self.filters_count[2], 3, 2, conv_type = conv_type),
             C2D_BN_A(self.filters_count[2], self.filters_count[3], 3, 2, conv_type = conv_type),
-            C2D_BN_A(self.filters_count[3], self.filters_count[4], 4, 1, conv_type = conv_type, activation_type = encoding_activation),
+            C2D_BN_A(self.filters_count[3], self.filters_count[4], 4, 1, conv_type = conv_type, activation_type = encoder_activation),
 #             C2D_BN_A(self.filters_count[4], self.filters_count[5], 2, 1, conv_type = conv_type, activation_type = "tanh"),
         )
         
