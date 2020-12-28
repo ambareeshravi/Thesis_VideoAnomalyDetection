@@ -191,7 +191,7 @@ class AutoEncoderModel:
         return torch.exp(-torch.norm(x.flatten() - to_push)**2 / (2 * self.sigma**2))
     
     def gaussian_push_loss(self, encodings):
-        
+        pass
     
     def gaussian_push(self, images, lambda_ = 1e-4):
         reconstructions, encodings = self.model(self.get_inputs(images))
