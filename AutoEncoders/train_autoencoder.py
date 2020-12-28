@@ -68,18 +68,21 @@ class AutoEncoderModel:
             self.et_criterion = nn.MSELoss()
             self.et_optimizer = torch.optim.Adam(self.et_model.parameters(), lr = 1e-4, weight_decay = 1e-5)
             self.et_model.to(self.device)
-        if "attention" in self.model_file.lower():
-            self.step = self.attention_step
             
         if "origin_push" in self.model_file.lower():
             self.step = self.origin_push
-            
+        
+        self.is_gaussian = False
         if "gaussian" in self.model_file.lower():
+            self.is_gaussian = True
             self.step = self.gaussian_push
             self.is_zero_push = False
             if "zero" in self.model_file.lower():
                 self.is_zero_push = True
             self.sigma = 0.1
+            
+        if "attention" in self.model_file.lower():
+            self.step = self.attention_step
             
         if "clstm" in self.model_file.lower() and "future" in self.model_file.lower():
             self.step = self.future_step
@@ -191,12 +194,12 @@ class AutoEncoderModel:
         if self.is_zero_push: to_push = torch.zeros_like(x)
         return torch.exp(-torch.norm((x-to_push), dim = -1)**2 / (2 * self.sigma**2))
     
-    def gaussian_push_loss(self, encodings):
-        return torch.sum(1 - self.gaussian(encodings))
+    def gaussian_push_loss(self, encodings, lambda_ = 1e-4):
+        return lambda_ * torch.sum(1 - self.gaussian(encodings))
     
-    def gaussian_push(self, images, lambda_ = 1e-4):
+    def gaussian_push(self, images):
         reconstructions, encodings = self.model(self.get_inputs(images))
-        return self.loss_criterion(images, reconstructions) + (lambda_ * self.gaussian_push_loss(encodings))
+        return self.loss_criterion(images, reconstructions) + self.gaussian_push_loss(encodings)
     
     def double_translative_step(self, images):
         reconstructions, encodings = self.model(self.get_inputs(images))
@@ -216,12 +219,15 @@ class AutoEncoderModel:
     def attention_step(self, images):
         if self.patchwise: images = get_patches(images)
         if self.stacked: images = images.flatten(start_dim = 0, end_dim = 1)
+        
         reconstructions, encodings, attention_activations = self.model(self.get_inputs(images))
-        return self.loss_criterion(images, reconstructions) + self.model.attention_loss(attention_activations)
+        loss = self.loss_criterion(images, reconstructions) + self.model.attention_loss(attention_activations)
+        if self.is_gaussian: loss += self.gaussian_push_loss(encodings)
+        return loss
     
     def future_step(self, images):
-        reconstructions, encodings = self.model(self.get_inputs(images)[:-1,...])
-        return self.loss_criterion(images[1:,...], reconstructions)
+        reconstructions, encodings = self.model(self.get_inputs(images)[:,:,:-1,:,:])
+        return self.loss_criterion(images[:,:,1:,:,:], reconstructions)
     
     def train_step(self, images):
         self.model.to(self.device)

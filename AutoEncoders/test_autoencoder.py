@@ -16,7 +16,7 @@ class AutoEncoder_Tester:
         model_file,
         stackFrames = 1,
         save_vis = True,
-        n_seed = 8,
+        n_seed = 1,
         useGPU = True
     ):
         self.model = model
@@ -57,7 +57,7 @@ class AutoEncoder_Tester:
             self.stackFrames = 16
         if "clstm" in self.model_file.lower() and "future" in self.model_file.lower():
             self.predict = self.predict_future
-            self.n_seed = 4
+            self.n_seed = 1
             
         self.save_as = ".pkl".join(self.model_file.split(".pth.tar"))
         self.save_path = os.path.split(self.save_as)[0]
@@ -120,9 +120,14 @@ class AutoEncoder_Tester:
         
     def predict_future(self, inputs, total_ts = 16):
         with torch.no_grad():
-            predictions, encodings = self.model(inputs[:self.n_seed], future_steps = (total_ts - self.n_seed))
-            reconstructions = torch.cat((inputs[:1], predictions))
-            encodings = torch.cat((encodings[:1], encodings))
+            print(inputs.shape)
+            input_seeds = inputs[:,:,:self.n_seed,:,:]
+            print(input_seeds.shape)
+            predictions, encodings = self.model(input_seeds, future_steps = (total_ts - self.n_seed))
+            
+            
+            reconstructions = torch.cat((inputs[:self.n_seed], predictions))
+            encodings = torch.cat((encodings[:self.n_seed], encodings))
             return reconstructions, encodings
                     
     def plot_regularity(self, y_true, y_pred, file_name):
