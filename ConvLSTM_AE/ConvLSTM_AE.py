@@ -318,6 +318,7 @@ class CLSTM_FULL_AE(nn.Module):
                 if idx == 4: encodings += [h_l]
             reconstructions += [h_l]
             prev_output = h_l
+            
         encodings = torch.stack(encodings).permute(1,2,0,3,4)
         reconstructions = torch.stack(reconstructions).permute(1,2,0,3,4)
         return reconstructions, encodings
@@ -603,7 +604,7 @@ class CLSTM_E2(nn.Module):
             TimeDistributed(CT2D_BN_A(self.filters_count[1], self.filters_count[0], 3,2)),
             TimeDistributed(CT2D_BN_A(self.filters_count[0], self.channels, 4,2, activation_type="sigmoid")),
         )
-        
+    
     def forward(self, x, future_steps = 0):
         b,c,t,w,h = x.shape
         

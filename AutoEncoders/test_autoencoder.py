@@ -16,7 +16,7 @@ class AutoEncoder_Tester:
         model_file,
         stackFrames = 1,
         save_vis = True,
-        n_seed = 1,
+        n_seed = 2,
         useGPU = True
     ):
         self.model = model
@@ -120,15 +120,19 @@ class AutoEncoder_Tester:
         
     def predict_future(self, inputs, total_ts = 16):
         with torch.no_grad():
-            print(inputs.shape)
-            input_seeds = inputs[:,:,:self.n_seed,:,:]
-            print(input_seeds.shape)
-            predictions, encodings = self.model(input_seeds, future_steps = (total_ts - self.n_seed))
-            reconstructions = torch.cat((input_seeds, predictions), dim = 2)
+            future_reconstructions, future_encodings = self.model(inputs[:,:,:self.n_seed,:,:], future_steps = (total_ts - self.n_seed))
             
+            seed_reconstructions, seed_encodings = list(), list()
+            for s in range(self.n_seed):
+                sr, se = self.model(inputs[:,:,s:(s+1),:,:])
+                seed_reconstructions += [sp]
+                seed_encodings += [se]
+                
+            seed_reconstructions = torch.stack(seed_reconstructions, dim = 2)
+            seed_encodings = torch.stack(seed_encodings, dim = 2)
             
-            reconstructions = torch.cat((inputs[:self.n_seed], predictions))
-            encodings = torch.cat((encodings[:self.n_seed], encodings))
+            reconstructions = torch.cat((seed_reconstructions, future_reconstructions), dim = 2)
+            encodings = torch.cat((seed_encodings, future_encodings), dim = 2)
             return reconstructions, encodings
                     
     def plot_regularity(self, y_true, y_pred, file_name):

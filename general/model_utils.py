@@ -283,7 +283,7 @@ class Conv2dLSTM_Cell(nn.Module):
                  include_W = False,
                  conv_bias = False,
                  conv_type = "conv2d",
-                 init_random = True,
+                 init_random = False,
                 ):
         '''
         Using channels first n,c,w,h for images
@@ -411,7 +411,7 @@ class ConvTranspose2dLSTM_Cell(nn.Module):
                  include_W = False,
                  conv_bias = False,
                  conv_type = "conv2d_transpose",
-                 init_random = True,
+                 init_random = False,
                 ):
         '''
         Using channels first n,c,w,h for images
