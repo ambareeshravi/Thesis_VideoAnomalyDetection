@@ -121,18 +121,17 @@ class AutoEncoder_Tester:
     def predict_future(self, inputs, total_ts = 16):
         with torch.no_grad():
             future_reconstructions, future_encodings = self.model(inputs[:,:,:self.n_seed,:,:], future_steps = (total_ts - self.n_seed))
-            
             seed_reconstructions, seed_encodings = list(), list()
             for s in range(self.n_seed):
                 sr, se = self.model(inputs[:,:,s:(s+1),:,:])
-                seed_reconstructions += [sp]
+                seed_reconstructions += [sr]
                 seed_encodings += [se]
-                
-            seed_reconstructions = torch.stack(seed_reconstructions, dim = 2)
-            seed_encodings = torch.stack(seed_encodings, dim = 2)
-            
-            reconstructions = torch.cat((seed_reconstructions, future_reconstructions), dim = 2)
-            encodings = torch.cat((seed_encodings, future_encodings), dim = 2)
+
+            seed_reconstructions = torch.cat(seed_reconstructions, dim = 2)
+            seed_encodings = torch.cat(seed_encodings, dim = 2)
+
+            reconstructions = torch.cat((seed_reconstructions, future_reconstructions[:,:,self.n_seed:,:,:]), dim = 2)
+            encodings = torch.cat((seed_encodings, future_encodings[:,:,self.n_seed:,:,:]), dim = 2)
             return reconstructions, encodings
                     
     def plot_regularity(self, y_true, y_pred, file_name):
