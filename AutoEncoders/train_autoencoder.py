@@ -188,7 +188,7 @@ class AutoEncoderModel:
     def gaussian(self, x):
         x = x.flatten(start_dim = 1, end_dim = -1)
         to_push = x.mean(dim=0)
-        if is_zero_push: to_push = torch.zeros_like(x)
+        if self.is_zero_push: to_push = torch.zeros_like(x)
         return torch.exp(-torch.norm((x-to_push), dim = -1)**2 / (2 * self.sigma**2))
     
     def gaussian_push_loss(self, encodings):
