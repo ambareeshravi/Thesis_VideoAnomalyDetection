@@ -124,6 +124,7 @@ class AutoEncoder_Tester:
             input_seeds = inputs[:,:,:self.n_seed,:,:]
             print(input_seeds.shape)
             predictions, encodings = self.model(input_seeds, future_steps = (total_ts - self.n_seed))
+            reconstructions = torch.cat((input_seeds, predictions), dim = 2)
             
             
             reconstructions = torch.cat((inputs[:self.n_seed], predictions))

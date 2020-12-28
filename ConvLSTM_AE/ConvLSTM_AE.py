@@ -284,14 +284,13 @@ class CLSTM_FULL_AE(nn.Module):
                     nn.Tanh()
                 )
         )
-        
         for i in [3,2,1,0,0]:
             self.act_blocks.append(
                 nn.Sequential(
                     nn.BatchNorm2d(self.filters_count[i]),
                     nn.LeakyReLU()
                 )
-            )
+        )
         self.act_blocks.append(
                 nn.Sequential(
                     nn.BatchNorm2d(self.channels),
