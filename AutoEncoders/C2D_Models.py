@@ -1005,7 +1005,7 @@ class C2D_AE_224_VAE(C2D_AE_224):
             return mu
     
     def vae_loss(self, original, reconstruction, mu, logvar, variational_beta = 1.0):
-        recon_loss = F.binary_cross_entropy(reconstruction.flatten(), original.flatten(), reduction='sum')
+        recon_loss = F.binary_cross_entropy(reconstruction.flatten(), original.flatten(), reduction='mean')
         kldivergence = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
         return recon_loss + (variational_beta * kldivergence)
 

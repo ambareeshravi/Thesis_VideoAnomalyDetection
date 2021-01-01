@@ -331,7 +331,7 @@ class CLSTM_Multi_AE(nn.Module):
         filters_count = [64,64,64,64,128]
     ):
         super(CLSTM_Multi_AE, self).__init__()
-        self.__name__ = "CLSTM_FULL_128"
+        self.__name__ = "CLSTM_MULTI_128"
         self.image_size = image_size
         self.channels = channels
         self.filters_count = filters_count

@@ -29,6 +29,9 @@ class OpticalFlow:
 class BackgroundSubtraction:
     def __init__(self):
         self.fgbg = cv2.createBackgroundSubtractorMOG2()
+        self.kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5))
         
     def __call__(self, frame):
-        return self.fgbg.apply(frame)
+        fgmask = self.fgbg.apply(frame)
+        fgmask = cv2.morphologyEx(fgmask, cv2.MORPH_OPEN, self.kernel)
+        return fgmask

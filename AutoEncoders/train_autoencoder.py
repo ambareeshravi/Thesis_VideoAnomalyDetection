@@ -2,8 +2,9 @@ import sys
 sys.path.append("..")
 from general import *
 from general.model_utils import HalfPrecision, DataParallel
+from autoencoder_steps import AutoEncoderHelper
 
-class AutoEncoderModel:
+class AutoEncoderModel(AutoEncoderHelper):
     def __init__(self,
                  model,
                  save_path,
@@ -24,10 +25,10 @@ class AutoEncoderModel:
                  useHalfPrecision = False,
                  debug = True
                 ):
+        
         self.isHalfPrecision = useHalfPrecision
         self.model = model
-        if self.isHalfPrecision:
-            HalfPrecision(self.model)
+        if self.isHalfPrecision: HalfPrecision(self.model)
             
 #         self.model = DataParallel(self.model)
             
@@ -36,56 +37,6 @@ class AutoEncoderModel:
         self.early_stopping_params = early_stopping_params
         self.stop_count = 0 
         self.debug = debug
-        
-        # Path
-        self.save_path = save_path
-        if not os.path.exists(self.save_path):
-            os.mkdir(self.save_path)
-        self.model_file = join_paths([self.save_path, os.path.split(self.save_path)[-1] + ".pth.tar"])
-        if "vae" in self.model_file.lower():
-            self.step = self.vae_step
-        self.addNoise = False
-        if "nois" in self.model_file.lower():
-            self.addNoise = True
-            self.noise_var = noise_var
-        self.patchwise = False
-        if "patch" in self.model_file.lower():
-            self.patchwise = True
-            self.step = self.patch_step
-        self.stacked = False
-        if "stack" in self.model_file.lower():
-            self.stacked = True
-            self.step = self.stack_step
-        if "noose" in self.model_file.lower():
-            self.noose_factor = 1.0
-            self.step = self.noose_step
-        self.isET = False
-        if "translat" in self.model_file.lower():
-            self.isET = True
-            self.step = self.double_translative_step
-            from AutoEncoders.embedding_translation import EmbeddingTranslator
-            self.et_model = EmbeddingTranslator()
-            self.et_criterion = nn.MSELoss()
-            self.et_optimizer = torch.optim.Adam(self.et_model.parameters(), lr = 1e-4, weight_decay = 1e-5)
-            self.et_model.to(self.device)
-            
-        if "origin_push" in self.model_file.lower():
-            self.step = self.origin_push
-        
-        self.is_gaussian = False
-        if "gaussian" in self.model_file.lower():
-            self.is_gaussian = True
-            self.step = self.gaussian_push
-            self.is_zero_push = False
-            if "zero" in self.model_file.lower():
-                self.is_zero_push = True
-            self.sigma = 0.1
-            
-        if "attention" in self.model_file.lower():
-            self.step = self.attention_step
-            
-        if "clstm" in self.model_file.lower() and "future" in self.model_file.lower():
-            self.step = self.future_step
         
         # Model Params
         self.stopTraining = False
@@ -102,27 +53,18 @@ class AutoEncoderModel:
         self.loss_criterion = loss_criterion
         self.optimizer = optimizer
         self.lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, **self.lr_scheduler_params)
+        
+        # Path
+        self.save_path = save_path
+        if not os.path.exists(self.save_path):
+            os.mkdir(self.save_path)
+        self.model_file = join_paths([self.save_path, os.path.split(self.save_path)[-1] + ".pth.tar"])
+        
+        AutoEncoderHelper.__init__(self, model_file = self.model_file)
+        
         with open(os.path.join(self.save_path, "model.txt"), "w") as f:
             f.write(str(self.model))
-        
-    def epoch_reset(self,):
-        train_loss = np.mean(self.epoch_train_loss)
-        val_loss = np.mean(self.epoch_validation_loss)
-        
-#         if (len(self.history["validation_loss"]) > 0) and ((val_loss + self.early_stopping_params["threshold"]) < np.min(self.history["validation_loss"])):
-#             self.stop_count += 1
-#         else:
-#             self.stop_count = 0
-            
-        self.history["train_loss"].append(train_loss)
-        self.history["validation_loss"].append(val_loss)
-        self.epoch_train_loss = list()
-        self.epoch_validation_loss = list()
-        
-#         if self.stop_count == self.early_stopping_params["patience"]:
-#             self.stopTraining = True
-#             INFO("Early Stopping Training")
-        
+
     def epoch_status(self,):
         if not self.stopTraining:            
             print("Model:", self.model_file)
@@ -143,92 +85,8 @@ class AutoEncoderModel:
                 "Validation" : {"Loss" : self.history["validation_loss"][-1],},
                 }
             print(pd.DataFrame(d).T)
-            print("-"*40)
-        
-    def save(self,):
-        save_model(self.model, self.model_file)
-        if self.isET:
-            save_model(self.et_model, "_ET.pth.tar".join(self.model_file.split(".pth.tar")))
-    
-    def save_final(self,):
-        self.save()
-        plot_stat(self.history, os.path.split(self.model_file)[-1], self.save_path)
-        with open(os.path.join(self.save_path, "train_stats.pkl"), "wb") as f:
-            pkl.dump(self.history, f)             
-    
-    def get_inputs(self, images):
-        if self.addNoise:
-            return add_noise(images, var = self.noise_var)
-        return images
-        
-    def step(self, images):
-        reconstructions, encodings = self.model(self.get_inputs(images))
-        return self.loss_criterion(images, reconstructions)
-    
-    def patch_step(self, images):
-        patch_images = get_patches(images)
-        reconstructions, encodings = self.model(patch_images)
-        return self.loss_criterion(patch_images, reconstructions)
-    
-    def stack_step(self, images):
-        # images 32x1x16x128x128
-        stacked_images = images.flatten(start_dim = 0, end_dim = 1)
-        reconstructions, encodings = self.model(stacked_images)
-        return self.loss_criterion(stacked_images, reconstructions)
-    
-    def vae_step(self, images):
-        reconstructions, latent_mu, latent_logvar = self.model(self.get_inputs(images))
-        return self.model.vae_loss(images, reconstructions, latent_mu, latent_logvar)
-        
-    def noose_step(self, images):
-        reconstructions, encodings = self.model(self.get_inputs(images))
-        return self.loss_criterion(images, reconstructions) + (self.noose_factor * self.loss_criterion(encodings, encodings.mean(dim = 0)))
-    
-    def origin_push(self, images, lambda_ = 1e-10):
-        reconstructions, encodings = self.model(self.get_inputs(images))
-        return self.loss_criterion(images, reconstructions) - (lambda_ * torch.sum(encodings))
-    
-    def gaussian(self, x):
-        x = x.flatten(start_dim = 1, end_dim = -1)
-        to_push = x.mean(dim=0)
-        if self.is_zero_push: to_push = torch.zeros_like(x)
-        return torch.exp(-torch.norm((x-to_push), dim = -1)**2 / (2 * self.sigma**2))
-    
-    def gaussian_push_loss(self, encodings, lambda_ = 1e-4):
-        return lambda_ * torch.sum(1 - self.gaussian(encodings))
-    
-    def gaussian_push(self, images):
-        reconstructions, encodings = self.model(self.get_inputs(images))
-        return self.loss_criterion(images, reconstructions) + self.gaussian_push_loss(encodings)
-    
-    def double_translative_step(self, images):
-        reconstructions, encodings = self.model(self.get_inputs(images))
-        
-        try:
-            self.et_model.zero_grad()
-            d_encodings = encodings.detach()
-            r, e = self.et_model(d_encodings)
-            et_loss = self.et_criterion(d_encodings, r)
-            et_loss.backward()
-            self.et_optimizer.step()
-        except:
-            pass
-        
-        return self.loss_criterion(images, reconstructions)
-    
-    def attention_step(self, images):
-        if self.patchwise: images = get_patches(images)
-        if self.stacked: images = images.flatten(start_dim = 0, end_dim = 1)
-        
-        reconstructions, encodings, attention_activations = self.model(self.get_inputs(images))
-        loss = self.loss_criterion(images, reconstructions) + self.model.attention_loss(attention_activations)
-        if self.is_gaussian: loss += self.gaussian_push_loss(encodings)
-        return loss
-    
-    def future_step(self, images):
-        reconstructions, encodings = self.model(self.get_inputs(images)[:,:,:-1,:,:])
-        return self.loss_criterion(images[:,:,1:,:,:], reconstructions)
-    
+            print("-"*40)           
+     
     def train_step(self, images):
         self.model.to(self.device)
         self.model.train()
@@ -237,6 +95,15 @@ class AutoEncoderModel:
         loss = self.step(images)
         loss.backward()
         self.optimizer.step()
+        
+        if self.isSVDD_enabled:
+            encodings = self.model.encoder(self.get_inputs(images))
+            if not self.svdd_init:
+                self.svdd.set_trainer(self.model.encoder, encodings)
+                self.svdd_init = True
+            svdd_train_loss = self.svdd.train_step(encodings, self.svdd_init and (self.svdd_warmup_count > self.svdd.boundary_warm_up))
+            self.svdd_warmup_count += 1
+            
         self.model.to('cpu')
         self.epoch_train_loss.append(loss.item())
         
@@ -246,6 +113,13 @@ class AutoEncoderModel:
         if self.isHalfPrecision: images = images.half()
         with torch.no_grad():
             loss = self.step(images)
+            
+            if self.isSVDD_enabled:
+                encodings = self.model.encoder(images)
+                svdd_val_loss = self.svdd.val_step(encodings)
+                if self.svdd_warmup_count % 200 == 0:
+                    print("*** SVDD Val Loss: %0.6f ***"%(svdd_val_loss.item()))
+                    
         self.model.to('cpu')
         self.epoch_validation_loss.append(loss.item())
         

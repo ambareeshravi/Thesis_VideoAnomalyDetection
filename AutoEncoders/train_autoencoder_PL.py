@@ -4,12 +4,13 @@ from general import *
 from general.data import *
 from general.all_imports import *
 from general.pl_callbacks import EpochChange
+from autoencoder_steps import AutoEncoderHelper
 
 from pytorch_lightning import Trainer
 from pytorch_lightning.core.lightning import LightningModule
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint, GPUStatsMonitor
 
-class AutoEncoderLM(LightningModule):
+class AutoEncoderLM(LightningModule, AutoEncoderHelper):
     def __init__(self,
                  model,
                  save_path,
@@ -50,50 +51,8 @@ class AutoEncoderLM(LightningModule):
         
         self.epoch_train_loss = list()
         self.epoch_validation_loss = list()
-
-        if "vae" in self.model_file.lower():
-            self.step = self.vae_step
-        self.addNoise = False
-        if "nois" in self.model_file.lower():
-            self.addNoise = True
-            self.noise_var = noise_var
-        self.patchwise = False
-        if "patch" in self.model_file.lower():
-            self.patchwise = True
-            self.step = self.patch_step
-        self.stacked = False
-        if "stack" in self.model_file.lower():
-            self.stacked = True
-            self.step = self.stack_step
-        if "noose" in self.model_file.lower():
-            self.noose_factor = 1.0
-            self.step = self.noose_step
-        self.isET = False
-        if "translat" in self.model_file.lower():
-            self.isET = True
-            self.step = self.double_translative_step
-            from AutoEncoders.embedding_translation import EmbeddingTranslator
-            self.et_model = EmbeddingTranslator()
-            self.et_criterion = nn.MSELoss()
-            self.et_optimizer = torch.optim.Adam(self.et_model.parameters(), lr = 1e-4, weight_decay = 1e-5)
-            self.et_model.to(self.device)
-        if "attention" in self.model_file.lower():
-            self.step = self.attention_step
-            
-        if "origin" in self.model_file.lower():
-            self.step = self.origin_push
-            
-        if "clstm" in self.model_file.lower() and "future" in self.model_file.lower():
-            self.step = self.future_step
-        
-    def epoch_reset(self,):
-        train_loss = np.mean(self.epoch_train_loss)
-        val_loss = np.mean(self.epoch_validation_loss)
-        self.history["train_loss"].append(train_loss)
-        self.history["validation_loss"].append(val_loss)
-        self.epoch_train_loss = list()
-        self.epoch_validation_loss = list()
-        
+        AutoEncoderHelper.__init__(self, model_file = self.model_file)
+               
     def epoch_status(self,):
         print("="*60)
         print("Epoch: [%03d/%03d] | Time: %0.2f (s) | Model: %s"%(self.EPOCH, self.MAX_EPOCHS, (self.EPOCH_END_TIME-self.EPOCH_START_TIME), self.model_file))
@@ -116,73 +75,7 @@ class AutoEncoderLM(LightningModule):
             }
         print(pd.DataFrame(d).T)
 #         print("="*60)
-        
-    def save(self,):
-        save_model(self.model, self.model_file)
-    
-    def save_final(self,):
-        self.save()
-        plot_stat(self.history, os.path.split(self.model_file)[-1], self.save_path)
-        with open(os.path.join(self.save_path, "train_stats.pkl"), "wb") as f:
-            pkl.dump(self.history, f)
-
-    def get_inputs(self, images):
-        if self.addNoise:
-            return add_noise(images, var = self.noise_var)
-        return images
-
-    def step(self, images):
-        reconstructions, encodings = self.model(self.get_inputs(images))
-        return self.loss_criterion(images, reconstructions)
-
-    def patch_step(self, images):
-        patch_images = get_patches(images)
-        reconstructions, encodings = self.model(patch_images)
-        return self.loss_criterion(patch_images, reconstructions)
-
-    def stack_step(self, images):
-        # images 32x1x16x128x128
-        stacked_images = images.flatten(start_dim = 0, end_dim = 1)
-#         stacked_images = images.squeeze(dim = -4)
-        reconstructions, encodings = self.model(stacked_images)
-        return self.loss_criterion(stacked_images, reconstructions)
-
-    def vae_step(self, images):
-        reconstructions, latent_mu, latent_logvar = self.model(self.get_inputs(images))
-        return self.model.vae_loss(images, reconstructions, latent_mu, latent_logvar)
-        
-    def noose_step(self, images):
-        reconstructions, encodings = self.model(self.get_inputs(images))
-        return self.loss_criterion(images, reconstructions) + (self.noose_factor * self.loss_criterion(encodings, encodings.mean(dim = 0)))
-    
-    def origin_push(self, images, lambda_ = 1e-8):
-        reconstructions, encodings = self.model(self.get_inputs(images))
-        return self.loss_criterion(images, reconstructions) - (lambda_ * torch.sum(encodings))
-    
-    def double_translative_step(self, images):
-        reconstructions, encodings = self.model(self.get_inputs(images))
-        
-        try:
-            self.et_model.zero_grad()
-            d_encodings = encodings.detach()
-            r, e = self.et_model(d_encodings)
-            et_loss = self.et_criterion(d_encodings, r)
-            et_loss.backward()
-            self.et_optimizer.step()
-        except:
-            pass
-        
-        return self.loss_criterion(images, reconstructions)
-    
-    def attention_step(self, images):
-        if self.patchwise: images = get_patches(images)
-        if self.stacked: images = images.flatten(start_dim = 0, end_dim = 1)
-        reconstructions, encodings, attention_activations = self.model(self.get_inputs(images))
-        return self.loss_criterion(images, reconstructions) + self.model.attention_loss(attention_activations)
-    
-    def future_step(self, images):
-        reconstructions, encodings = self.model(self.get_inputs(images)[:-1,...])
-        return self.loss_criterion(images[1:,...], reconstructions)   
+          
     
     # LM functions
     def configure_optimizers(self):

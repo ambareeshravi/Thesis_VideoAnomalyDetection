@@ -70,23 +70,25 @@ class ImagesHandler:
         flow_combined = [torch.cat((self.data_transform(Image.fromarray(image_255(frame))), self.data_transform(Image.fromarray(image_255(flow)))), dim = 0) for idx, (frame, flow) in enumerate(zip(frame_arrays[:-1], frame_flows))]
         return flow_combined
         
+    # difference is useless
     def get_difference(self, frame1, frame2):
-        difference = (np.asarray(frame1.covert('L')) - np.asarray(frame2.covert('L')))*255
-        return Image.fromarray(np.concatenate((frame1, difference.astype(np.uint8)), axis = -1))
-        
+        difference = image_255(np.asarray(frame2.convert('L')) - np.asarray(frame1.convert('L')))
+        return Image.fromarray(np.concatenate((extend_gray(frame1), extend_gray(difference)), axis = -1))
+
     def read_difference(self, files):
         frames = [read_image(image_path) for image_path in files]
         return [self.data_transform(self.get_difference(frames[idx-1], frames[idx])) for idx in range(1, len(frames))]
     
+    # thresholds only white colors -> useless too
     def add_mask(self, original_frame):
         gray = np.asarray(original_frame.convert('L'))
-        original_frame = np.asarray(original_frame, dtype = np.float32)/255.
-        if len(original_frame.shape) < 3: original_frame = np.expand_dims(original_frame, axis = -1)
-        threshold = filters.threshold_otsu(gray, nbins=128)
-        mask = gray > threshold
-        mask = np.expand_dims(np.asarray(mask), axis = -1)
-        combined = np.concatenate((original_frame, mask), axis = -1) * 255
-        return Image.fromarray(combined.astype(np.uint8))
+        original_frame = extend_gray(np.asarray(original_frame, dtype = np.float32)/255.)
+        threshold = filters.threshold_otsu(gray, nbins=256)
+        mask = gray < threshold
+        mask = extend_gray(np.asarray(mask * 1.0))
+        mask = image_255(mask)
+        combined = image_255(np.array(original_frame) * mask)
+        return Image.fromarray(combined.squeeze())
     
     def read_mask(self, files):
         return [self.data_transform(self.add_mask(read_image(image_path))) for image_path in files]
