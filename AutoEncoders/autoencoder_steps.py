@@ -8,7 +8,8 @@ from SVM.deep_SVDD import DeepSVDD
 class AutoEncoderHelper:
     def __init__(
         self,
-        model_file
+        model_file,
+        noise_var = 0.1
     ):
         self.model_file = model_file
         
@@ -168,6 +169,12 @@ class AutoEncoderHelper:
         return self.loss_criterion(images[:,:,1:,:,:], reconstructions)
             
     def save(self,):
+        if self.isSVDD_enabled:
+            self.model.objective = self.svdd.objective
+            self.model.R = self.svdd.R
+            self.model.c = self.svdd.c
+            self.model.nu = self.svdd.nu
+            
         save_model(self.model, self.model_file)
         if self.isET:
             save_model(self.et_model, "_ET.pth.tar".join(self.model_file.split(".pth.tar")))

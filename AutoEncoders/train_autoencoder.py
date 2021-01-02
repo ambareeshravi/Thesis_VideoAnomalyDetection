@@ -60,7 +60,7 @@ class AutoEncoderModel(AutoEncoderHelper):
             os.mkdir(self.save_path)
         self.model_file = join_paths([self.save_path, os.path.split(self.save_path)[-1] + ".pth.tar"])
         
-        AutoEncoderHelper.__init__(self, model_file = self.model_file)
+        AutoEncoderHelper.__init__(self, model_file = self.model_file, noise_var = noise_var)
         
         with open(os.path.join(self.save_path, "model.txt"), "w") as f:
             f.write(str(self.model))
@@ -117,7 +117,7 @@ class AutoEncoderModel(AutoEncoderHelper):
             if self.isSVDD_enabled:
                 encodings = self.model.encoder(images)
                 svdd_val_loss = self.svdd.val_step(encodings)
-                if self.svdd_warmup_count % 200 == 0:
+                if self.svdd_warmup_count % 50 == 0:
                     print("*** SVDD Val Loss: %0.6f ***"%(svdd_val_loss.item()))
                     
         self.model.to('cpu')

@@ -51,7 +51,7 @@ class AutoEncoderLM(LightningModule, AutoEncoderHelper):
         
         self.epoch_train_loss = list()
         self.epoch_validation_loss = list()
-        AutoEncoderHelper.__init__(self, model_file = self.model_file)
+        AutoEncoderHelper.__init__(self, model_file = self.model_file, noise_var = noise_var)
                
     def epoch_status(self,):
         print("="*60)

@@ -1,7 +1,6 @@
 import torch
 from torch import nn
 import numpy as np
-torch.autograd.set_detect_anomaly(True)
 
 '''
 https://github.com/lukasruff/Deep-SVDD-PyTorch/blob/master/src/optim/deepSVDD_trainer.py
@@ -34,8 +33,8 @@ class DeepSVDD(nn.Module):
         self,
         model,
         embeddings,
-        lr: float = 2e-4,
-        weight_decay = 1e-5,
+        lr: float = 1e-4,
+        weight_decay = 1e-7,
         lr_scheduler_kwargs = {
             "factor": 0.5,
             "patience": 10,
@@ -114,7 +113,7 @@ class DeepSVDD(nn.Module):
     ):
         self.optimizer.zero_grad()
         loss, dist = self.loss_function(embeddings)
-        loss.backward(retain_graph=True)
+        loss.backward() # retain_graph=True
         self.optimizer.step()
         if updateR: self.update_radius(dist)
         return loss
