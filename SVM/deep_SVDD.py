@@ -33,8 +33,8 @@ class DeepSVDD(nn.Module):
         self,
         model,
         embeddings,
-        lr: float = 1e-4,
-        weight_decay = 1e-7,
+        lr: float = 1e-5,
+        weight_decay = 1e-5,
         lr_scheduler_kwargs = {
             "factor": 0.5,
             "patience": 10,
