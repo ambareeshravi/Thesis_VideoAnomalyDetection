@@ -730,7 +730,7 @@ CONV2D_LSTM_DICT = {
 
 CONV2D_RNN_DICT = {
     128: {
-        "CRNN_FULL": CRNN_FULL_AE
+        "CRNN_MULTI": CRNN_MULTI_AE
     }
 }
 '''
