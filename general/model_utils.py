@@ -610,12 +610,9 @@ class Conv2dRNN_Cell(nn.Module):
         if self.init_random:
             init_fn = torch.randn
             
-        return (
-            init_fn(*state_shape, device = self.conv_Wx.weight.device),
-            init_fn(*state_shape, device = self.conv_Wx.weight.device)
-        )
+        return init_fn(*state_shape, device = self.conv_Wx.weight.device)
         
-    def forward(self, x, states = None):
+    def forward(self, x, h_p = None):
         '''
         
         h_t = f(h_t-1, x_t; theta)
@@ -627,11 +624,9 @@ class Conv2dRNN_Cell(nn.Module):
         
         '''
         b,c,w,h = x.shape
-        if states == None: states = self.init_states(b)
-            
-        h, c = states
+        if h_p == None: h_p = self.init_states(b)
                 
-        h_n = self.tanh(self.conv_Wx(x) + self.conv_Wh(h))
+        h_n = self.tanh(self.conv_Wx(x) + self.conv_Wh(h_p))
         y_n = self.sigmoid(self.W_o * h_n)
         return y_n, h_n
     
@@ -719,18 +714,13 @@ class ConvTranspose2dRNN_Cell(nn.Module):
         if self.init_random:
             init_fn = torch.randn
             
-        return (
-            init_fn(*state_shape, device = self.conv_Wx.weight.device),
-            init_fn(*state_shape, device = self.conv_Wx.weight.device)
-        )
+        return init_fn(*state_shape, device = self.conv_Wx.weight.device)
             
-    def forward(self, x, states = None):
+    def forward(self, x, h_p = None):
         b,c,w,h = x.shape
-        if states == None: states = self.init_states(b)
-            
-        h, c = states
+        if h_p == None: h_p = self.init_states(b)
         
-        h_n = self.tanh(self.conv_Wx(x) + self.conv_Wh(h))
+        h_n = self.tanh(self.conv_Wx(x) + self.conv_Wh(h_p))
         y_n = self.sigmoid(self.W_o * h_n)
         return y_n, h_n
     

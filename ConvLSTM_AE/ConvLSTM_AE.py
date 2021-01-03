@@ -626,6 +626,91 @@ class CLSTM_E2(nn.Module):
         encodings = torch.stack(encodings).permute(1,2,0,3,4)
         reconstructions = self.decoder(encodings.transpose(1,2)).transpose(1,2)
         return reconstructions, encodings
+
+class CRNN_MULTI_AE(nn.Module):
+    def __init__(
+        self,
+        image_size = 128,
+        channels = 3,
+        filters_count = [64,64,64,64,128]
+    ):
+        super(CRNN_MULTI_AE, self).__init__()
+        self.__name__ = "CRNN_MULTI_AE"
+        self.image_size = image_size
+        self.channels = channels
+        self.filters_count = filters_count
+        
+        # Encoder
+        self.crnn1 = Conv2dRNN_Cell(self.image_size, self.channels, self.filters_count[0], 3, 2, 0)
+        self.crnn2 = Conv2dRNN_Cell(self.crnn1.output_shape, self.filters_count[0], self.filters_count[1], 3, 2, 0)
+        self.crnn3 = Conv2dRNN_Cell(self.crnn2.output_shape, self.filters_count[1], self.filters_count[2], 3, 2, 0)
+        self.crnn4 = Conv2dRNN_Cell(self.crnn3.output_shape, self.filters_count[2], self.filters_count[3], 3, 2, 0)
+        self.crnn5 = Conv2dRNN_Cell(self.crnn4.output_shape, self.filters_count[3], self.filters_count[4], 3, 1, 0)
+        
+        # Decoder
+        self.ctrnn6 = ConvTranspose2dRNN_Cell(self.crnn5.output_shape, self.filters_count[4], self.filters_count[3], 3, 1, 0)
+        self.ctrnn7 = ConvTranspose2dRNN_Cell(self.ctrnn6.output_shape, self.filters_count[3], self.filters_count[2], 3, 2, 0)
+        self.ctrnn8 = ConvTranspose2dRNN_Cell(self.ctrnn7.output_shape, self.filters_count[2], self.filters_count[1], 3, 2, 0)
+        self.ctrnn9 = ConvTranspose2dRNN_Cell(self.ctrnn8.output_shape, self.filters_count[1], self.filters_count[0], 3, 2, 0)
+        self.ctrnn10 =ConvTranspose2dRNN_Cell(self.ctrnn9.output_shape, self.filters_count[0], self.channels, 4, 2, 0)
+        
+        self.rnn_layers = nn.Sequential(
+            self.crnn1, self.crnn2, self.crnn3, self.crnn4, self.crnn5,
+            self.ctrnn6, self.ctrnn7, self.ctrnn8, self.ctrnn9, self.ctrnn10
+        )
+        
+        self.act_blocks = list()
+        for i in [0,1,2,3]:
+            self.act_blocks.append(
+                nn.Sequential(
+                    nn.BatchNorm2d(self.filters_count[i]),
+                    nn.LeakyReLU()
+                )
+            )
+        self.act_blocks.append(
+                nn.Sequential(
+                    nn.BatchNorm2d(self.filters_count[4]),
+                    nn.Tanh()
+                )
+        )
+        
+        for i in [3,2,1,0]:
+            self.act_blocks.append(
+                nn.Sequential(
+                    nn.BatchNorm2d(self.filters_count[i]),
+                    nn.LeakyReLU()
+                )
+            )
+        self.act_blocks.append(
+                nn.Sequential(
+                    nn.BatchNorm2d(self.channels),
+                    nn.Sigmoid()
+                )
+        )
+        self.act_blocks = nn.Sequential(*self.act_blocks)
+        
+    def forward(self, x, future_steps = 0):
+        b,c,t,w,h = x.shape
+        
+        hidden_list = [None]*len(self.rnn_layers)
+        
+        encodings = list()
+        reconstructions = list()
+        
+        for ts in range(t + future_steps):
+            if ts < t: ts_input = x[:,:,ts,:,:]
+            else: ts_input = prev_output
+            for idx, layer in enumerate(self.rnn_layers):
+                h_l, y_l = layer(ts_input, hidden_list[idx])
+                y_l = self.act_blocks[idx](y_l)
+                hidden_list[idx] = h_l
+                ts_input = y_l
+                if idx == 4: encodings += [y_l]
+            reconstructions += [y_l]
+            prev_output = y_l
+        encodings = torch.stack(encodings).permute(1,2,0,3,4)
+        reconstructions = torch.stack(reconstructions).permute(1,2,0,3,4)
+        return reconstructions, encodings
     
 CONV2D_LSTM_DICT = {
     128: {
@@ -643,6 +728,11 @@ CONV2D_LSTM_DICT = {
     }
 }
 
+CONV2D_RNN_DICT = {
+    128: {
+        "CRNN_FULL": CRNN_FULL_AE
+    }
+}
 '''
 # Mixed ideas:
 
