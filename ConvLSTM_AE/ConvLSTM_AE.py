@@ -712,6 +712,115 @@ class CRNN_MULTI_AE(nn.Module):
         reconstructions = torch.stack(reconstructions).permute(1,2,0,3,4)
         return reconstructions, encodings
     
+class BiCRNN_MULTI_AE(nn.Module):
+    def __init__(
+        self,
+        image_size = 128,
+        channels = 3,
+        filters_count = [64,64,64,64,128]
+    ):
+        super(BiCRNN_MULTI_AE, self).__init__()
+        self.__name__ = "BiCRNN_MULTI_AE"
+        self.image_size = image_size
+        self.channels = channels
+        self.filters_count = filters_count
+        
+        # Encoder
+        self.crnn1_f = Conv2dRNN_Cell(self.image_size, self.channels, self.filters_count[0], 3, 2, 0)
+        self.crnn1_b = Conv2dRNN_Cell(self.image_size, self.channels, self.filters_count[0], 3, 2, 0)
+        
+        self.crnn2_f = Conv2dRNN_Cell(self.crnn1_f.output_shape, self.filters_count[0], self.filters_count[1], 3, 2, 0)
+        self.crnn2_b = Conv2dRNN_Cell(self.crnn1_b.output_shape, self.filters_count[0], self.filters_count[1], 3, 2, 0)
+        
+        self.crnn3_f = Conv2dRNN_Cell(self.crnn2_f.output_shape, self.filters_count[1], self.filters_count[2], 3, 2, 0)
+        self.crnn3_b = Conv2dRNN_Cell(self.crnn2_b.output_shape, self.filters_count[1], self.filters_count[2], 3, 2, 0)
+        
+        self.crnn4_f = Conv2dRNN_Cell(self.crnn3_f.output_shape, self.filters_count[2], self.filters_count[3], 3, 2, 0)
+        self.crnn4_b = Conv2dRNN_Cell(self.crnn3_b.output_shape, self.filters_count[2], self.filters_count[3], 3, 2, 0)
+        
+        self.crnn5_f = Conv2dRNN_Cell(self.crnn4_f.output_shape, self.filters_count[3], self.filters_count[4], 3, 1, 0)
+        self.crnn5_b = Conv2dRNN_Cell(self.crnn4_b.output_shape, self.filters_count[3], self.filters_count[4], 3, 1, 0)
+        
+        # Decoder
+        self.ctrnn6_f = ConvTranspose2dRNN_Cell(self.crnn5_f.output_shape, self.filters_count[4], self.filters_count[3], 3, 1, 0)
+        self.ctrnn6_b = ConvTranspose2dRNN_Cell(self.crnn5_b.output_shape, self.filters_count[4], self.filters_count[3], 3, 1, 0)
+        
+        self.ctrnn7_f = ConvTranspose2dRNN_Cell(self.ctrnn6_f.output_shape, self.filters_count[3], self.filters_count[2], 3, 2, 0)
+        self.ctrnn7_b = ConvTranspose2dRNN_Cell(self.ctrnn6_b.output_shape, self.filters_count[3], self.filters_count[2], 3, 2, 0)
+        
+        self.ctrnn8_f = ConvTranspose2dRNN_Cell(self.ctrnn7_f.output_shape, self.filters_count[2], self.filters_count[1], 3, 2, 0)
+        self.ctrnn8_b = ConvTranspose2dRNN_Cell(self.ctrnn7_b.output_shape, self.filters_count[2], self.filters_count[1], 3, 2, 0)
+        
+        self.ctrnn9_f = ConvTranspose2dRNN_Cell(self.ctrnn8_f.output_shape, self.filters_count[1], self.filters_count[0], 3, 2, 0)
+        self.ctrnn9_b = ConvTranspose2dRNN_Cell(self.ctrnn8_b.output_shape, self.filters_count[1], self.filters_count[0], 3, 2, 0)
+        
+        self.ctrnn10_f = ConvTranspose2dRNN_Cell(self.ctrnn9_f.output_shape, self.filters_count[0], self.channels, 4, 2, 0)
+        self.ctrnn10_b = ConvTranspose2dRNN_Cell(self.ctrnn9_b.output_shape, self.filters_count[0], self.channels, 4, 2, 0)
+        
+        self.rnn_layers = [
+            (self.crnn1_f, self.crnn1_b), (self.crnn2_f, self.crnn2_b), (self.crnn3_f, self.crnn3_b), (self.crnn4_f, self.crnn4_b), (self.crnn5_f, self.crnn5_b),
+            (self.ctrnn6_f, self.ctrnn6_b), (self.ctrnn7_f, self.ctrnn7_b), (self.ctrnn8_f, self.ctrnn8_b), (self.ctrnn9_f, self.ctrnn9_b), (self.ctrnn10_f, self.ctrnn10_b)
+        ]
+        
+        self.act_blocks_f = list()
+        for i in [0,1,2,3]:
+            self.act_blocks_f.append(BN_A(self.filters_count[i], is3d = False))
+        self.act_blocks_f.append(BN_A(self.filters_count[4], activation_type = "tanh", is3d = False))
+        
+        for i in [3,2,1,0]:
+            self.act_blocks_f.append(BN_A(self.filters_count[i], is3d = False))
+        self.act_blocks_f.append(BN_A(self.channels, activation_type = "sigmoid", is3d = False))
+        self.act_blocks_f = nn.Sequential(*self.act_blocks_f)
+        
+        self.act_blocks_b = list()
+        for i in [0,1,2,3]:
+            self.act_blocks_b.append(BN_A(self.filters_count[i], is3d = False))
+        self.act_blocks_b.append(BN_A(self.filters_count[4], activation_type = "tanh", is3d = False))
+        
+        for i in [3,2,1,0]:
+            self.act_blocks_b.append(BN_A(self.filters_count[i], is3d = False))
+        self.act_blocks_b.append(BN_A(self.channels, activation_type = "sigmoid", is3d = False))
+        self.act_blocks_b = nn.Sequential(*self.act_blocks_b)
+        
+        self.final_act_block = TimeDistributed(BN_A(self.channels, activation_type="sigmoid", is3d=False))
+        
+    def forward(self, x, future_steps = 0):
+        b,c,t,w,h = x.shape
+        
+        hidden_list = [[None]*2]*len(self.rnn_layers)
+        
+        encodings_f = list()
+        encodings_b = list()
+        reconstructions_f = list()
+        reconstructions_b = list()
+        
+        for ts in range(t):
+            ip_f = x[:,:,ts,:,:]
+            ip_b = x[:,:,t-(ts+1),:,:]
+            for idx, (forward_layer, backward_layer) in enumerate(self.rnn_layers):
+                h_f, y_f = forward_layer(ip_f, hidden_list[idx][0])
+                h_b, y_b = backward_layer(ip_b, hidden_list[idx][1])
+                hidden_list[idx] = [h_f, h_b]
+                o_f, o_b = self.act_blocks_f[idx](y_f), self.act_blocks_b[idx](y_b)
+                ip_f, ip_b = o_f, o_b
+                if idx == 4:
+                    encodings_f += [o_f]
+                    encodings_b += [o_b]
+            reconstructions_f += [o_f]
+            reconstructions_b += [o_b]
+        
+        encodings_f = torch.stack(encodings_f)
+        encodings_b = torch.stack(encodings_b)
+        encodings = (encodings_f + torch.fliplr(encodings_b))
+        encodings = encodings.permute(1,2,0,3,4)
+        
+        reconstructions_f = torch.stack(reconstructions_f)
+        reconstructions_b = torch.stack(reconstructions_b)
+        reconstructions = self.final_act_block(reconstructions_f + torch.fliplr(reconstructions_b))
+        reconstructions = reconstructions.permute(1,2,0,3,4)
+        
+        return reconstructions, encodings
+    
 CONV2D_LSTM_DICT = {
     128: {
         "CLSTM_CTD": CLSTM_CTD_AE,
@@ -730,7 +839,8 @@ CONV2D_LSTM_DICT = {
 
 CONV2D_RNN_DICT = {
     128: {
-        "CRNN_MULTI": CRNN_MULTI_AE
+        "CRNN_MULTI": CRNN_MULTI_AE,
+        "BiCRNN_MULTI_AE": BiCRNN_MULTI_AE
     }
 }
 '''

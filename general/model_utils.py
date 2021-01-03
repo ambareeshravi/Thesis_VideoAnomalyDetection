@@ -627,7 +627,7 @@ class Conv2dRNN_Cell(nn.Module):
         if h_p == None: h_p = self.init_states(b)
                 
         h_n = self.tanh(self.conv_Wx(x) + self.conv_Wh(h_p))
-        y_n = self.sigmoid(self.W_o * h_n)
+        y_n = self.sigmoid(self.W_o.to(self.conv_Wx.weight.device) * h_n)
         return y_n, h_n
     
 class ConvTranspose2dRNN_Cell(nn.Module):
@@ -721,7 +721,7 @@ class ConvTranspose2dRNN_Cell(nn.Module):
         if h_p == None: h_p = self.init_states(b)
         
         h_n = self.tanh(self.conv_Wx(x) + self.conv_Wh(h_p))
-        y_n = self.sigmoid(self.W_o * h_n)
+        y_n = self.sigmoid(self.W_o.to(self.conv_Wx.weight.device) * h_n)
         return y_n, h_n
     
 class TimeDistributed(nn.Module):
