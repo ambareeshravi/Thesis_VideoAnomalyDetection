@@ -49,6 +49,12 @@ class DeepSVDD(nn.Module):
         self.lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, **lr_scheduler_kwargs)
         if self.c is None: self.init_center(embeddings.flatten(start_dim = 1, end_dim = -1))
         print("INFO: SVDD Initialized")
+        self.history = {
+            "epoch_train_loss": list(),
+            "epoch_val_loss": list(),
+            "train_loss": list(),
+            "val_loss": list()
+        }
     
     def init_center(
         self,

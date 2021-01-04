@@ -102,6 +102,7 @@ class AutoEncoderModel(AutoEncoderHelper):
                 self.svdd.set_trainer(self.model.encoder, encodings)
                 self.svdd_init = True
             svdd_train_loss = self.svdd.train_step(encodings, self.svdd_init and (self.svdd_warmup_count > self.svdd.boundary_warm_up))
+            self.svdd.history["epoch_train_loss"].append(svdd_train_loss.item())
             self.svdd_warmup_count += 1
             
         self.model.to('cpu')
@@ -117,6 +118,7 @@ class AutoEncoderModel(AutoEncoderHelper):
             if self.isSVDD_enabled:
                 encodings = self.model.encoder(images)
                 svdd_val_loss = self.svdd.val_step(encodings)
+                self.svdd.history["epoch_val_loss"].append(svdd_val_loss.item())
                 if self.svdd_warmup_count % 50 == 0:
                     print("*** SVDD Val Loss: %0.6f ***"%(svdd_val_loss.item()))
                     

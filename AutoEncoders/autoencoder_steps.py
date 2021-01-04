@@ -94,6 +94,16 @@ class AutoEncoderHelper:
         
         self.epoch_train_loss = list()
         self.epoch_validation_loss = list()
+        
+        if self.isSVDD_enabled:
+            try:
+                self.svdd.history["train_loss"].append(np.mean(self.svdd.history["epoch_train_loss"]))
+                self.svdd.history["epoch_train_loss"] = list()
+                self.svdd.history["val_loss"].append(np.mean(self.svdd.history["epoch_val_loss"]))
+                self.svdd.history["epoch_val_loss"] = list()
+                self.svdd.lr_scheduler.step(self.svdd.history["val_loss"][-1])
+            except Exception as e:
+                print("Problem with SVDD epoch end", e)
                     
     def get_inputs(self, images):
         if self.addNoise:
