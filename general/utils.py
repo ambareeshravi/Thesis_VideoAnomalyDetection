@@ -5,6 +5,30 @@ from scipy.optimize import brentq
 from scipy.interpolate import interp1d
 from torchvision.utils import make_grid, save_image
 
+def load_json(file):
+    if ".json" not in file: file += ".json"
+    with open(file, "r") as f:
+        contents = json.load(f)
+    return contents
+
+def dump_json(contents, file):
+    if ".json" not in file: file += ".json"
+    with open(file, "w") as f:
+        json.dump(contents, f)
+    return True
+
+def load_pickle(file):
+    if ".pkl" not in file: file += ".pkl"
+    with open(file, "rb") as f:
+        contents = pkl.load(f)
+    return contents
+    
+def dump_pickle(contents, file):
+    if ".pkl" not in file: file += ".pkl"
+    with open(file, "wb") as f:
+        pkl.dump(contents, f)
+    return True
+
 def join_paths(paths):
     path = ""
     for tag in paths:
@@ -15,8 +39,10 @@ def read_directory_contents(directory):
     return sorted(glob(directory))
 
 def read_image(image_path, asGray = False):
-    if asGray: return Image.open(image_path).convert('L')
-    return Image.open(image_path)
+    if isinstance(image_path, np.ndarray): image = Image.fromarray(image_path)
+    else: image = Image.open(image_path)
+    if asGray: return image.convert('L')
+    return image
 
 def image_cwh(image):
     return image.transpose(0,1).transpose(1,2)
@@ -203,3 +229,63 @@ def scores2labels(y_scores, threshold):
     labels[labels>=threshold] = 1
     labels[labels<threshold] = 0
     return labels
+
+def get_video_frame_count(source):
+    cap_flag = False
+    if isinstance(resize_to, str):
+        cap_flag = True
+        source = cv2.VideoCapture(source)
+    n_frames = source.get(7)
+    if cap_flag:
+        source.release()
+        del source
+    return n_frames
+
+def video2frames(
+    video_path:str,
+    resize_to = False,
+    read_rate:int = 1,
+    read_fps = None,
+    save_path = False,
+    return_count = False,
+    start_at:int = 0,
+    stop_at:int = 0,
+    init_read_count = 0,
+    extension:str = ".png"
+):
+    cap = cv2.VideoCapture(video_path)
+    frames = list()
+    frame_count = 0
+    read_count = init_read_count
+    
+    assert read_rate == 1 or read_fps == None, "[ERROR]: Use either read rate or read fps. Not both"
+    
+    w = int(cap.get(3))
+    h = int(cap.get(4))
+    fps = int(cap.get(5))
+    n_frames = int(cap.get(7))
+    
+    check_rate = read_rate
+    
+    if read_fps != None:
+        assert fps % read_fps == 0, "[ERROR]: The resultant number of frames will be imperfect"
+        check_rate = fps / read_fps 
+    
+    while cap.isOpened():
+        isRead, frame = cap.read()
+        if not isRead: break
+        frame_count += 1
+        if (cap.get(0)//1000) < start_at: continue
+        if frame_count % check_rate != 0: continue
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        if resize_to: cv2.resize(frame, resize_to)
+        if save_path:
+            cv2.imwrite("%s/%06d%s"%(save_path, read_count, extension), frame)
+        if not return_count: frames.append(frame)
+        read_count += 1
+        if stop_at > 0 and (cap.get(0)//1000 > stop_at): break
+        
+    cap.release()
+    del cap
+    if return_count or save_path: return read_count
+    else: return frames

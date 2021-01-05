@@ -439,6 +439,200 @@ class Avenue(ImagesHandler, VideosHandler, Attributes):
             else:
                 self.data.append(data)
                 self.labels.append(labels)
+                
+class Subway(ImagesHandler, VideosHandler, Attributes):
+    def __init__(
+        self,
+        dataset_type = 0,
+        parent_path = "../../../datasets/VAD_Datasets/",
+        isTrain = True,
+        asImages = True,
+        image_size = 128,
+        image_type = "normal",
+        n_frames = 16,
+        frame_strides = [1,2,4,8,16],
+        sample_stride = 1,
+    ):
+        if dataset_type == 0:
+            self.dataset_type = 0
+            self.dataset_tag = "Entrance"
+        else:
+            self.dataset_type = 1
+            self.dataset_tag = "Exit"
+            
+        self.__name__ = "%s_%s"%("Subway", self.dataset_tag)
+        self.isTrain = isTrain
+        self.asImages = asImages
+        self.image_size = image_size
+        self.image_type = image_type
+        self.n_frames = n_frames
+        self.frame_strides = frame_strides
+        self.sample_stride = sample_stride
+        
+        if isinstance(self.image_size, int): self.image_size = (self.image_size, self.image_size)
+            
+        ImagesHandler.__init__(self)
+        VideosHandler.__init__(self)
+        
+        self.data_path = os.path.join(parent_path, "%s/%s"%("Subway", self.dataset_tag))
+        
+        if self.isTrain:
+            self.parent_directory = join_paths([self.data_path, "Train"])
+        else:
+            self.asImages = True
+            self.sample_stride = 1
+            self.parent_directory = join_paths([self.data_path, "Test/"])
+            self.frame_strides = [1]
+            self.temporal_labels = self.read_temporal_annotations()
+            
+        if self.asImages:
+            self.read = self.read_image_data
+        else:
+            self.read = self.read_video_data
+            
+        self.create_dataset()
+        Attributes.__init__(self)
+    
+    def read_temporal_annotations(self, threshold = 20):
+        annotation_file = join_paths([self.data_path, "%s_annotations.json"%(self.dataset_tag.lower())])
+        anomalous_frame_numbers = list()
+        
+        for values in load_json(annotation_file).values():
+            anomalous_frame_numbers += values
+        
+        anomalous_frame_numbers = sorted(np.array(anomalous_frame_numbers))
+        frame_ids = np.array([int(os.path.split(i)[-1].split(".")[0]) for i in read_directory_contents(join_paths([self.parent_directory, "*"]))])
+        start_frame_number = frame_ids[0]
+        adjusted_anomalous_frame_numbers = anomalous_frame_numbers - start_frame_number
+        assert np.all(adjusted_anomalous_frame_numbers > 0), "Negative indices found in temporal annotations"
+        
+        temporal_labels = np.array([NORMAL_LABEL]*len(frame_ids))
+        for aafn in adjusted_anomalous_frame_numbers:
+            temporal_labels[max(0, aafn-threshold) : min(aafn + threshold, len(temporal_labels))] = ABNORMAL_LABEL
+        return np.expand_dims(temporal_labels, axis = 0)
+                
+    def read_image_data(self, files_in_dir, idx):
+        files_in_dir, indices = self.stride_through_frames(files_in_dir)
+        data = self.read_frames(files_in_dir)
+        if self.isTrain:
+            labels = [NORMAL_LABEL] * len(data)
+        else:
+            labels = self.temporal_labels[idx][indices].tolist()
+        return data, labels
+    
+    def read_video_data(self, files_in_dir, idx):
+        data, segment_indices = self.read_videos(files_in_dir)
+        if self.isTrain:
+            labels = np.ones(segment_indices.shape, dtype = np.int16).tolist()
+        else:
+            labels = [self.temporal_labels[idx][si].tolist() for si in segment_indices]
+        return data, labels
+    
+    def create_dataset(self):
+        self.data, self.labels = list(), list()
+        image_files = read_directory_contents(join_paths([self.parent_directory, "*"]))
+        data, labels = self.read(image_files, 0)
+        assert len(data) == len(labels), "Data and Labels length mismatch"
+        if self.isTrain:
+            self.data += data
+            self.labels += labels
+        else:
+            self.data.append(data)
+            self.labels.append(labels)
+                
+class ShangaiTech(ImagesHandler, VideosHandler, Attributes):
+    def __init__(
+        self,
+        parent_path = "../../../datasets/VAD_Datasets/",
+        isTrain = True,
+        asImages = True,
+        image_size = 128,
+        image_type = "normal",
+        n_frames = 16,
+        frame_strides = [1,2,4,8,16],
+        sample_stride = 1,
+    ):
+        self.__name__ = "ShangaiTech"
+        self.isTrain = isTrain
+        self.asImages = asImages
+        self.image_size = image_size
+        self.image_type = image_type
+        self.n_frames = n_frames
+        self.frame_strides = frame_strides
+        self.sample_stride = sample_stride
+        
+        if isinstance(self.image_size, int): self.image_size = (self.image_size, self.image_size)
+            
+        ImagesHandler.__init__(self)
+        VideosHandler.__init__(self)
+        
+        self.data_path = os.path.join(parent_path, "ShangaiTech")
+        
+        if self.isTrain:
+            self.parent_directory = join_paths([self.data_path, "Train"])
+        else:
+            self.asImages = True
+            self.sample_stride = 1
+            self.parent_directory = join_paths([self.data_path, "Test/frames/"])
+            self.frame_strides = [1]
+            self.temporal_labels = self.read_temporal_annotations()
+            
+        if self.asImages:
+            self.read = self.read_image_data
+        else:
+            self.read = self.read_video_data
+            
+        self.create_dataset()
+        Attributes.__init__(self)
+    
+    def read_temporal_annotations(self,):
+        annotation_files = read_directory_contents(join_paths([self.data_path, "Test/test_frame_mask/*"]))
+        test_annotations = list()
+        for af in annotation_files:
+            test_annotations.append(np.load(af))
+        return np.asarray(test_annotations)
+        
+    def read_image_data(self, files_in_dir, idx):
+        files_in_dir, indices = self.stride_through_frames(files_in_dir)
+        data = self.read_frames(files_in_dir)
+        if self.isTrain:
+            labels = [NORMAL_LABEL] * len(data)
+        else:
+            labels = self.temporal_labels[idx][indices].tolist()
+        return data, labels
+    
+    def read_video_data(self, files_in_dir, idx):
+        data, segment_indices = self.read_videos(files_in_dir)
+        if self.isTrain:
+            labels = np.ones(segment_indices.shape, dtype = np.int16).tolist()
+        else:
+            labels = [self.temporal_labels[idx][si].tolist() for si in segment_indices]
+        return data, labels
+    
+    def create_dataset(self):
+        self.data, self.labels = list(), list()
+        directory_contents = read_directory_contents(join_paths([self.parent_directory, "*"]))
+        for idx, content in tqdm(enumerate(directory_contents)):
+            try:
+                if self.isTrain:
+                    video_path = content
+                    frames = video2frames(video_path)
+                    data, labels = self.read(frames, idx)
+                else:
+                    video_directory = content
+                    image_files = read_directory_contents(join_paths([video_directory, "*"]))
+                    data, labels = self.read(image_files, idx)
+                    
+                assert len(data) == len(labels), "Data and Labels length mismatch"
+            except Exception as e:
+                print(e)
+                continue
+            if self.isTrain:
+                self.data += data
+                self.labels += labels
+            else:
+                self.data.append(data)
+                self.labels.append(labels)
                     
 def select_dataset(
     dataset,
@@ -477,3 +671,9 @@ def select_dataset(
         return StreetScene(**kwargs), 3 + flow_channels
     elif "avenue" in dataset:
         return Avenue(**kwargs), 3 + flow_channels
+    elif "shangai" in dataset:
+        return ShangaiTech(**kwargs), 3 + flow_channels
+    elif "subway" in dataset:
+        if "entrance" in dataset: dataset_type = 0
+        else: dataset_type = 1
+        return Subway(dataset_type = dataset_type, **kwargs), 3 + flow_channels
