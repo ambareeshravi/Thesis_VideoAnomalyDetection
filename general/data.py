@@ -153,14 +153,14 @@ class UCSD(ImagesHandler, VideosHandler, Attributes):
         
         transforms_list = list()
         if dataset_type == 1:
-            transforms_list += [transforms.CenterCrop((144,224))]
+            transforms_list += [lambda x: transforms.F.crop(x, 14, 8, 144, 204)]
         else:
             transforms_list += [lambda x: transforms.F.crop(x, 80, 0, 160, 360)]
         
         if self.isTrain:
             transforms_list += [
 #                 transforms.ColorJitter(brightness=0.9, contrast=0.9),
-                transforms.RandomAffine(3, translate=None, scale=None, shear=None, resample=0, fillcolor=0),
+#                 transforms.RandomAffine(3, translate=None, scale=None, shear=None, resample=0, fillcolor=0),
 #                 transforms.RandomHorizontalFlip(p=0.25),
             ]
         transforms_list += [
@@ -277,9 +277,9 @@ class StreetScene(ImagesHandler, VideosHandler, Attributes):
         
         if self.isTrain:
             transforms_list += [
-                transforms.ColorJitter(brightness=0.9, contrast=0.9),
-                transforms.RandomAffine(3, translate=None, scale=None, shear=None, resample=0, fillcolor=0),
-                transforms.RandomHorizontalFlip(p=0.25),
+#                 transforms.ColorJitter(brightness=0.9, contrast=0.9),
+#                 transforms.RandomAffine(3, translate=None, scale=None, shear=None, resample=0, fillcolor=0),
+#                 transforms.RandomHorizontalFlip(p=0.25),
             ]
         transforms_list += [
             transforms.Resize((self.image_size[0], self.image_size[1])),
@@ -383,8 +383,8 @@ class Avenue(ImagesHandler, VideosHandler, Attributes):
         if self.isTrain:
             transforms_list += [
 #                 transforms.ColorJitter(brightness=0.9, contrast=0.9),
-                transforms.RandomAffine(3, translate=None, scale=None, shear=None, resample=0, fillcolor=0),
-                transforms.RandomHorizontalFlip(p=0.2),
+#                 transforms.RandomAffine(3, translate=None, scale=None, shear=None, resample=0, fillcolor=0),
+#                 transforms.RandomHorizontalFlip(p=0.2),
             ]
         transforms_list += [
             transforms.Resize((self.image_size[0], self.image_size[1])),
@@ -508,7 +508,7 @@ class Subway(ImagesHandler, VideosHandler, Attributes):
         if self.isTrain:
             transforms_list += [
 #                 transforms.ColorJitter(brightness=0.9, contrast=0.9),
-                transforms.RandomAffine(3, translate=None, scale=None, shear=None, resample=0, fillcolor=0),
+#                 transforms.RandomAffine(3, translate=None, scale=None, shear=None, resample=0, fillcolor=0),
 #                 transforms.RandomHorizontalFlip(p=0.2),
             ]
         transforms_list += [
@@ -612,8 +612,8 @@ class ShangaiTech(ImagesHandler, VideosHandler, Attributes):
         
         if self.isTrain:
             transforms_list += [
-                transforms.ColorJitter(brightness=0.9, contrast=0.9),
-                transforms.RandomAffine(3, translate=None, scale=None, shear=None, resample=0, fillcolor=0),
+#                 transforms.ColorJitter(brightness=0.9, contrast=0.9),
+#                 transforms.RandomAffine(3, translate=None, scale=None, shear=None, resample=0, fillcolor=0),
 #                 transforms.RandomHorizontalFlip(p=0.2),
             ]
         transforms_list += [
