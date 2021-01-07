@@ -9,22 +9,9 @@ ABNORMAL_LABEL = 0
 
 # Handles Image data
 class ImagesHandler:
-    def __init__(self):
+    def __init__(self, data_transforms):
+        self.data_transform = data_transforms
         self.select_image_type()
-        
-        transforms_list = list()
-        if self.isTrain and self.image_type == "normal":
-            transforms_list += [
-            transforms.RandomRotation(20),
-#             transforms.RandomHorizontalFlip(p=0.25),
-            transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
-            transforms.RandomGrayscale(p=0.2),
-            ]
-        transforms_list += [
-            transforms.Resize((self.image_size[0], self.image_size[1])),
-            transforms.ToTensor()
-        ]
-        self.data_transform = transforms.Compose(transforms_list)
         
     def select_image_type(self,):
         image_type = self.image_type.lower()
@@ -103,13 +90,8 @@ class ImagesHandler:
 
 # Handles Video data
 class VideosHandler:
-    def __init__(self):
-        
-        transforms_list = [
-            transforms.Resize((self.image_size[0], self.image_size[1])),
-            transforms.ToTensor()
-        ]
-        self.data_transform = transforms.Compose(transforms_list)
+    def __init__(self, data_transforms):
+        self.data_transform = data_transforms
         
     def read_video_frames(self, files):
         return torch.stack(self.read_frames(files)).transpose(0,1)
@@ -158,7 +140,7 @@ class UCSD(ImagesHandler, VideosHandler, Attributes):
                  sample_stride = 1,
                  useCorrectedAnnotations = False
                 ):
-        self.__name__ = "UCSD" + str(dataset_type)
+        self.__name__ = "UCSD" + str(dataset_type) + "_V2"
         self.isTrain = isTrain
         self.asImages = asImages
         self.image_size = image_size
@@ -169,8 +151,26 @@ class UCSD(ImagesHandler, VideosHandler, Attributes):
         
         if isinstance(self.image_size, int): self.image_size = (self.image_size, self.image_size)
         
-        ImagesHandler.__init__(self)
-        VideosHandler.__init__(self)
+        transforms_list = list()
+        if dataset_type == 1:
+            transforms_list += [transforms.CenterCrop((144,224))]
+        else:
+            transforms_list += [lambda x: transforms.F.crop(x, 80, 0, 160, 360)]
+        
+        if self.isTrain:
+            transforms_list += [
+#                 transforms.ColorJitter(brightness=0.9, contrast=0.9),
+                transforms.RandomAffine(3, translate=None, scale=None, shear=None, resample=0, fillcolor=0),
+#                 transforms.RandomHorizontalFlip(p=0.25),
+            ]
+        transforms_list += [
+            transforms.Resize((self.image_size[0], self.image_size[1])),
+            transforms.ToTensor()
+        ]
+        data_transforms = transforms.Compose(transforms_list)
+        
+        ImagesHandler.__init__(self, data_transforms)
+        VideosHandler.__init__(self, data_transforms)
         self.data_path = os.path.join(parent_path, "UCSD/UCSDped%s/"%(str(dataset_type)))
         
         if self.isTrain:
@@ -262,7 +262,7 @@ class StreetScene(ImagesHandler, VideosHandler, Attributes):
                  frame_strides = [1,2,4,8,16],
                  sample_stride = 1,
                 ):
-        self.__name__ = "Street Scene"
+        self.__name__ = "Street_Scene" + "_V2"
         self.isTrain = isTrain
         self.asImages = asImages
         self.image_size = image_size
@@ -272,9 +272,23 @@ class StreetScene(ImagesHandler, VideosHandler, Attributes):
         self.sample_stride = sample_stride
         
         if isinstance(self.image_size, int): self.image_size = (self.image_size, self.image_size)
-            
-        ImagesHandler.__init__(self)
-        VideosHandler.__init__(self)
+        
+        transforms_list = list()
+        
+        if self.isTrain:
+            transforms_list += [
+                transforms.ColorJitter(brightness=0.9, contrast=0.9),
+                transforms.RandomAffine(3, translate=None, scale=None, shear=None, resample=0, fillcolor=0),
+                transforms.RandomHorizontalFlip(p=0.25),
+            ]
+        transforms_list += [
+            transforms.Resize((self.image_size[0], self.image_size[1])),
+            transforms.ToTensor()
+        ]
+        data_transforms = transforms.Compose(transforms_list)
+        
+        ImagesHandler.__init__(self, data_transforms)
+        VideosHandler.__init__(self, data_transforms)
         self.data_path = os.path.join(parent_path, "StreetScene")
         
         if self.isTrain:
@@ -352,7 +366,7 @@ class Avenue(ImagesHandler, VideosHandler, Attributes):
                  frame_strides = [1,2,4,8,16],
                  sample_stride = 1,
                 ):
-        self.__name__ = "Avenue"
+        self.__name__ = "Avenue" + "_V2"
         self.isTrain = isTrain
         self.asImages = asImages
         self.image_size = image_size
@@ -362,9 +376,24 @@ class Avenue(ImagesHandler, VideosHandler, Attributes):
         self.sample_stride = sample_stride
         
         if isinstance(self.image_size, int): self.image_size = (self.image_size, self.image_size)
-            
-        ImagesHandler.__init__(self)
-        VideosHandler.__init__(self)
+        
+        transforms_list = list()
+        transforms_list += [transforms.F.crop(x, 60, 0, 300, 640)]
+        
+        if self.isTrain:
+            transforms_list += [
+#                 transforms.ColorJitter(brightness=0.9, contrast=0.9),
+                transforms.RandomAffine(3, translate=None, scale=None, shear=None, resample=0, fillcolor=0),
+                transforms.RandomHorizontalFlip(p=0.2),
+            ]
+        transforms_list += [
+            transforms.Resize((self.image_size[0], self.image_size[1])),
+            transforms.ToTensor()
+        ]
+        data_transforms = transforms.Compose(transforms_list)
+        
+        ImagesHandler.__init__(self, data_transforms)
+        VideosHandler.__init__(self, data_transforms)
         self.data_path = os.path.join(parent_path, "Avenue")
         
         if self.isTrain:
@@ -460,7 +489,7 @@ class Subway(ImagesHandler, VideosHandler, Attributes):
             self.dataset_type = 1
             self.dataset_tag = "Exit"
             
-        self.__name__ = "%s_%s"%("Subway", self.dataset_tag)
+        self.__name__ = "%s_%s"%("Subway", self.dataset_tag) + "_V2"
         self.isTrain = isTrain
         self.asImages = asImages
         self.image_size = image_size
@@ -470,9 +499,25 @@ class Subway(ImagesHandler, VideosHandler, Attributes):
         self.sample_stride = sample_stride
         
         if isinstance(self.image_size, int): self.image_size = (self.image_size, self.image_size)
-            
-        ImagesHandler.__init__(self)
-        VideosHandler.__init__(self)
+        
+        transforms_list = [
+            transforms.Grayscale(),
+            transforms.F.crop(x, 64, 8, 280, 488)
+        ]
+        
+        if self.isTrain:
+            transforms_list += [
+#                 transforms.ColorJitter(brightness=0.9, contrast=0.9),
+                transforms.RandomAffine(3, translate=None, scale=None, shear=None, resample=0, fillcolor=0),
+#                 transforms.RandomHorizontalFlip(p=0.2),
+            ]
+        transforms_list += [
+            transforms.Resize((self.image_size[0], self.image_size[1])),
+            transforms.ToTensor()
+        ]
+        data_transforms = transforms.Compose(transforms_list)
+        ImagesHandler.__init__(self, data_transforms)
+        VideosHandler.__init__(self, data_transforms)
         
         self.data_path = os.path.join(parent_path, "%s/%s"%("Subway", self.dataset_tag))
         
@@ -552,7 +597,7 @@ class ShangaiTech(ImagesHandler, VideosHandler, Attributes):
         frame_strides = [1,2,4,8,16],
         sample_stride = 1,
     ):
-        self.__name__ = "ShangaiTech"
+        self.__name__ = "ShangaiTech" + "_V2"
         self.isTrain = isTrain
         self.asImages = asImages
         self.image_size = image_size
@@ -562,9 +607,23 @@ class ShangaiTech(ImagesHandler, VideosHandler, Attributes):
         self.sample_stride = sample_stride
         
         if isinstance(self.image_size, int): self.image_size = (self.image_size, self.image_size)
+        
+        transforms_list = list()
+        
+        if self.isTrain:
+            transforms_list += [
+                transforms.ColorJitter(brightness=0.9, contrast=0.9),
+                transforms.RandomAffine(3, translate=None, scale=None, shear=None, resample=0, fillcolor=0),
+#                 transforms.RandomHorizontalFlip(p=0.2),
+            ]
+        transforms_list += [
+            transforms.Resize((self.image_size[0], self.image_size[1])),
+            transforms.ToTensor()
+        ]
+        data_transforms = transforms.Compose(transforms_list)
             
-        ImagesHandler.__init__(self)
-        VideosHandler.__init__(self)
+        ImagesHandler.__init__(self, data_transforms)
+        VideosHandler.__init__(self, data_transforms)
         
         self.data_path = os.path.join(parent_path, "ShangaiTech")
         

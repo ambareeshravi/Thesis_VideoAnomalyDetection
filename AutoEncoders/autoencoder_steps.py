@@ -87,6 +87,11 @@ class AutoEncoderHelper:
             
         if "alw" in self.model_file.lower():
             self.step = self.alw_step
+        
+        self.isGaussianBlur = False
+        if "blur" in self.model_file.lower():
+            self.isGaussianBlur = True
+            self.gaussian_blur = transforms.GaussianBlur((3,3))
             
     def epoch_reset(self,):
         train_loss = np.mean(self.epoch_train_loss)
@@ -111,6 +116,8 @@ class AutoEncoderHelper:
     def get_inputs(self, images):
         if self.addNoise:
             return add_noise(images, var = self.noise_var)
+        if self.isGaussianBlur:
+            return self.gaussian_blur(images)
         return images
     
     def step(self, images):
