@@ -85,6 +85,9 @@ class AutoEncoderHelper:
             self.svdd_init = False
             self.svdd_warmup_count = 0
             
+        if "alw" in self.model_file.lower():
+            self.step = self.alw_step
+            
     def epoch_reset(self,):
         train_loss = np.mean(self.epoch_train_loss)
         val_loss = np.mean(self.epoch_validation_loss)
@@ -172,6 +175,11 @@ class AutoEncoderHelper:
         reconstructions, encodings, attention_activations = self.model(self.get_inputs(images))
         loss = self.loss_criterion(images, reconstructions) + self.model.attention_loss(attention_activations)
         if self.is_gaussian: loss += self.gaussian_push_loss(encodings)
+        return loss
+    
+    def alw_step(self, images, lambda_ = 1e-3):
+        reconstructions, encodings = self.model(self.get_inputs(images))
+        loss = self.loss_criterion(images, reconstructions) + (lambda_ * self.model.get_attention_loss())
         return loss
     
     def future_step(self, images):

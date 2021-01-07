@@ -8,6 +8,13 @@ from sklearn.metrics import *
 
 from pprint import pprint
 
+def pr_auc(y_true, y_pred):
+    try:
+        fpr, tpr, thresholds = precision_recall_curve(y_true, y_pred)
+        return auc(fpr, tpr)
+    except:
+        return 0.0
+
 class AutoEncoder_Tester:
     def __init__(
         self,
@@ -174,6 +181,8 @@ class AutoEncoder_Tester:
         VL_sqr_regularity_scores = list()
         VL_abs_rocauc_scores = list()
         VL_sqr_rocauc_scores = list()
+        VL_abs_prauc_scores = list()
+        VL_sqr_prauc_scores = list()
         VL_encodings = list()
         
         # iterating through the dataset video by video
@@ -257,6 +266,7 @@ class AutoEncoder_Tester:
                         VIS_frames_sqr += self.visualize_results(test_inputs, reconstructions, pixel_regularity_sqr_mask)
                     except Exception as e:
                         print("Visualization:", e)
+                        self.save_vis = False
                 
             VL_targets.append(np.asarray(FL_targets))
             VL_abs_losses.append(np.asarray(FL_abs_losses))
@@ -266,8 +276,15 @@ class AutoEncoder_Tester:
             
             # Calculate AUC-ROC scores per video
             try:
+                VL_abs_prauc_scores.append(pr_auc(FL_targets, VL_abs_regularity_scores[-1]))
+                VL_sqr_prauc_scores.append(pr_auc(FL_targets, VL_sqr_regularity_scores[-1]))
+            except Exception as e:
+                print("Calculation of AUC-PR score", e)
+            
+            try:
                 VL_abs_rocauc_scores.append(roc_auc_score(FL_targets, VL_abs_regularity_scores[-1]))
                 VL_sqr_rocauc_scores.append(roc_auc_score(FL_targets, VL_sqr_regularity_scores[-1]))
+                
             except Exception as e:
                 print("Calculation of AUC-ROC score", e)
                 
@@ -281,6 +298,7 @@ class AutoEncoder_Tester:
                     frames_to_video(VIS_frames_sqr, join_paths([results_visulization_path, "%03d_AV_sqr"%(video_idx + 1)]))
                 except Exception as e:
                     print("Video Generation:", e)
+                    self.save_vis = False
             
             try:
                 VL_encodings.append(FL_encodings)
@@ -294,6 +312,8 @@ class AutoEncoder_Tester:
         VL_sqr_regularity_scores = np.asarray(VL_sqr_regularity_scores) # V,F,1
         VL_abs_rocauc_scores = np.asarray(VL_abs_rocauc_scores) # V,1
         VL_sqr_rocauc_scores = np.asarray(VL_sqr_rocauc_scores) # V,1
+        VL_abs_prauc_scores = np.asarray(VL_abs_prauc_scores) # V,1
+        VL_sqr_prauc_scores = np.asarray(VL_sqr_prauc_scores) # V,1
         VL_encodings = np.asarray(VL_encodings) # V,F,E
         
         FLT_targets = flatten_2darray(VL_targets)
@@ -318,24 +338,32 @@ class AutoEncoder_Tester:
         mean_abs_vid_aucroc = VL_abs_rocauc_scores.mean()
         mean_sqr_vid_aucroc = VL_sqr_rocauc_scores.mean()
         
+        # Mean video pr-auc
+        mean_abs_vid_aucpr = VL_abs_prauc_scores.mean()
+        mean_sqr_vid_aucpr = VL_sqr_prauc_scores.mean()
+        
         # aggregated regularity roc-auc
         # video-wise regularized scores [CORRECT and INTUITIVE]
         agg_abs_reg_aucroc = roc_auc_score(FLT_targets, FLT_agg_abs_regularity)
+        agg_abs_reg_aucpr = pr_auc(FLT_targets, FLT_agg_abs_regularity)
         agg_abs_reg_report = classification_report(FLT_targets, np.round(FLT_agg_abs_regularity))
         agg_abs_conf_matrix = confusion_matrix(FLT_targets, np.round(FLT_agg_abs_regularity))
         agg_abs_eer = calculate_eer(FLT_targets, FLT_agg_abs_regularity)
         
         agg_sqr_reg_aucroc = roc_auc_score(FLT_targets, FLT_agg_sqr_regularity)
+        agg_sqr_reg_aucpr = pr_auc(FLT_targets, FLT_agg_sqr_regularity)
         agg_sqr_reg_report = classification_report(FLT_targets, np.round(FLT_agg_sqr_regularity))
         agg_sqr_conf_matrix = confusion_matrix(FLT_targets, np.round(FLT_agg_sqr_regularity))
         agg_sqr_eer = calculate_eer(FLT_targets, FLT_agg_sqr_regularity)
         
         # overall roc-auc
         overall_abs_aucroc = roc_auc_score(FLT_targets, FLT_abs_regularity)
+        overall_abs_aucpr = pr_auc(FLT_targets, FLT_abs_regularity)
         overall_abs_eer = calculate_eer(FLT_targets, FLT_abs_regularity)
         overall_abs_report = classification_report(FLT_targets, np.round(FLT_abs_regularity))
         
         overall_sqr_aucroc = roc_auc_score(FLT_targets, FLT_sqr_regularity)
+        overall_sqr_aucpr = pr_auc(FLT_targets, FLT_sqr_regularity)
         overall_sqr_eer = calculate_eer(FLT_targets, FLT_sqr_regularity)
         overall_sqr_report = classification_report(FLT_targets, np.round(FLT_sqr_regularity))
         
@@ -356,12 +384,20 @@ class AutoEncoder_Tester:
             "AUC_ROC": {
                 "mean_abs_vid_aucroc": mean_abs_vid_aucroc,
                 "mean_sqr_vid_aucroc": mean_sqr_vid_aucroc,
+                "mean_abs_vid_aucpr": mean_abs_vid_aucpr,
+                "mean_sqr_vid_aucpr": mean_sqr_vid_aucpr,
+                
                 "agg_abs_reg_aucroc": agg_abs_reg_aucroc,
                 "agg_sqr_reg_aucroc": agg_sqr_reg_aucroc,
+                "agg_abs_reg_aucpr": agg_abs_reg_aucpr,
+                "agg_sqr_reg_aucpr": agg_sqr_reg_aucpr,
                 "agg_abs_eer": agg_abs_eer,
                 "agg_sqr_eer": agg_sqr_eer,
+                
                 "overall_abs_aucroc": overall_abs_aucroc,
                 "overall_sqr_aucroc": overall_sqr_aucroc,
+                "overall_abs_aucpr": overall_abs_aucpr,
+                "overall_sqr_aucpr": overall_sqr_aucpr,
                 "overall_abs_eer": overall_abs_eer,
                 "overall_sqr_eer": overall_sqr_eer,
             },
