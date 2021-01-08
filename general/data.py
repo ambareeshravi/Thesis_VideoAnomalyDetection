@@ -378,7 +378,7 @@ class Avenue(ImagesHandler, VideosHandler, Attributes):
         if isinstance(self.image_size, int): self.image_size = (self.image_size, self.image_size)
         
         transforms_list = list()
-        transforms_list += [transforms.F.crop(x, 60, 0, 300, 640)]
+        transforms_list += [lambda x: transforms.F.crop(x, 60, 0, 300, 640)]
         
         if self.isTrain:
             transforms_list += [
@@ -502,7 +502,7 @@ class Subway(ImagesHandler, VideosHandler, Attributes):
         
         transforms_list = [
             transforms.Grayscale(),
-            transforms.F.crop(x, 64, 8, 280, 488)
+            lambda x: transforms.F.crop(x, 64, 8, 280, 488)
         ]
         
         if self.isTrain:
