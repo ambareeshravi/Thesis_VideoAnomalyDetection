@@ -742,4 +742,4 @@ def select_dataset(
     elif "subway" in dataset:
         if "entrance" in dataset: dataset_type = 0
         else: dataset_type = 1
-        return Subway(dataset_type = dataset_type, **kwargs), 3 + flow_channels
+        return Subway(dataset_type = dataset_type, **kwargs), 1 + flow_channels
