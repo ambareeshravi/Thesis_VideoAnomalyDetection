@@ -268,7 +268,11 @@ def video2frames(
     check_rate = read_rate
     
     if read_fps != None:
-        assert fps % read_fps == 0, "[ERROR]: The resultant number of frames will be imperfect"
+        try: assert fps % read_fps == 0, "[ERROR]: The resultant number of frames will be imperfect"
+        except:
+            while fps%read_fps != 0:
+                read_fps -= 1
+            print("Changed read_fps to", read_fps)
         check_rate = fps / read_fps 
     
     while cap.isOpened():

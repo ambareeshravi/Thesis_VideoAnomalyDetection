@@ -582,8 +582,15 @@ class Subway(ImagesHandler, VideosHandler, Attributes):
             self.data += data
             self.labels += labels
         else:
+            if self.dataset_type == 0:
+                print("Subway Entrance: Last few frames dropped")
+                print(len(data))
+                data = data[:-3000]
+                labels = labels[:-3000]
+                print(len(data))
             self.data.append(data)
             self.labels.append(labels)
+            print(len(self.data[0]))
                 
 class ShangaiTech(ImagesHandler, VideosHandler, Attributes):
     def __init__(
@@ -675,7 +682,7 @@ class ShangaiTech(ImagesHandler, VideosHandler, Attributes):
             try:
                 if self.isTrain:
                     video_path = content
-                    frames = video2frames(video_path)
+                    frames = video2frames(video_path, read_fps = 1)
                     data, labels = self.read(frames, idx)
                 else:
                     video_directory = content
