@@ -68,6 +68,7 @@ class DeepSVDD(nn.Module):
 #         mean_c[(abs(mean_c) < eps) & (mean_c > 0)] = eps
         
         self.c = mean_c
+        self.c = self.c.to(self.device)
         print("INFO: SVDD C Initialized", self.c.shape)
             
     def get_distance(

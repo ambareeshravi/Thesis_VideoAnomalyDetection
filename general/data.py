@@ -655,7 +655,7 @@ class ShangaiTech(ImagesHandler, VideosHandler, Attributes):
         annotation_files = read_directory_contents(join_paths([self.data_path, "Test/test_frame_mask/*"]))
         test_annotations = list()
         for af in annotation_files:
-            test_annotations.append(np.load(af))
+            test_annotations.append(np.abs(1-np.load(af))) # the original labels are flipped
         return np.asarray(test_annotations)
         
     def read_image_data(self, files_in_dir, idx):
