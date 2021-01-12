@@ -93,6 +93,9 @@ class AutoEncoderHelper:
             self.isGaussianBlur = True
             self.gaussian_blur = transforms.GaussianBlur((3,3))
             
+        if "best" in self.model_file.lower():
+            self.step = self.best_step
+            
     def epoch_reset(self,):
         train_loss = np.mean(self.epoch_train_loss)
         val_loss = np.mean(self.epoch_validation_loss)
@@ -187,6 +190,11 @@ class AutoEncoderHelper:
     def alw_step(self, images, lambda_ = 1e-3):
         reconstructions, encodings = self.model(self.get_inputs(images))
         loss = self.loss_criterion(images, reconstructions) + (lambda_ * self.model.get_attention_loss())
+        return loss
+    
+    def best_step(self, images):
+        reconstructions, encodings = self.model(self.get_inputs(images))
+        loss = self.loss_criterion(images, reconstructions) + self.model.auxillary_loss()
         return loss
     
     def future_step(self, images):

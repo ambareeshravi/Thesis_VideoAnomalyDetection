@@ -10,8 +10,8 @@ from pprint import pprint
 
 def pr_auc(y_true, y_pred):
     try:
-        fpr, tpr, thresholds = precision_recall_curve(y_true, y_pred)
-        return auc(fpr, tpr)
+        precision, recall, thresholds = precision_recall_curve(y_true, y_pred)
+        return auc(recall, precision)
     except:
         return 0.0
 
@@ -21,9 +21,10 @@ class AutoEncoder_Tester:
         model,
         dataset,
         model_file,
-        stackFrames = 1,
-        save_vis = True,
+        stackFrames = 64,
+        save_vis = False,
         n_seed = 2,
+        calcOC_SVM = False,
         useGPU = True
     ):
         self.model = model
@@ -32,6 +33,7 @@ class AutoEncoder_Tester:
         self.stackFrames = stackFrames
         self.save_vis = save_vis
         self.n_seed = n_seed
+        self.calcOC_SVM = calcOC_SVM
         
         self.device = torch.device("cpu")
         if useGPU and torch.cuda.is_available():
@@ -194,7 +196,7 @@ class AutoEncoder_Tester:
             FL_encodings = list()
             
             # check to save visualization
-            if self.save_vis or video_idx == 0:
+            if self.save_vis: # or video_idx == 0:
                 VIS_frames_abs = list()
                 VIS_frames_sqr = list()
 
@@ -230,13 +232,14 @@ class AutoEncoder_Tester:
                     reconstructions = reconstructions[-n_frames:]
                     
                 # note encodings
-                try:
-                    output_encodings = tensor_to_numpy(model_outputs[1])
-                    if n_frames < self.stackFrames:
-                        output_encodings = output_encodings[-n_frames:]
-                    FL_encodings.append(output_encodings)
-                except Exception as e:
-                    print("Frames Encodings:", e)
+                if self.calcOC_SVM: 
+                    try:
+                        output_encodings = tensor_to_numpy(model_outputs[1])
+                        if n_frames < self.stackFrames:
+                            output_encodings = output_encodings[-n_frames:]
+                        FL_encodings.append(output_encodings)
+                    except Exception as e:
+                        print("Frames Encodings:", e)
                 
                 # use only 3 channels - for PatchWise models
                 test_inputs = to_cpu(test_inputs[..., :3, :, :])
@@ -260,7 +263,7 @@ class AutoEncoder_Tester:
                 FL_sqr_losses += frame_sqr_loss
                 
                 # get visualization results
-                if self.save_vis or video_idx == 0:
+                if self.save_vis: # or video_idx == 0:
                     try:                
                         VIS_frames_abs += self.visualize_results(test_inputs, reconstructions, pixel_regularity_abs_mask)
                         VIS_frames_sqr += self.visualize_results(test_inputs, reconstructions, pixel_regularity_sqr_mask)
@@ -292,18 +295,19 @@ class AutoEncoder_Tester:
             self.plot_regularity(FL_targets, VL_abs_regularity_scores[-1], join_paths([results_visulization_path, "%03d_R_abs.png"%(video_idx + 1)]))
             self.plot_regularity(FL_targets, VL_sqr_regularity_scores[-1], join_paths([results_visulization_path, "%03d_R_sqr.png"%(video_idx + 1)]))
             
-            if self.save_vis or video_idx == 0:            
+            if self.save_vis: # or video_idx == 0:            
                 try:
                     frames_to_video(VIS_frames_abs, join_paths([results_visulization_path, "%03d_AV_abs"%(video_idx + 1)]))
                     frames_to_video(VIS_frames_sqr, join_paths([results_visulization_path, "%03d_AV_sqr"%(video_idx + 1)]))
                 except Exception as e:
                     print("Video Generation:", e)
                     self.save_vis = False
-            
-            try:
-                VL_encodings.append(FL_encodings)
-            except Exception as e:
-                print("Frames Encodings:", e)
+                    
+            if self.calcOC_SVM: 
+                try:
+                    VL_encodings.append(FL_encodings)
+                except Exception as e:
+                    print("Frames Encodings:", e)
         
         VL_targets = np.asarray(VL_targets) # V,F,1
         VL_abs_losses = np.asarray(VL_abs_losses) # V,F,1
@@ -314,7 +318,7 @@ class AutoEncoder_Tester:
         VL_sqr_rocauc_scores = np.asarray(VL_sqr_rocauc_scores) # V,1
         VL_abs_prauc_scores = np.asarray(VL_abs_prauc_scores) # V,1
         VL_sqr_prauc_scores = np.asarray(VL_sqr_prauc_scores) # V,1
-        VL_encodings = np.asarray(VL_encodings) # V,F,E
+        if self.calcOC_SVM: VL_encodings = np.asarray(VL_encodings) # V,F,E
         
         FLT_targets = flatten_2darray(VL_targets)
             
@@ -326,13 +330,14 @@ class AutoEncoder_Tester:
         FLT_agg_abs_regularity = flatten_2darray(VL_abs_regularity_scores)
         FLT_agg_sqr_regularity = flatten_2darray(VL_sqr_regularity_scores)
         
-        # One Class Unsupervised SVM
-        try:
-            FLT_encodings = np.array([e.flatten() for e in flatten_2darray(VL_encodings)])
-            svm_score = 0.0
-            svm_score = self.OC_SVM(FLT_encodings, FLT_targets, tag = "")
-        except Exception as e:
-            print("OneCass SVM: Encodings shape: %s, Targets shape: %s, OC_SVM Error: %s:"%(FLT_encodings.shape, FLT_targets.shape, e))
+        svm_score = 0.0
+        if self.calcOC_SVM: 
+            # One Class Unsupervised SVM
+            try:
+                FLT_encodings = np.array([e.flatten() for e in flatten_2darray(VL_encodings)])
+                svm_score = self.OC_SVM(FLT_encodings, FLT_targets, tag = "")
+            except Exception as e:
+                print("OneCass SVM: Encodings shape: %s, Targets shape: %s, OC_SVM Error: %s:"%(FLT_encodings.shape, FLT_targets.shape, e))
             
         # Mean video roc-auc
         mean_abs_vid_aucroc = VL_abs_rocauc_scores.mean()
@@ -417,7 +422,6 @@ class AutoEncoder_Tester:
             },
             "params": {
                 "targets": VL_targets,
-                "encodings": VL_encodings,
                 "abs_losses": VL_abs_losses,
                 "sqr_losses": VL_sqr_losses,
                 "abs_regularity": VL_abs_regularity_scores,
@@ -432,12 +436,9 @@ class AutoEncoder_Tester:
         
         print("-"*20, "TEST RESULTS", "-"*20)
         pprint(self.results["AUC_ROC"])
+        pprint(self.results["confusion_matrices"])
         for k, v in self.results["classification_reports"].items():
-            if "agg" in k:
-                print(k)
-                pprint(v)
-        for k, v in self.results["confusion_matrices"].items():
-            if "agg" in k:
+            if "agg" in k or "best" in k:
                 print(k)
                 pprint(v)
         print("="*54)

@@ -136,11 +136,11 @@ class UCSD(ImagesHandler, VideosHandler, Attributes):
                  image_size = 128,
                  image_type = "normal",
                  n_frames = 16,
-                 frame_strides = [1,2,4,8,16],
+                 frame_strides = [2,4,8,16],
                  sample_stride = 1,
                  useCorrectedAnnotations = False
                 ):
-        self.__name__ = "UCSD" + str(dataset_type) + "_V2"
+        self.__name__ = "UCSD" + str(dataset_type)
         self.isTrain = isTrain
         self.asImages = asImages
         self.image_size = image_size
@@ -259,10 +259,10 @@ class StreetScene(ImagesHandler, VideosHandler, Attributes):
                  image_size = 128,
                  image_type = "normal",
                  n_frames = 16,
-                 frame_strides = [1,2,4,8,16],
+                 frame_strides = [2,4,8,16],
                  sample_stride = 1,
                 ):
-        self.__name__ = "Street_Scene" + "_V2"
+        self.__name__ = "Street_Scene"
         self.isTrain = isTrain
         self.asImages = asImages
         self.image_size = image_size
@@ -363,10 +363,10 @@ class Avenue(ImagesHandler, VideosHandler, Attributes):
                  image_size = 128,
                  image_type = "normal",
                  n_frames = 16,
-                 frame_strides = [1,2,4,8,16],
+                 frame_strides = [2,4,8,16],
                  sample_stride = 1,
                 ):
-        self.__name__ = "Avenue" + "_V2"
+        self.__name__ = "Avenue"
         self.isTrain = isTrain
         self.asImages = asImages
         self.image_size = image_size
@@ -479,17 +479,18 @@ class Subway(ImagesHandler, VideosHandler, Attributes):
         image_size = 128,
         image_type = "normal",
         n_frames = 16,
-        frame_strides = [1,2,4,8,16],
+        frame_strides = [2,4,8,16],
         sample_stride = 1,
+        threshold = 1,
     ):
-        if dataset_type == 0:
+        if dataset_type == 0 or "Entrance" in dataset_type:
             self.dataset_type = 0
             self.dataset_tag = "Entrance"
         else:
             self.dataset_type = 1
             self.dataset_tag = "Exit"
             
-        self.__name__ = "%s_%s"%("Subway", self.dataset_tag) + "_V2"
+        self.__name__ = "%s_%s"%("Subway", self.dataset_tag)
         self.isTrain = isTrain
         self.asImages = asImages
         self.image_size = image_size
@@ -497,6 +498,7 @@ class Subway(ImagesHandler, VideosHandler, Attributes):
         self.n_frames = n_frames
         self.frame_strides = frame_strides
         self.sample_stride = sample_stride
+        self.threshold = threshold
         
         if isinstance(self.image_size, int): self.image_size = (self.image_size, self.image_size)
         
@@ -538,7 +540,7 @@ class Subway(ImagesHandler, VideosHandler, Attributes):
         self.create_dataset()
         Attributes.__init__(self)
     
-    def read_temporal_annotations(self, threshold = 20):
+    def read_temporal_annotations(self):
         annotation_file = join_paths([self.data_path, "%s_annotations.json"%(self.dataset_tag.lower())])
         anomalous_frame_numbers = list()
         
@@ -553,7 +555,7 @@ class Subway(ImagesHandler, VideosHandler, Attributes):
         
         temporal_labels = np.array([NORMAL_LABEL]*len(frame_ids))
         for aafn in adjusted_anomalous_frame_numbers:
-            temporal_labels[max(0, aafn-threshold) : min(aafn + threshold, len(temporal_labels))] = ABNORMAL_LABEL
+            temporal_labels[max(0, aafn-self.threshold) : min(aafn + self.threshold, len(temporal_labels))] = ABNORMAL_LABEL
         return np.expand_dims(temporal_labels, axis = 0)
                 
     def read_image_data(self, files_in_dir, idx):
@@ -601,10 +603,10 @@ class ShangaiTech(ImagesHandler, VideosHandler, Attributes):
         image_size = 128,
         image_type = "normal",
         n_frames = 16,
-        frame_strides = [1,2,4,8,16],
+        frame_strides = [2,4,8,16],
         sample_stride = 1,
     ):
-        self.__name__ = "ShangaiTech" + "_V2"
+        self.__name__ = "ShangaiTech"
         self.isTrain = isTrain
         self.asImages = asImages
         self.image_size = image_size
@@ -619,8 +621,8 @@ class ShangaiTech(ImagesHandler, VideosHandler, Attributes):
         
         if self.isTrain:
             transforms_list += [
-#                 transforms.ColorJitter(brightness=0.9, contrast=0.9),
-#                 transforms.RandomAffine(3, translate=None, scale=None, shear=None, resample=0, fillcolor=0),
+                transforms.ColorJitter(brightness=0.9, contrast=0.9),
+                transforms.RandomAffine(3, translate=None, scale=None, shear=None, resample=0, fillcolor=0),
 #                 transforms.RandomHorizontalFlip(p=0.2),
             ]
         transforms_list += [
@@ -708,7 +710,7 @@ def select_dataset(
     image_size = 128,
     image_type = "normal",
     n_frames = 16,
-    frame_strides = [1,2,4,8,16],
+    frame_strides = [2,4,8,16],
     sample_stride = 1,
 ):
     if not isTrain:

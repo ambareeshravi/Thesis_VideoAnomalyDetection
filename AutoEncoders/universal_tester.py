@@ -12,10 +12,13 @@ def test_model(
         "save_vis": True,
         "n_seed": 8,
         "useGPU": True
-    }
-    
+    },
+    dataset_kwargs ={
+        'image_size': 128,
+        'image_type': 'normal'
+    },
 ):
-    test_data, channels = select_dataset(dataset_type, isTrain = False)
+    test_data, channels = select_dataset(dataset_type, isTrain = False, **dataset_kwargs)
     load_model(model, model_path)
 
     print("-"*40)

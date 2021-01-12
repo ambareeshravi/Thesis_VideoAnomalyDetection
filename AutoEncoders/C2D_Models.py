@@ -841,7 +841,7 @@ class ConvAttentionLayerWrapper(nn.Module):
         kernel_sizes:tuple = (3,5),
         stride:int = 1,
         padding = 0,
-        lambda_:float = 1e-6
+        lambda_:float = 1e-4
     ):
         super(ConvAttentionLayerWrapper, self).__init__()
         self.__name__ = "ConvAttentionLayerWrapper"
@@ -858,9 +858,9 @@ class ConvAttentionLayerWrapper(nn.Module):
         if self.kernel_sizes[1] % 2 == 0: out_padding -= 1
         
         self.attention_conv = nn.Sequential(
-            nn.Conv2d(self.in_channels, self.out_channels, self.kernel_sizes[0], stride, padding = self.padding),
-#             nn.Conv2d(self.in_channels, self.out_channels//self.compression, self.kernel_sizes[0], stride, padding = self.padding),
-#             nn.Conv2d(self.out_channels//self.compression, self.out_channels, self.kernel_sizes[1], 1, padding = out_padding),
+#             nn.Conv2d(self.in_channels, self.out_channels, self.kernel_sizes[0], stride, padding = self.padding),
+            nn.Conv2d(self.in_channels, self.out_channels//self.compression, self.kernel_sizes[0], stride, padding = self.padding),
+            nn.Conv2d(self.out_channels//self.compression, self.out_channels, self.kernel_sizes[1], 1, padding = out_padding),
         )
         self.act_block = nn.Sequential(
             nn.BatchNorm2d(self.out_channels),
@@ -902,9 +902,9 @@ class ConvTransposeAttentionLayerWrapper(nn.Module):
         if self.kernel_sizes[-1] % 2 == 0: out_padding -= 1
             
         self.attention_conv = nn.Sequential(
-            nn.ConvTranspose2d(self.in_channels, self.out_channels, self.kernel_sizes[0], stride, padding = self.padding),
-#             nn.ConvTranspose2d(self.in_channels, self.out_channels//self.compression, self.kernel_sizes[0], stride, padding = self.padding),
-#             nn.ConvTranspose2d(self.out_channels//self.compression, self.out_channels, self.kernel_sizes[1], 1, padding = out_padding),
+#             nn.ConvTranspose2d(self.in_channels, self.out_channels, self.kernel_sizes[0], stride, padding = self.padding),
+            nn.ConvTranspose2d(self.in_channels, self.out_channels//self.compression, self.kernel_sizes[0], stride, padding = self.padding),
+            nn.ConvTranspose2d(self.out_channels//self.compression, self.out_channels, self.kernel_sizes[1], 1, padding = out_padding),
         )
         self.act_block = nn.Sequential(
             nn.BatchNorm2d(self.out_channels),
@@ -1052,6 +1052,7 @@ class C2D_AE_224(nn.Module):
         self.filters_count = filters_count
         self.embedding_dim = [1, self.filters_count[4], 4, 4] # check and change
         self.conv_layer = C2D_BN_A
+        
         if use_aug_conv:
             self.__name__ += "_AAC"
             self.conv_layer = self.get_AAC
@@ -1127,7 +1128,8 @@ class C2D_AE_224(nn.Module):
             self.decoder_layers = modified_layers[:-1]
         
         self.decoder = nn.Sequential(*self.decoder_layers)
-    
+        
+    @staticmethod
     def get_AAC(self, in_channels, out_channels, kernel_size = 3, stride = 2, padding = 0, conv_type = None, activation_type="leaky_relu"):
         return nn.Sequential(
             AugmentedConv(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, stride=stride),
@@ -1264,3 +1266,115 @@ C2D_MODELS_DICT = {
     
     "multi_resolution": C2D_Multi_AE
 }
+
+class C2D_BEST(nn.Module):
+    def __init__(
+        self,
+        image_size = 128,
+        channels = 3,
+        filters_count = [64,64,96,96,128,128],
+        encoder_activation = "tanh",
+        conv_type = "conv2d",
+        
+        use_aug_conv = False,
+        use_input_attention = True,
+        add_sqzex = True,
+        add_dropouts = True,
+        add_res = False,
+        add_noise = True,
+        
+        dropout_rate = 0.2,
+        attention_lambda = 1e-6
+    ):
+        super(C2D_BEST, self).__init__()
+        self.__name__ = "C2D_BEST"
+        if add_noise: self.__name__ += "_DeNoising"
+        self.image_size = image_size
+        self.channels = channels
+        self.filters_count = filters_count
+        self.attention_lambda = attention_lambda
+        
+        assert (use_input_attention and use_aug_conv) != True, "Either Input Self attention Block or Attention Augmented Conv layer. Not both"
+        
+        s = lambda x: "Y" if x else "N"
+        self.__name__ += "_AugConv_%s|InpAttn_%s|SE_%s|Res_%s|DP_%s|Noise_%s|AL:%s"%(tuple(list(map(s, [use_aug_conv, use_input_attention, add_sqzex, add_res, add_dropouts, add_noise])) + ["{:.0e}".format(self.attention_lambda)]))
+
+        # Build encoder
+        encoder_layers = list()
+        new_image_size = self.image_size
+        new_in_channels = self.channels
+        idx = 0
+        
+        while new_image_size > 10:
+            if idx == 0:
+                if use_aug_conv:
+                    input_layer = C2D_AE_224.get_AAC(self, new_in_channels, self.filters_count[idx], 3, 2)
+                elif use_input_attention:
+                    input_layer = ConvAttentionLayerWrapper(
+                        C2D_BN_A(new_in_channels, self.filters_count[idx], 3, 2),
+                        in_channels=new_in_channels,
+                        out_channels=self.filters_count[idx],
+                        stride = 2
+                    )
+                    self.attention_layer = input_layer
+                else:
+                    input_layer = C2D_BN_A(new_in_channels, self.filters_count[idx], 3, 2)
+                encoder_layers.append(input_layer)
+                
+            else:
+                encoder_layers.append(
+                    C2D_BN_A(new_in_channels, self.filters_count[idx], 3, 2)
+                )
+            
+            if add_sqzex: encoder_layers.append(SE_Block(self.filters_count[idx]))
+            if add_res: encoder_layers.append(C2D_Res(self.filters_count[idx], 3))
+            if add_dropouts: encoder_layers.append(nn.Dropout2d(dropout_rate))
+            
+            new_image_size = getConvOutputShape(new_image_size, 3, 2)
+            new_in_channels = self.filters_count[idx]
+            idx += 1
+            
+        encoder_layers.append(
+            C2D_BN_A(new_in_channels, self.filters_count[idx], 3, 1, activation_type=encoder_activation)
+        )
+        new_in_channels = self.filters_count[idx]
+        new_image_size = getConvOutputShape(new_image_size, 3, 1)
+        self.encoder = nn.Sequential(*encoder_layers)
+        
+        # Build decoder
+        decoder_layers = list()
+        decoder_layers.append(
+            CT2D_BN_A(new_in_channels, self.filters_count[idx-1], 3, 1)
+        )
+        if add_sqzex: decoder_layers.append(SE_Block(self.filters_count[idx-1]))
+        if add_res: decoder_layers.append(CT2D_Res(self.filters_count[idx-1], 3))
+        if add_dropouts: decoder_layers.append(nn.Dropout2d(dropout_rate))
+
+        new_image_size = getConvTransposeOutputShape(new_image_size, 3, 2)
+        new_in_channels = self.filters_count[idx-1]
+        idx -= 1
+        while idx > 0:
+            decoder_layers.append(
+                CT2D_BN_A(new_in_channels, self.filters_count[idx-1], 3, 2)
+            )
+            
+            if add_sqzex: decoder_layers.append(SE_Block(self.filters_count[idx-1]))
+            if add_res: decoder_layers.append(CT2D_Res(self.filters_count[idx-1], 3))
+            if add_dropouts: decoder_layers.append(nn.Dropout2d(dropout_rate))
+                
+            new_image_size = getConvTransposeOutputShape(new_image_size, 3, 2)
+            new_in_channels = self.filters_count[idx-1]
+            idx -= 1
+        decoder_layers.append(
+            CT2D_BN_A(new_in_channels, self.channels, 4, 2, activation_type="sigmoid")
+        )
+        self.decoder = nn.Sequential(*decoder_layers)
+    
+    def auxillary_loss(self,):
+        try: return self.attention_lambda * self.attention_layer.attention_loss()
+        except: return 0.0
+    
+    def forward(self, x):
+        encodings = self.encoder(x)
+        reconstructions = self.decoder(encodings)
+        return reconstructions, encodings
