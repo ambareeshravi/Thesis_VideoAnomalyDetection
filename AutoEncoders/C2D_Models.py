@@ -1305,7 +1305,7 @@ class C2D_BEST(nn.Module):
         new_in_channels = self.channels
         idx = 0
         
-        while new_image_size > 10:
+        while new_image_size > 5:
             if idx == 0:
                 if use_aug_conv:
                     input_layer = C2D_AE_224.get_AAC(self, new_in_channels, self.filters_count[idx], 3, 2)

@@ -745,3 +745,12 @@ def select_dataset(
         if "entrance" in dataset: dataset_type = 0
         else: dataset_type = 1
         return Subway(dataset_type = dataset_type, **kwargs), 1 + flow_channels
+    
+class CombineDatasets(Attributes):
+    def __init__(self, *datasets):
+        self.data = list()
+        self.labels = list()
+        for d in datasets:
+            self.data += d.data
+            self.labels += d.labels
+        super(Attributes, self).__init__()
