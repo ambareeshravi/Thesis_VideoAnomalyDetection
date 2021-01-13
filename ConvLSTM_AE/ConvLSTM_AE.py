@@ -918,6 +918,7 @@ class FUNNEL(nn.Module):
         l1_output = list()
         for t in range(ts):
             y_n, input_hidden = self.i_layer(x[:,:,t,:,:], input_hidden)
+            if not self.isRNN: input_hidden = (y_n, input_hidden)
             y_n = self.input_act_block(y_n)
             l1_output.append(y_n)
             
@@ -930,6 +931,7 @@ class FUNNEL(nn.Module):
         final_output = list()
         for t in range(ts):
             y_n, output_hidden = self.o_layer(decoded_output[:,t,:,:,:], output_hidden)
+            if not self.isRNN: output_hidden = (y_n, output_hidden)
             y_n = self.output_act_block(y_n)
             final_output.append(y_n)
         reconstructions = torch.stack(final_output) # ts, bs, c, w, h
