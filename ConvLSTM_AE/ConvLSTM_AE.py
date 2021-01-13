@@ -850,3 +850,89 @@ CONV2D_RNN_DICT = {
     
     4. Use ACB and Res Connections    
 '''
+
+class FUNNEL(nn.Module):
+    def __init__(
+        self,
+        isRNN = True,
+        image_size = 128,
+        channels = 3,
+        filters_count = [64,64,96,96,128,128]
+    ):
+        super(FUNNEL, self).__init__()
+        self.__name__ = "FUNNEL"
+        self.isRNN = isRNN
+        if self.isRNN:
+            self.__name__ += "_CRNN"
+            self.input_layer = Conv2dRNN_Cell
+            self.output_layer = ConvTranspose2dRNN_Cell
+        else:
+            self.__name__ += "_CLSTM"
+            self.input_layer = Conv2dLSTM_Cell
+            self.output_layer = ConvTranspose2dLSTM_Cell
+            
+        self.image_size = image_size
+        self.channels = channels
+        self.filters_count = filters_count
+        
+        self.i_layer = self.input_layer(self.image_size, self.channels, self.filters_count[0], kernel_size=3, stride=2, conv_bias=True, init_random=True)
+        self.input_act_block = BN_A(self.filters_count[0], is3d=False)
+        
+        self.encoder_layers = nn.Sequential(
+            C2D_BN_A(self.filters_count[0], self.filters_count[1], 3, 2),
+            C2D_BN_A(self.filters_count[1], self.filters_count[2], 3, 2),
+            C2D_BN_A(self.filters_count[2], self.filters_count[3], 3, 2),
+            C2D_BN_A(self.filters_count[3], self.filters_count[4], 4, 1, activation_type="tanh"),
+        )
+        
+        current_shape = self.i_layer.output_shape
+        for k,s in zip([3,3,3,3], [2,2,2,1]):
+            current_shape = getConvOutputShape(current_shape, k, s)
+            
+        self.decoder_layers = nn.Sequential(
+            CT2D_BN_A(self.filters_count[4], self.filters_count[3], 4, 1),
+            CT2D_BN_A(self.filters_count[3], self.filters_count[2], 3, 2),
+            CT2D_BN_A(self.filters_count[2], self.filters_count[1], 3, 2),
+            CT2D_BN_A(self.filters_count[1], self.filters_count[0], 3, 2),
+        )
+        
+        for k,s in zip([3,3,3,3], [1,2,2,2]):
+            current_shape = getConvTransposeOutputShape(current_shape, k, s)
+            
+        self.o_layer = self.output_layer(current_shape, self.filters_count[0], self.channels, kernel_size=4, stride = 2, conv_bias=True, init_random=True)
+        self.output_act_block = BN_A(self.channels, activation_type="sigmoid", is3d=False)
+    
+    def temporal_squeeze(self, x):
+        # bs,ts,c,w,h = x.shape
+        return torch.stack([ts_x for bs_x in x for ts_x in bs_x])
+    
+    def temporal_expand(self, x, bs, ts = 16):
+        # bs*ts,c,w,h = x.shape
+        return torch.stack([torch.stack([x[t_idx] for t_idx in range(ts)]) for b_idx in range(bs)])
+        
+    def forward(self, x):
+        bs, c, ts, w, h = x.shape
+        
+        input_hidden, output_hidden = None, None
+        
+        l1_output = list()
+        for t in range(ts):
+            y_n, input_hidden = self.i_layer(x[:,:,t,:,:], input_hidden)
+            y_n = self.input_act_block(y_n)
+            l1_output.append(y_n)
+            
+        l1_output = torch.stack(l1_output).transpose(0,1) # bs,ts,c,w,h
+        l1_output = self.temporal_squeeze(l1_output) # bs * ts, c, w, h
+        encodings = self.encoder_layers(l1_output)
+        decoded_output = self.decoder_layers(encodings)
+        decoded_output = self.temporal_expand(decoded_output, bs = bs, ts = ts) # bs,ts,c,w,h
+        
+        final_output = list()
+        for t in range(ts):
+            y_n, output_hidden = self.o_layer(decoded_output[:,t,:,:,:], output_hidden)
+            y_n = self.output_act_block(y_n)
+            final_output.append(y_n)
+        reconstructions = torch.stack(final_output) # ts, bs, c, w, h
+        reconstructions = reconstructions.transpose(0,1).transpose(1,2)
+        encodings = self.temporal_expand(encodings, bs = bs, ts = ts).transpose(1,2) # bs,ts,c,w,h -> bs,c,ts,w,h
+        return reconstructions, encodings
