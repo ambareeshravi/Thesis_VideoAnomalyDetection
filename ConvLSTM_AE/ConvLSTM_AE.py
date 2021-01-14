@@ -142,12 +142,14 @@ class CLSTM_AE(nn.Module):
         self.decoder_layers = list()
         for idx, (n, k, s) in enumerate(zip(self.filter_count[::-1], self.filter_sizes[::-1], self.filter_strides[::-1])):
             oc_idx = len(self.filter_count) - (2 + idx)
+            activation_type = "leaky_relu"
             if oc_idx > -1: out_channels = self.filter_count[oc_idx]
             else:
                 out_channels = self.channels
                 if k%2 !=0: k += 1
+                activation_type = "sigmoid"
             if (self.n_layers - idx) <= self.n_lstm_layers:
-                insert = TimeDistributed(CT2D_BN_A(n, out_channels, k, s))
+                insert = TimeDistributed(CT2D_BN_A(n, out_channels, k, s, activation_type = activation_type))
             else:
                 insert = ConvTransposeLSTM_Cell(current_input_shape, n, out_channels, k, s, useBias=useBias)
             self.decoder_layers.append(insert)
@@ -177,6 +179,6 @@ class CLSTM_AE(nn.Module):
             states_list[idx] = states
         
         reconstructions = nn.Sequential(*self.decoder_layers[self.n_normal:])(layer_output)
-        encodings = lstm_outputs[self.n_lstm_layers].transpose(1,2)
+        encodings = lstm_outputs[self.n_lstm_layers - 1].transpose(1,2)
         reconstructions = reconstructions.transpose(1,2)
         return reconstructions, encodings
