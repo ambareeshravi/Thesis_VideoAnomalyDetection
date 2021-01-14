@@ -54,7 +54,7 @@ class AutoEncoder_Tester:
         self.stacked = False
         if "stack" in self.model_file.lower():
             self.stacked = True
-            self.stackFrames = 16
+            if self.stackFrames == 1: self.stackFrames = 16
             self.isVideo = True
             self.predict = self.predict_stacked
         if "translat" in self.model_file.lower():
@@ -63,7 +63,7 @@ class AutoEncoder_Tester:
             self.predict = self.predict_attention
         if "c3d" in self.model_file.lower() or "lstm" in self.model_file.lower() or "rnn" in self.model_file.lower():
             self.isVideo = True
-            self.stackFrames = 16
+            if self.stackFrames == 1: self.stackFrames = 16
         if "clstm" in self.model_file.lower() and "future" in self.model_file.lower():
             self.predict = self.predict_future
             self.n_seed = 1

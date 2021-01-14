@@ -732,9 +732,9 @@ class TimeDistributed(nn.Module):
         
     def forward(self, x):
         outputs = list()
-        for i in range(x.size(0)):
-            outputs += [self.module(x[i])]
-        return torch.stack(outputs)
+        for i in range(x.size(1)):
+            outputs += [self.module(x[:,i,...])]
+        return torch.stack(outputs).transpose(0,1)
     
 class SE_Block(nn.Module):
     "credits: https://github.com/moskomule/senet.pytorch/blob/master/senet/se_module.py#L4"
