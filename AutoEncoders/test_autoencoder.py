@@ -67,6 +67,9 @@ class AutoEncoder_Tester:
         if "clstm" in self.model_file.lower() and "future" in self.model_file.lower():
             self.predict = self.predict_future
             self.n_seed = 1
+        if "clstm" in self.model_file.lower() and "seq2seq" in self.model_file.lower():
+            self.predict = self.predict_sequence
+            self.n_future_steps = 4
             
         self.save_as = ".pkl".join(self.model_file.split(".pth.tar"))
         self.save_path = os.path.split(self.save_as)[0]
@@ -142,6 +145,11 @@ class AutoEncoder_Tester:
             reconstructions = torch.cat((seed_reconstructions, future_reconstructions[:,:,self.n_seed:,:,:]), dim = 2)
             encodings = torch.cat((seed_encodings, future_encodings[:,:,self.n_seed:,:,:]), dim = 2)
             return reconstructions, encodings
+        
+    def predict_sequence(self, inputs):
+        with torch.no_grad():
+            predictions, encodings = self.model(inputs, future_steps = self.n_future_steps)
+            return predictions, encodings
                     
     def plot_regularity(self, y_true, y_pred, file_name):
         x = np.array(range(len(y_true)))
@@ -172,6 +180,7 @@ class AutoEncoder_Tester:
         return results
         
     def test(self, return_results = False):
+        if "seq" in self.model_path.lower(): return True
         results_visulization_path = join_paths([self.save_path, "results/"])
         if not os.path.exists(results_visulization_path):
             os.mkdir(results_visulization_path)
