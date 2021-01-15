@@ -109,6 +109,7 @@ class CLSTM_AE(nn.Module):
         filter_sizes = [3,3,3,5],
         filter_strides = [2,2,2,2],
         n_lstm_layers = 2,
+        disableDeConvLSTM = True,
         useBias = False
     ):
         super(CLSTM_AE, self).__init__()
@@ -118,6 +119,7 @@ class CLSTM_AE(nn.Module):
         self.filter_count = filter_count
         self.filter_sizes = filter_sizes
         self.filter_strides = filter_strides
+        self.disableDeConvLSTM = disableDeConvLSTM
         
         self.n_layers = len(self.filter_count)
         self.n_lstm_layers = n_lstm_layers
@@ -140,6 +142,7 @@ class CLSTM_AE(nn.Module):
             in_channels = n
             
         self.decoder_layers = list()
+        
         for idx, (n, k, s) in enumerate(zip(self.filter_count[::-1], self.filter_sizes[::-1], self.filter_strides[::-1])):
             oc_idx = len(self.filter_count) - (2 + idx)
             activation_type = "leaky_relu"
@@ -148,10 +151,10 @@ class CLSTM_AE(nn.Module):
                 out_channels = self.channels
                 if k%2 !=0: k += 1
                 activation_type = "sigmoid"
-            if (self.n_layers - idx) <= self.n_lstm_layers:
-                insert = TimeDistributed(CT2D_BN_A(n, out_channels, k, s, activation_type = activation_type))
-            else:
+            if idx < self.n_lstm_layers and not self.disableDeConvLSTM:
                 insert = ConvTransposeLSTM_Cell(current_input_shape, n, out_channels, k, s, useBias=useBias)
+            else:
+                insert = TimeDistributed(CT2D_BN_A(n, out_channels, k, s, activation_type = activation_type))
             self.decoder_layers.append(insert)
             current_input_shape = getConvTransposeOutputShape(current_input_shape, k, s)
         
@@ -163,22 +166,29 @@ class CLSTM_AE(nn.Module):
         preliminary_encodings = nn.Sequential(*self.encoder_layers[:(self.n_layers - self.n_lstm_layers)])(x.permute(0,2,1,3,4)) # bs,ts,c,w,h
         # preliminary_encodings -> bs,ts,c,w,h
         
-        states_list = [None] * 2 * self.n_lstm_layers
-        current_input = preliminary_encodings
-        lstm_outputs = list()
+        if self.n_lstm_layers != 0:
+            states_list = [None] * 2 * self.n_lstm_layers
+            current_input = preliminary_encodings
+            lstm_outputs = list()
+            lstm_layers = self.encoder_layers[self.n_normal:]
+            if not self.disableDeConvLSTM: lstm_layers += self.decoder_layers[:self.n_lstm_layers]
+            for idx, layer in enumerate(lstm_layers):
+                layer_outputs = list()
+                states = states_list[idx]
+                for t in range(ts):
+                    states = layer(current_input[:,t,...], states)
+                    layer_outputs.append(states[0])
+                layer_output = torch.stack(layer_outputs, dim = 1) # b,ts,c,w,h
+                lstm_outputs.append(layer_output)
+                current_input = layer_output
+                states_list[idx] = states
+            encodings = lstm_outputs[self.n_lstm_layers - 1].transpose(1,2)
+        else:
+            layer_output = preliminary_encodings
+            encodings = layer_output
         
-        for idx, layer in enumerate(self.encoder_layers[self.n_normal:] + self.decoder_layers[:self.n_lstm_layers]):
-            layer_outputs = list()
-            states = states_list[idx]
-            for t in range(ts):
-                states = layer(current_input[:,t,...], states)
-                layer_outputs.append(states[0])
-            layer_output = torch.stack(layer_outputs, dim = 1) # b,ts,c,w,h
-            lstm_outputs.append(layer_output)
-            current_input = layer_output
-            states_list[idx] = states
-        
-        reconstructions = nn.Sequential(*self.decoder_layers[self.n_normal:])(layer_output)
-        encodings = lstm_outputs[self.n_lstm_layers - 1].transpose(1,2)
+        decode_index = self.n_lstm_layers
+        if self.disableDeConvLSTM: decode_index = 0
+        reconstructions = nn.Sequential(*self.decoder_layers[decode_index:])(layer_output)
         reconstructions = reconstructions.transpose(1,2)
         return reconstructions, encodings
