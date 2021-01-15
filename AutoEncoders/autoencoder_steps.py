@@ -74,6 +74,9 @@ class AutoEncoderHelper:
         # Future prediction step
         if "clstm" in self.model_file.lower() and "future" in self.model_file.lower():
             self.step = self.future_step
+            
+        if "clstm" in self.model_file.lower() and "seq2seq" in self.model_file.lower():
+            self.step = self.sequence_step
         
         self.isSVDD_enabled = False
         if "svdd" in self.model_file.lower():
@@ -200,6 +203,14 @@ class AutoEncoderHelper:
     def future_step(self, images):
         reconstructions, encodings = self.model(self.get_inputs(images)[:,:,:-1,:,:])
         return self.loss_criterion(images[:,:,1:,:,:], reconstructions)
+    
+    def sequence_step(self, images):
+        video_chunks = self.get_inputs(images) # bs,c,ts,w,h
+        bs,c,ts,w,h = video_chunks.shape
+        current_steps = np.random.choice(list(range(ts//3, ts-2)))
+        future_steps = ts - current_steps
+        predictions, encodings = self.model(video_chunks[:,:,:current_steps,:,:], future_steps = future_steps)
+        return self.loss_criterion(video_chunks[:,:,current_steps:,:,:], predictions)
             
     def save(self,):
         if self.isSVDD_enabled:
