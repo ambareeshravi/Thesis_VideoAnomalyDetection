@@ -95,7 +95,7 @@ class ConvTransposeLSTM_Cell(ConvLSTM_Cell):
         self.output_shape = getConvTransposeOutputShape(self.input_size, self.kernel_size, self.stride, self.padding, output_padding)
         
         self.hidden_kernel_size = (self.kernel_size - 1) if (self.kernel_size%2==0) else self.kernel_size
-        self.hidden_padding = self.kernel_size//2
+        self.hidden_padding = (self.kernel_size - 1)//2
         
         self.conv_Wh = nn.ConvTranspose2d(self.out_channels, 4*self.out_channels, self.hidden_kernel_size, 1, self.hidden_padding, output_padding = output_padding, bias = useBias)
         self.states_shape = [self.out_channels, self.output_shape, self.output_shape]
@@ -191,4 +191,94 @@ class CLSTM_AE(nn.Module):
         if self.disableDeConvLSTM: decode_index = 0
         reconstructions = nn.Sequential(*self.decoder_layers[decode_index:])(layer_output)
         reconstructions = reconstructions.transpose(1,2)
+        return reconstructions, encodings
+    
+class CLSTM_Seq2Seq(nn.Module):
+    def __init__(
+        self,
+        image_size = 128, 
+        channels = 3,
+        filter_count = [64,64,64],
+        filter_sizes = [3,3,3],
+        filter_strides = [2,2,1],
+        useBias = False
+    ):
+        super(CLSTM_Seq2Seq, self).__init__()
+        self.__name__ = "CLSTM_Seq2Seq_%d"%(image_size)
+        self.image_size = image_size
+        self.channels = channels
+        self.filter_count = filter_count
+        self.filter_sizes = filter_sizes
+        self.filter_strides = filter_strides
+        
+        assert self.filter_count[-1] == self.filter_count[-2], "Last two filter counts should be same"
+        
+        self.encoder_layers = list()
+        current_input_shape = self.image_size
+        in_channels = self.channels
+        for idx, (n, k, s) in enumerate(zip(self.filter_count, self.filter_sizes, self.filter_strides)):
+            self.encoder_layers.append(
+                ConvLSTM_Cell(current_input_shape, in_channels, n, k, s, useBias=useBias)
+            )
+            current_input_shape = getConvOutputShape(current_input_shape,k,s)
+            in_channels = n
+            
+        self.decoder_layers = list()
+        
+        for idx, (n, k, s) in enumerate(zip(self.filter_count[::-1], self.filter_sizes[::-1], self.filter_strides[::-1])):
+            oc_idx = len(self.filter_count) - (2 + idx)
+            activation_type = "leaky_relu"
+            if oc_idx > -1: out_channels = self.filter_count[oc_idx]
+            else:
+                states = None
+                if k%2 !=0: k *= 2
+            self.decoder_layers.append(
+                ConvTransposeLSTM_Cell(current_input_shape, n, out_channels, k, s, useBias=useBias)
+            )
+            current_input_shape = getConvTransposeOutputShape(current_input_shape, k, s)
+        
+        # For cuda use
+        self.modules = nn.ModuleList(self.encoder_layers + self.decoder_layers)
+        self.conv3d = C3D_BN_A(self.filter_count[0], self.channels, (1,self.filter_sizes[-1],self.filter_sizes[-1]), 1, activation_type = "sigmoid")
+        self.adjust_pool = nn.AvgPool2d(3, 1)
+    
+    def forward(self, x, future_steps = 0):
+        bs,c,ts,w,h = x.shape
+        x = x.permute(2,0,1,3,4) # ts,[bs,c,w,h]
+        if future_steps == 0: future_steps = ts
+        
+        # Encoding
+        encoder_states = [None]*len(self.encoder_layers)
+        current_input = x
+        encoder_outputs = list()
+        for idx, layer in enumerate(self.encoder_layers):
+            layer_outputs = list()
+            states = encoder_states[idx]
+            for t in range(ts):
+                states = layer(current_input[t], states)
+                layer_outputs.append(states[0])
+            layer_outputs = torch.stack(layer_outputs)
+            encoder_outputs.append(layer_outputs)
+            current_input = layer_outputs
+            encoder_states[idx] = states
+            
+        encodings = states[0]
+        
+        # Decoder
+        current_input = encodings
+        decoder_states = [None]*len(self.decoder_layers)
+        decoder_outputs = list()
+        
+        for t in range(future_steps):
+            for idx, layer in enumerate(self.decoder_layers):
+                states = layer(current_input, decoder_states[idx])
+                decoder_states[idx] = states
+                current_input = states[0]
+                if idx == 0:
+                    next_ts_input = current_input
+            current_input = self.adjust_pool(next_ts_input)
+            decoder_outputs.append(states[0])
+        
+        decoder_outputs = torch.stack(decoder_outputs).permute(1,2,0,3,4) # ts,bs,c,w,h -> bs,c,ts,w,h
+        reconstructions = self.conv3d(decoder_outputs)
         return reconstructions, encodings
