@@ -11,6 +11,7 @@ def test_model(
         "stackFrames": 1,
         "save_vis": True,
         "n_seed": 8,
+        "applyFilter": False,
         "useGPU": True
     },
     dataset_kwargs ={
@@ -31,3 +32,5 @@ def test_model(
     )
     results = tester.test()
     print("="*40)
+    try: del test_data, tester
+    except: pass

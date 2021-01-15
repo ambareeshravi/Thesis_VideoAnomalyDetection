@@ -5,6 +5,7 @@ from general.visualization import *
 
 from sklearn.svm import OneClassSVM
 from sklearn.metrics import *
+from scipy.signal import savgol_filter
 
 from pprint import pprint
 
@@ -25,6 +26,8 @@ class AutoEncoder_Tester:
         save_vis = False,
         n_seed = 2,
         calcOC_SVM = False,
+        applyFilter = False,
+        filterWindow = [9,1],
         useGPU = True
     ):
         self.model = model
@@ -34,6 +37,8 @@ class AutoEncoder_Tester:
         self.save_vis = save_vis
         self.n_seed = n_seed
         self.calcOC_SVM = calcOC_SVM
+        self.applyFilter = applyFilter
+        self.filterWindow = filterWindow
         
         self.device = torch.device("cpu")
         if useGPU and torch.cuda.is_available():
@@ -74,8 +79,13 @@ class AutoEncoder_Tester:
         self.save_as = ".pkl".join(self.model_file.split(".pth.tar"))
         self.save_path = os.path.split(self.save_as)[0]
        
-    def regularity(self, x):
-        return (1-normalize_error(x))
+    def regularity(self, x, applyFilter = True):
+        normalized = 1-normalize_error(x)
+        if applyFilter and self.applyFilter:
+            window = min(self.filterWindow[0], len(x))
+            if window % 2 == 0: window -= 1
+            return savgol_filter(normalized, window, self.filterWindow[1])
+        return normalized
         
     def abs_loss(self, original, reconstruction):
         '''
@@ -180,7 +190,7 @@ class AutoEncoder_Tester:
         return results
         
     def test(self, return_results = False):
-        if "seq" in self.model_path.lower(): return True
+        if "seq" in self.model_file.lower(): return True
         results_visulization_path = join_paths([self.save_path, "results/"])
         if not os.path.exists(results_visulization_path):
             os.mkdir(results_visulization_path)
@@ -263,8 +273,8 @@ class AutoEncoder_Tester:
                 frame_sqr_loss = [psl.sum() for psl in pixel_sqr_loss] # N,1
                 
                 # normalized regularity masks - 0/black normal 1/white abnormal
-                pixel_regularity_abs_mask = [np.abs(1-self.regularity(pal)) for pal in pixel_abs_loss] # Normalized between [0,1]
-                pixel_regularity_sqr_mask = [np.abs(1-self.regularity(psl)) for psl in pixel_sqr_loss] # Normalized between [0,1]
+                pixel_regularity_abs_mask = [np.abs(1-self.regularity(pal, applyFilter = False)) for pal in pixel_abs_loss] # Normalized between [0,1]
+                pixel_regularity_sqr_mask = [np.abs(1-self.regularity(psl, applyFilter = False)) for psl in pixel_sqr_loss] # Normalized between [0,1]
                 
                 FL_targets += test_labels
                 
