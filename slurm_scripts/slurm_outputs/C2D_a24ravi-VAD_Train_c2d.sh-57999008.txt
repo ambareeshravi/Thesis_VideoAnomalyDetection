@@ -1,57 +1,0 @@
-[STATUS] Created version: C2D_23_12_2020_11_47
-              total        used        free      shared  buff/cache   available
-Mem:            187           3         180           2           4         180
-Swap:             0           0           0
-Wed Dec 23 11:47:55 2020       
-+-----------------------------------------------------------------------------+
-| NVIDIA-SMI 455.45.01    Driver Version: 455.45.01    CUDA Version: 11.1     |
-|-------------------------------+----------------------+----------------------+
-| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
-| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
-|                               |                      |               MIG M. |
-|===============================+======================+======================|
-|   0  Tesla V100-SXM2...  On   | 00000000:18:00.0 Off |                    0 |
-| N/A   33C    P0    42W / 300W |      0MiB / 32510MiB |      0%      Default |
-|                               |                      |                  N/A |
-+-------------------------------+----------------------+----------------------+
-|   1  Tesla V100-SXM2...  On   | 00000000:3B:00.0 Off |                    0 |
-| N/A   30C    P0    41W / 300W |      0MiB / 32510MiB |      0%      Default |
-|                               |                      |                  N/A |
-+-------------------------------+----------------------+----------------------+
-                                                                               
-+-----------------------------------------------------------------------------+
-| Processes:                                                                  |
-|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
-|        ID   ID                                                   Usage      |
-|=============================================================================|
-|  No running processes found                                                 |
-+-----------------------------------------------------------------------------+
-[STATUS] Created data directory
-[STATUS] Python environment ready
-[STATUS] Starting script at Wed Dec 23 11:48:13 PST 2020
-0it [00:00, ?it/s]1it [00:11, 11.94s/it]2it [00:25, 12.28s/it]3it [00:37, 12.43s/it]4it [00:50, 12.58s/it]5it [00:58, 10.99s/it]6it [01:10, 11.56s/it]7it [01:20, 10.96s/it]8it [01:29, 10.30s/it]9it [01:41, 10.79s/it]10it [01:51, 10.77s/it]11it [01:58,  9.59s/it]12it [01:59,  7.10s/it]13it [02:03,  5.93s/it]14it [02:07,  5.47s/it]15it [02:10,  4.76s/it]16it [02:12,  3.97s/it]16it [02:12,  8.31s/it]----------------------------------------
-[INFO]: TRAINING DATA READY
-----------------------------------------
-----------------------------------------
-[INFO]: MODEL, OPTIM, LOSS ARE READY
-----------------------------------------
-----------------------------------------
-[INFO]: STARTING THE TRAINING
-----------------------------------------
-
-Traceback (most recent call last):
-  File "run_config_c2d.py", line 99, in <module>
-    trainer.train()
-  File "/scratch/a24ravi/Thesis_VideoAnomalyDetection/AutoEncoders/train_autoencoder.py", line 307, in train
-    model.train_step(train_images)
-  File "/scratch/a24ravi/Thesis_VideoAnomalyDetection/AutoEncoders/train_autoencoder.py", line 205, in train_step
-    loss.backward()
-  File "/home/a24ravi/ENV/lib/python3.7/site-packages/torch/tensor.py", line 221, in backward
-    torch.autograd.backward(self, gradient, retain_graph, create_graph)
-  File "/home/a24ravi/ENV/lib/python3.7/site-packages/torch/autograd/__init__.py", line 132, in backward
-    allow_unreachable=True)  # allow_unreachable flag
-RuntimeError: CUDA out of memory. Tried to allocate 8.00 GiB (GPU 0; 31.75 GiB total capacity; 24.14 GiB already allocated; 6.33 GiB free; 24.19 GiB reserved in total by PyTorch)
-[STATUS] Script completed at Wed Dec 23 11:51:22 PST 2020
-cp: cannot stat '/home/a24ravi/projects/def-karray/a24ravi/slurm_outputs/C2D_%u-%x-%j.txt': No such file or directory
-[STATUS] Models copied safely
-[STATUS] Deactivate python environment. EXITING ...

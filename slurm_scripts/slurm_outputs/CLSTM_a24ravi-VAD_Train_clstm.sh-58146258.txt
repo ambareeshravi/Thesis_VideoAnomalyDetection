@@ -1,55 +1,0 @@
-[STATUS] Created version: CLSTM_25_12_2020_21_01
-              total        used        free      shared  buff/cache   available
-Mem:            187          19         142           3          25         161
-Swap:             0           0           0
-Fri Dec 25 21:01:02 2020       
-+-----------------------------------------------------------------------------+
-| NVIDIA-SMI 455.45.01    Driver Version: 455.45.01    CUDA Version: 11.1     |
-|-------------------------------+----------------------+----------------------+
-| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
-| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
-|                               |                      |               MIG M. |
-|===============================+======================+======================|
-|   0  Tesla V100-SXM2...  On   | 00000000:18:00.0 Off |                    0 |
-| N/A   33C    P0    41W / 300W |      0MiB / 32510MiB |      0%      Default |
-|                               |                      |                  N/A |
-+-------------------------------+----------------------+----------------------+
-                                                                               
-+-----------------------------------------------------------------------------+
-| Processes:                                                                  |
-|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
-|        ID   ID                                                   Usage      |
-|=============================================================================|
-|  No running processes found                                                 |
-+-----------------------------------------------------------------------------+
-[STATUS] Created data directory
-[STATUS] Python environment ready
-[STATUS] Starting script at Fri Dec 25 21:01:21 PST 2020
-0it [00:00, ?it/s]1it [00:06,  6.69s/it]2it [00:16,  7.57s/it]3it [00:26,  8.22s/it]4it [00:38,  9.54s/it]5it [00:51, 10.51s/it]6it [01:01, 10.25s/it]7it [01:10, 10.09s/it]8it [01:17,  9.04s/it]9it [01:30, 10.15s/it]10it [01:42, 10.91s/it]11it [01:55, 11.50s/it]12it [02:08, 11.86s/it]13it [02:21, 12.11s/it]14it [02:30, 11.40s/it]15it [02:40, 10.85s/it]16it [02:50, 10.50s/it]16it [02:50, 10.63s/it]----------------------------------------
-[INFO]: TRAINING DATA READY
-----------------------------------------
-----------------------------------------
-[INFO]: MODEL, OPTIM, LOSS ARE READY
-----------------------------------------
-----------------------------------------
-[INFO]: STARTING THE TRAINING
-----------------------------------------
-
-Traceback (most recent call last):
-  File "run_config_clstm.py", line 95, in <module>
-    trainer.train()
-  File "/scratch/a24ravi/Thesis_VideoAnomalyDetection/AutoEncoders/train_autoencoder.py", line 307, in train
-    model.train_step(train_images)
-  File "/scratch/a24ravi/Thesis_VideoAnomalyDetection/AutoEncoders/train_autoencoder.py", line 204, in train_step
-    loss = self.step(images)
-  File "/scratch/a24ravi/Thesis_VideoAnomalyDetection/AutoEncoders/train_autoencoder.py", line 152, in step
-    reconstructions, encodings = self.model(self.get_inputs(images))
-  File "/home/a24ravi/ENV/lib/python3.7/site-packages/torch/nn/modules/module.py", line 727, in _call_impl
-    result = self.forward(*input, **kwargs)
-  File "../ConvLSTM_AE/ConvLSTM_AE.py", line 447, in forward
-    for t in range(ts + future_steps):
-NameError: name 'future_steps' is not defined
-[STATUS] Script completed at Fri Dec 25 21:04:38 PST 2020
-cp: cannot stat 'slurm_outputs/CLSTM_%u-%x-%j.txt': No such file or directory
-[STATUS] Models copied safely
-[STATUS] Deactivate python environment. EXITING ...

@@ -1,47 +1,0 @@
-[STATUS] Created version: C2D_24_12_2020_06_55
-              total        used        free      shared  buff/cache   available
-Mem:            187           3         175           2           7         180
-Swap:             0           0           0
-Thu Dec 24 06:55:00 2020       
-+-----------------------------------------------------------------------------+
-| NVIDIA-SMI 455.45.01    Driver Version: 455.45.01    CUDA Version: 11.1     |
-|-------------------------------+----------------------+----------------------+
-| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
-| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
-|                               |                      |               MIG M. |
-|===============================+======================+======================|
-|   0  Tesla V100-SXM2...  On   | 00000000:18:00.0 Off |                    0 |
-| N/A   32C    P0    43W / 300W |      0MiB / 32510MiB |      0%      Default |
-|                               |                      |                  N/A |
-+-------------------------------+----------------------+----------------------+
-                                                                               
-+-----------------------------------------------------------------------------+
-| Processes:                                                                  |
-|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
-|        ID   ID                                                   Usage      |
-|=============================================================================|
-|  No running processes found                                                 |
-+-----------------------------------------------------------------------------+
-[STATUS] Created data directory
-[STATUS] Python environment ready
-[STATUS] Starting script at Thu Dec 24 06:55:59 PST 2020
-0it [00:00, ?it/s]1it [02:50, 170.54s/it]2it [06:02, 176.82s/it]3it [09:09, 179.94s/it]4it [12:20, 183.34s/it]5it [13:57, 157.40s/it]6it [17:09, 167.71s/it]7it [19:25, 158.18s/it]8it [21:30, 148.29s/it]9it [24:26, 156.66s/it]10it [26:59, 155.55s/it]11it [28:32, 136.80s/it]12it [28:40, 98.21s/it] 13it [29:16, 79.48s/it]14it [30:11, 72.27s/it]15it [30:46, 60.88s/it]16it [31:04, 48.18s/it]16it [31:04, 116.55s/it]----------------------------------------
-[INFO]: TRAINING DATA READY
-----------------------------------------
-----------------------------------------
-[INFO]: MODEL, OPTIM, LOSS ARE READY
-----------------------------------------
-----------------------------------------
-[INFO]: STARTING THE TRAINING
-----------------------------------------
-
-Maximum estimated Time: 5.81 hours | Will be completed by: 2020-12-24 13:17
-------------------------------------------------------------
-Epoch: [001/300] | time/epoch: 69.99 seconds
-------------------------------------------------------------
-Model: /localscratch/a24ravi.58055208.0/C2D_24_12_2020_06_55/C2D_3x3_128_CONV_ATTENTION_AVENUE_normal_adam_mse_E300_BS048_Stacked/C2D_3x3_128_CONV_ATTENTION_AVENUE_normal_adam_mse_E300_BS048_Stacked.pth.tar
-                Loss
-Training    0.020093
-Validation  0.010456
-----------------------------------------
-slurmstepd: error: *** JOB 58055208 ON cdr2537 CANCELLED AT 2020-12-24T07:47:40 ***

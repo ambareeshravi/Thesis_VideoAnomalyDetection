@@ -1,218 +1,0 @@
-[STATUS] Created version: CLSTM_24_12_2020_17_22
-              total        used        free      shared  buff/cache   available
-Mem:            187          21          99           6          66         157
-Swap:             0           0           0
-Thu Dec 24 17:22:36 2020       
-+-----------------------------------------------------------------------------+
-| NVIDIA-SMI 455.45.01    Driver Version: 455.45.01    CUDA Version: 11.1     |
-|-------------------------------+----------------------+----------------------+
-| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
-| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
-|                               |                      |               MIG M. |
-|===============================+======================+======================|
-|   0  Tesla V100-SXM2...  On   | 00000000:18:00.0 Off |                    0 |
-| N/A   37C    P0    43W / 300W |      0MiB / 32510MiB |      0%      Default |
-|                               |                      |                  N/A |
-+-------------------------------+----------------------+----------------------+
-                                                                               
-+-----------------------------------------------------------------------------+
-| Processes:                                                                  |
-|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
-|        ID   ID                                                   Usage      |
-|=============================================================================|
-|  No running processes found                                                 |
-+-----------------------------------------------------------------------------+
-[STATUS] Created data directory
-[STATUS] Python environment ready
-[STATUS] Starting script at Thu Dec 24 17:22:54 PST 2020
-0it [00:00, ?it/s]1it [00:06,  6.62s/it]2it [00:16,  7.52s/it]3it [00:25,  8.19s/it]4it [00:38,  9.54s/it]5it [00:51, 10.49s/it]6it [01:01, 10.24s/it]7it [01:10, 10.15s/it]8it [01:17,  9.13s/it]9it [01:30, 10.33s/it]10it [01:43, 11.14s/it]11it [01:56, 11.62s/it]12it [02:09, 11.98s/it]13it [02:22, 12.22s/it]14it [02:31, 11.45s/it]15it [02:41, 10.92s/it]16it [02:51, 10.58s/it]16it [02:51, 10.71s/it]----------------------------------------
-[INFO]: TRAINING DATA READY
-----------------------------------------
-----------------------------------------
-[INFO]: MODEL, OPTIM, LOSS ARE READY
-----------------------------------------
-----------------------------------------
-[INFO]: STARTING THE TRAINING
-----------------------------------------
-
-Maximum estimated Time: 26.35 hours | Will be completed by: 2020-12-25 19:55
-------------------------------------------------------------
-Epoch: [001/200] | time/epoch: 476.72 seconds
-------------------------------------------------------------
-Model: /localscratch/a24ravi.58085612.0/CLSTM_24_12_2020_17_22/CLSTM_FULL_128_UCSD2_normal_adam_mse_E200_BS016_DeNoising/CLSTM_FULL_128_UCSD2_normal_adam_mse_E200_BS016_DeNoising.pth.tar
-                Loss
-Training    0.004657
-Validation  0.009426
-----------------------------------------
-------------------------------------------------------------
-Epoch: [025/200] | time/epoch: 469.12 seconds
-------------------------------------------------------------
-Model: /localscratch/a24ravi.58085612.0/CLSTM_24_12_2020_17_22/CLSTM_FULL_128_UCSD2_normal_adam_mse_E200_BS016_DeNoising/CLSTM_FULL_128_UCSD2_normal_adam_mse_E200_BS016_DeNoising.pth.tar
-             Loss -2   Loss -1    Loss *
-Training    0.000679  0.000677  0.000675
-Validation  0.003522  0.003520  0.003830
-----------------------------------------
-------------------------------------------------------------
-Epoch: [050/200] | time/epoch: 469.49 seconds
-------------------------------------------------------------
-Model: /localscratch/a24ravi.58085612.0/CLSTM_24_12_2020_17_22/CLSTM_FULL_128_UCSD2_normal_adam_mse_E200_BS016_DeNoising/CLSTM_FULL_128_UCSD2_normal_adam_mse_E200_BS016_DeNoising.pth.tar
-             Loss -2   Loss -1    Loss *
-Training    0.000566  0.000565  0.000566
-Validation  0.003795  0.003741  0.003718
-----------------------------------------
-------------------------------------------------------------
-Epoch: [075/200] | time/epoch: 469.37 seconds
-------------------------------------------------------------
-Model: /localscratch/a24ravi.58085612.0/CLSTM_24_12_2020_17_22/CLSTM_FULL_128_UCSD2_normal_adam_mse_E200_BS016_DeNoising/CLSTM_FULL_128_UCSD2_normal_adam_mse_E200_BS016_DeNoising.pth.tar
-             Loss -2   Loss -1    Loss *
-Training    0.000528  0.000528  0.000527
-Validation  0.003643  0.003577  0.003597
-----------------------------------------
-------------------------------------------------------------
-Epoch: [100/200] | time/epoch: 469.61 seconds
-------------------------------------------------------------
-Model: /localscratch/a24ravi.58085612.0/CLSTM_24_12_2020_17_22/CLSTM_FULL_128_UCSD2_normal_adam_mse_E200_BS016_DeNoising/CLSTM_FULL_128_UCSD2_normal_adam_mse_E200_BS016_DeNoising.pth.tar
-             Loss -2   Loss -1    Loss *
-Training    0.000515  0.000515  0.000516
-Validation  0.003643  0.003600  0.003648
-----------------------------------------
-------------------------------------------------------------
-Epoch: [125/200] | time/epoch: 469.36 seconds
-------------------------------------------------------------
-Model: /localscratch/a24ravi.58085612.0/CLSTM_24_12_2020_17_22/CLSTM_FULL_128_UCSD2_normal_adam_mse_E200_BS016_DeNoising/CLSTM_FULL_128_UCSD2_normal_adam_mse_E200_BS016_DeNoising.pth.tar
-             Loss -2   Loss -1    Loss *
-Training    0.000512  0.000512  0.000512
-Validation  0.003623  0.003607  0.003665
-----------------------------------------
-------------------------------------------------------------
-Epoch: [150/200] | time/epoch: 469.65 seconds
-------------------------------------------------------------
-Model: /localscratch/a24ravi.58085612.0/CLSTM_24_12_2020_17_22/CLSTM_FULL_128_UCSD2_normal_adam_mse_E200_BS016_DeNoising/CLSTM_FULL_128_UCSD2_normal_adam_mse_E200_BS016_DeNoising.pth.tar
-             Loss -2   Loss -1    Loss *
-Training    0.000511  0.000511  0.000511
-Validation  0.003637  0.003671  0.003606
-----------------------------------------
-------------------------------------------------------------
-Epoch: [175/200] | time/epoch: 469.30 seconds
-------------------------------------------------------------
-Model: /localscratch/a24ravi.58085612.0/CLSTM_24_12_2020_17_22/CLSTM_FULL_128_UCSD2_normal_adam_mse_E200_BS016_DeNoising/CLSTM_FULL_128_UCSD2_normal_adam_mse_E200_BS016_DeNoising.pth.tar
-             Loss -2   Loss -1    Loss *
-Training    0.000511  0.000511  0.000512
-Validation  0.003648  0.003636  0.003712
-----------------------------------------
-../general/data.py:213: VisibleDeprecationWarning: Creating an ndarray from ragged nested sequences (which is a list-or-tuple of lists-or-tuples-or ndarrays with different lengths or shapes) is deprecated. If you meant to do this, you must specify 'dtype=object' when creating the ndarray
-  temporal_labels = np.array(temporal_labels)
-0it [00:00, ?it/s]1it [00:00,  2.69it/s]2it [00:00,  2.86it/s]3it [00:00,  3.13it/s]4it [00:01,  3.20it/s]5it [00:01,  3.40it/s]6it [00:01,  3.39it/s]7it [00:02,  3.38it/s]8it [00:02,  3.37it/s]9it [00:02,  3.75it/s]10it [00:02,  3.83it/s]11it [00:03,  3.68it/s]12it [00:03,  3.57it/s]12it [00:03,  3.53it/s]
-0it [00:00, ?it/s]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
-OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
-OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
-OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
-1it [00:04,  4.54s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
-OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
-OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
-OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
-2it [00:08,  4.32s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
-OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
-OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
-OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
-3it [00:11,  4.00s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
-OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
-OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
-OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
-4it [00:15,  4.00s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
-OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
-OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
-OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
-5it [00:18,  3.79s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
-OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
-OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
-OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
-6it [00:22,  3.81s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
-OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
-OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
-OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
-7it [00:26,  3.81s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
-OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
-OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
-OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
-8it [00:30,  3.82s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
-OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
-OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
-OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
-9it [00:33,  3.67s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
-OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
-OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
-OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
-10it [00:37,  3.56s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
-OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
-OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
-OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
-11it [00:41,  3.74s/it]OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
-OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
-OpenCV: FFMPEG: tag 0x44495658/'XVID' is not supported with codec id 12 and format 'mp4 / MP4 (MPEG-4 Part 14)'
-OpenCV: FFMPEG: fallback to use tag 0x7634706d/'mp4v'
-12it [00:45,  3.82s/it]12it [00:45,  3.77s/it]
-/home/a24ravi/ENV/lib/python3.7/site-packages/numpy/core/_asarray.py:83: VisibleDeprecationWarning: Creating an ndarray from ragged nested sequences (which is a list-or-tuple of lists-or-tuples-or ndarrays with different lengths or shapes) is deprecated. If you meant to do this, you must specify 'dtype=object' when creating the ndarray
-  return array(a, dtype, copy=False, order=order)
-------------------------------------------------------------
-Epoch: [200/200] | time/epoch: 469.71 seconds
-------------------------------------------------------------
-Model: /localscratch/a24ravi.58085612.0/CLSTM_24_12_2020_17_22/CLSTM_FULL_128_UCSD2_normal_adam_mse_E200_BS016_DeNoising/CLSTM_FULL_128_UCSD2_normal_adam_mse_E200_BS016_DeNoising.pth.tar
-             Loss -2   Loss -1    Loss *
-Training    0.000511  0.000511  0.000511
-Validation  0.003654  0.003673  0.003636
-----------------------------------------
-----------------------------------------
-[INFO]: TESTING DATA READY
-----------------------------------------
-----------------------------------------
-/localscratch/a24ravi.58085612.0/CLSTM_24_12_2020_17_22/CLSTM_FULL_128_UCSD2_normal_adam_mse_E200_BS016_DeNoising/CLSTM_FULL_128_UCSD2_normal_adam_mse_E200_BS016_DeNoising.pth.tar
-Calculation of AUC-ROC score Only one class present in y_true. ROC AUC score is not defined in that case.
-Calculation of AUC-ROC score Only one class present in y_true. ROC AUC score is not defined in that case.
-Calculation of AUC-ROC score Only one class present in y_true. ROC AUC score is not defined in that case.
-Calculation of AUC-ROC score Only one class present in y_true. ROC AUC score is not defined in that case.
-OneCass SVM: Encodings shape: (134, 32768), Targets shape: (2010,), OC_SVM Error: OC_SVM: Number of features and targets are different:
--------------------- TEST RESULTS --------------------
-{'agg_abs_eer': 0.22928176795579366,
- 'agg_abs_reg_aucroc': 0.7821442699672798,
- 'agg_sqr_eer': 0.251213592232857,
- 'agg_sqr_reg_aucroc': 0.7807873598669742,
- 'mean_abs_vid_aucroc': 0.8132282407745823,
- 'mean_sqr_vid_aucroc': 0.7953788606653498,
- 'overall_abs_aucroc': 0.6060627648447139,
- 'overall_abs_eer': 0.5027624309392262,
- 'overall_sqr_aucroc': 0.6060099635251838,
- 'overall_sqr_eer': 0.49723756906077343}
-agg_abs_reg_report
-('              precision    recall  f1-score   support\n'
- '\n'
- '           0       0.82      0.06      0.11      1648\n'
- '           1       0.18      0.94      0.30       362\n'
- '\n'
- '    accuracy                           0.22      2010\n'
- '   macro avg       0.50      0.50      0.21      2010\n'
- 'weighted avg       0.70      0.22      0.15      2010\n')
-agg_sqr_reg_report
-('              precision    recall  f1-score   support\n'
- '\n'
- '           0       0.82      0.06      0.11      1648\n'
- '           1       0.18      0.94      0.30       362\n'
- '\n'
- '    accuracy                           0.22      2010\n'
- '   macro avg       0.50      0.50      0.21      2010\n'
- 'weighted avg       0.70      0.22      0.15      2010\n')
-agg_abs_conf_matrix
-array([[ 100, 1548],
-       [  22,  340]])
-agg_sqr_conf_matrix
-array([[ 100, 1548],
-       [  22,  340]])
-======================================================
-----------------------------------------
-----------------------------------------
-[INFO]: ** Sucessfully Completed Execution **
-----------------------------------------
-[STATUS] Script completed at Fri Dec 25 19:32:41 PST 2020
-cp: cannot stat 'slurm_outputs/CLSTM_%u-%x-%j.txt': No such file or directory
-[STATUS] Models copied safely
-[STATUS] Deactivate python environment. EXITING ...
