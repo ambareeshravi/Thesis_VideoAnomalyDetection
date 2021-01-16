@@ -11,7 +11,7 @@ from pprint import pprint
 
 def pr_auc(y_true, y_pred):
     try:
-        precision, recall, thresholds = precision_recall_curve(y_true, y_pred)
+        precision, recall, thresholds = precision_recall_curve(y_true, y_pred, pos_label = ABNORMAL_LABEL)
         return auc(recall, precision)
     except:
         return 0.0
