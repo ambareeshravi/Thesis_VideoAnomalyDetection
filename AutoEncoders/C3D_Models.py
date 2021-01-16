@@ -3,7 +3,7 @@ sys.path.append("..")
 from general import *
 from general.model_utils import *
 
-class Generic_C3D_AE(nn.Module):
+class C3D_AE_Generic(nn.Module):
     def __init__(self,
                  encoder_layer_info = [
                         [64,3,1,0,1],
@@ -26,7 +26,7 @@ class Generic_C3D_AE(nn.Module):
                  image_size = 128,
                  n_frames = 16,
                  debug = False):
-        super(Generic_C3D_AE, self).__init__()
+        super(C3D_AE_Generic, self).__init__()
         self.__name__ = "C3D_AE_Generic_Generic"
         self.channels = channels
         self.debug = debug
@@ -65,14 +65,14 @@ class Generic_C3D_AE(nn.Module):
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
 
-class C3D_AE_3x3(nn.Module):
+class C3D_AE_128_3x3(nn.Module):
     def __init__(
         self,
         channels = 3,
         filters_count = [64,64,64,96,96,128],
         conv_type = "conv3d"
     ):
-        super(C3D_AE_3x3, self).__init__()
+        super(C3D_AE_128_3x3, self).__init__()
         self.__name__ = "C3D_AE_128_3x3"
         self.channels = channels
         self.filters_count = filters_count
@@ -102,14 +102,14 @@ class C3D_AE_3x3(nn.Module):
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
     
-class C3D_AE_Res_3x3(nn.Module):
+class C3D_AE_128_3x3_Res(nn.Module):
     def __init__(
         self,
         channels = 3,
         filters_count = [64,64,64,96,96,128],
         conv_type = "conv3d"
     ):
-        super(C3D_AE_Res_3x3, self).__init__()
+        super(C3D_AE_128_3x3_Res, self).__init__()
         self.__name__ = "C3D_AE_128_3x3_RES"
         self.channels = channels
         self.filters_count = filters_count
@@ -148,14 +148,14 @@ class C3D_AE_Res_3x3(nn.Module):
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
 
-class C3D2D_AE_3x3(nn.Module):
+class C3D2D_AE_128_3x3(nn.Module):
     def __init__(
         self,
         channels = 3,
         filters_count = [64,64,64,96,96,128],
         conv_type = "conv3d"
     ):
-        super(C3D2D_AE_3x3, self).__init__()
+        super(C3D2D_AE_128_3x3, self).__init__()
         self.__name__ = "C3D2D_AE_128_3x3"
         self.channels = channels
         self.filters_count = filters_count
@@ -189,14 +189,14 @@ class C3D2D_AE_3x3(nn.Module):
         reconstructions = self.decoder2(prilim_out)
         return reconstructions, encodings
 
-class C3D_Multi_AE(nn.Module):
+class C3D_AE_Multi_3x3(nn.Module):
     def __init__(
         self,
         channels = 3,
         filters_count = [64,64,64,96,96,128],
         conv_type = "conv3d"
     ):
-        super(C3D_Multi_AE, self).__init__()
+        super(C3D_AE_Multi_3x3, self).__init__()
         self.__name__ = "C3D_AE_MULTI_3x3"
         self.channels = channels
         self.filters_count = filters_count
@@ -224,7 +224,7 @@ class C3D_Multi_AE(nn.Module):
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
 
-class C3D_AE_128_VAE(C3D_AE_3x3):
+class C3D_AE_128_3x3_VAE(C3D_AE_128_3x3):
     def __init__(
         self,
         isTrain = True,
@@ -232,7 +232,7 @@ class C3D_AE_128_VAE(C3D_AE_3x3):
         filters_count = [64,64,64,96,128,128],
         conv_type = "conv3d"
     ):
-        C3D_AE_3x3.__init__(self, channels = channels, filters_count = filters_count, conv_type = conv_type)
+        C3D_AE_128_3x3.__init__(self, channels = channels, filters_count = filters_count, conv_type = conv_type)
         self.__name__ = "C3D_AE_128_3x3_VAE"
         self.view_shape = tuple([-1] + self.embedding_dim[1:])
         self.embedding_dim = np.product(self.embedding_dim)
@@ -272,17 +272,17 @@ class C3D_AE_128_VAE(C3D_AE_3x3):
     
 C3D_MODELS_DICT = {
     128: {
-        "generic": Generic_C3D_AE,
+        "generic": C3D_AE_Generic,
         "vanilla": {
-            "3x3": C3D_AE_3x3
+            "3x3": C3D_AE_128_3x3
         },
         "vae": {
-            "3x3": C3D_AE_128_VAE
+            "3x3": C3D_AE_128_3x3_VAE
         },
         "res": {
-            "3x3": C3D_AE_Res_3x3
+            "3x3": C3D_AE_128_3x3_Res
         },
-        "3D2D": C3D2D_AE_3x3,
-        "multi_resolution": C3D_Multi_AE
+        "3D2D": C3D2D_AE_128_3x3,
+        "multi_resolution": C3D_AE_Multi_3x3
     }
 }
