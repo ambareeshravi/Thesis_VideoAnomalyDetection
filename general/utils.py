@@ -293,3 +293,6 @@ def video2frames(
     del cap
     if return_count or save_path: return read_count
     else: return frames
+    
+def most_common(lst):
+    return max(set(lst), key=lst.count)

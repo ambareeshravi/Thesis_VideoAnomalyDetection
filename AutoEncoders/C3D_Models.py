@@ -27,7 +27,7 @@ class Generic_C3D_AE(nn.Module):
                  n_frames = 16,
                  debug = False):
         super(Generic_C3D_AE, self).__init__()
-        self.__name__ = "C3D_Generic"
+        self.__name__ = "C3D_AE_Generic_Generic"
         self.channels = channels
         self.debug = debug
         
@@ -73,7 +73,7 @@ class C3D_AE_3x3(nn.Module):
         conv_type = "conv3d"
     ):
         super(C3D_AE_3x3, self).__init__()
-        self.__name__ = "C3D_3x3_128"
+        self.__name__ = "C3D_AE_128_3x3"
         self.channels = channels
         self.filters_count = filters_count
         self.embedding_dim = [1, self.filters_count[4], 1, 4, 4]
@@ -110,7 +110,7 @@ class C3D_AE_Res_3x3(nn.Module):
         conv_type = "conv3d"
     ):
         super(C3D_AE_Res_3x3, self).__init__()
-        self.__name__ = "C3D_3x3_128_RES"
+        self.__name__ = "C3D_AE_128_3x3_RES"
         self.channels = channels
         self.filters_count = filters_count
         
@@ -156,7 +156,7 @@ class C3D2D_AE_3x3(nn.Module):
         conv_type = "conv3d"
     ):
         super(C3D2D_AE_3x3, self).__init__()
-        self.__name__ = "C3D2D_3x3_128"
+        self.__name__ = "C3D2D_AE_128_3x3"
         self.channels = channels
         self.filters_count = filters_count
         
@@ -197,7 +197,7 @@ class C3D_Multi_AE(nn.Module):
         conv_type = "conv3d"
     ):
         super(C3D_Multi_AE, self).__init__()
-        self.__name__ = "C3D_3x3_128"
+        self.__name__ = "C3D_AE_MULTI_3x3"
         self.channels = channels
         self.filters_count = filters_count
         
@@ -233,7 +233,7 @@ class C3D_AE_128_VAE(C3D_AE_3x3):
         conv_type = "conv3d"
     ):
         C3D_AE_3x3.__init__(self, channels = channels, filters_count = filters_count, conv_type = conv_type)
-        self.__name__ = "C3D_AE_3x3_VAE"
+        self.__name__ = "C3D_AE_128_3x3_VAE"
         self.view_shape = tuple([-1] + self.embedding_dim[1:])
         self.embedding_dim = np.product(self.embedding_dim)
         self.isTrain = isTrain
