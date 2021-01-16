@@ -483,7 +483,7 @@ class Subway(ImagesHandler, VideosHandler, Attributes):
         sample_stride = 1,
         threshold = 1,
     ):
-        if dataset_type == 0 or "Entrance" in dataset_type:
+        if dataset_type == 0 or (isinstance(dataset_type, str) and "Entrance" in dataset_type):
             self.dataset_type = 0
             self.dataset_tag = "Entrance"
         else:
