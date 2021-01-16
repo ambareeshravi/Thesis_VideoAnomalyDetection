@@ -9,8 +9,159 @@ from general.losses import max_norm
 
 from attention_conv import AugmentedConv
 
-# [64,64,96,96,128,128]
+# Attention Modules
 
+class AttentionWrapper(nn.Module):
+    def __init__(self, image_size, model, projection_ratio = 4):
+        super(AttentionWrapper, self).__init__()
+        self.image_size = image_size # w,h
+        self.model = model
+        self.projection_dim = (self.image_size[0] * projection_ratio, self.image_size[1] * projection_ratio)
+        self.__name__ = self.model.__name__ + "_ATTENTION"
+        
+        self.W_v = nn.Parameter(torch.randn((self.image_size[1], self.projection_dim[1]), requires_grad=True))
+        self.W_h = nn.Parameter(torch.randn((self.projection_dim[0], self.image_size[0]), requires_grad=True))
+        self.attention_activation = nn.Sigmoid()
+    
+    def attention_forward(self, x):
+        x_a = torch.matmul(torch.matmul(x, self.W_v), torch.matmul(self.W_h, x))
+        return self.attention_activation(torch.multiply(x, x_a))
+    
+    def attention_loss(self, x):
+        return torch.sum(x**2)
+        
+    def forward(self, x):
+        x_a = self.attention_forward(x)
+        encodings = self.model.encoder(x_a)
+        reconstructions = self.model.decoder(encodings)
+        return reconstructions, encodings, x_a
+
+class ConvAttentionWapper(nn.Module):
+    def __init__(self, model, kernel_sizes = (3,5), projection = 64, lambda_ = 1e-6, max_norm_clip = 1):
+        super(ConvAttentionWapper, self).__init__()
+        self.model = model
+        self.projection = projection
+        self.kernel_sizes = kernel_sizes
+        self.lambda_ = lambda_
+        self.max_norm_clip = max_norm_clip
+        
+        self.attention_conv = nn.Sequential(
+            nn.Conv2d(self.model.channels, self.projection, self.kernel_sizes[0], 1, padding = self.kernel_sizes[0]//2),
+            nn.Conv2d(self.projection, self.model.channels, self.kernel_sizes[1], 1, padding = self.kernel_sizes[1]//2),
+        )
+        self.__name__ = self.model.__name__ + "_CONV_ATTENTION"
+        self.act_block = nn.Sequential(
+            nn.BatchNorm2d(self.model.channels),
+            nn.Sigmoid()
+        )
+    
+    def attention_forward(self, x):
+#         x_a = self.attention_conv(x)
+#         return self.act_block(x_a)
+        x_a = self.attention_conv(x)
+        return self.act_block(torch.multiply(x, x_a))
+    
+    def attention_loss(self, w):
+        return self.lambda_ * torch.sqrt(torch.sum(w**2))
+#         return torch.sum(max_norm(self.attention_conv[0].weight.data, self.max_norm_clip)) + torch.sum(max_norm(self.attention_conv[1].weight.data, self.max_norm_clip))
+        
+    def forward(self, x):
+        x_a = self.attention_forward(x)
+        encodings = self.model.encoder(x_a)
+        reconstructions = self.model.decoder(encodings)
+        return reconstructions, encodings, x_a
+
+ConvAttentionWrapper = ConvAttentionWapper
+
+class ConvAttentionLayerWrapper(nn.Module):
+    def __init__(
+        self,
+        module,
+        in_channels:int,
+        out_channels:int,
+        compression:int = 16,
+        kernel_sizes:tuple = (3,5),
+        stride:int = 1,
+        padding = 0,
+        lambda_:float = 1e-4
+    ):
+        super(ConvAttentionLayerWrapper, self).__init__()
+        self.__name__ = "ConvAttentionLayerWrapper"
+        self.module = module
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.compression = compression
+        self.stride = stride
+        self.padding = padding
+        self.kernel_sizes = kernel_sizes
+        self.lambda_ = lambda_
+        
+        out_padding = (self.kernel_sizes[1]-1)//2 
+        if self.kernel_sizes[1] % 2 == 0: out_padding -= 1
+        
+        self.attention_conv = nn.Sequential(
+#             nn.Conv2d(self.in_channels, self.out_channels, self.kernel_sizes[0], stride, padding = self.padding),
+            nn.Conv2d(self.in_channels, self.out_channels//self.compression, self.kernel_sizes[0], stride, padding = self.padding),
+            nn.Conv2d(self.out_channels//self.compression, self.out_channels, self.kernel_sizes[1], 1, padding = out_padding),
+        )
+        self.act_block = nn.Sequential(
+            nn.BatchNorm2d(self.out_channels),
+            nn.Sigmoid()
+        )
+        
+    def attention_loss(self):
+        return self.lambda_ * torch.stack([torch.norm(layer.weight.data) for layer in self.attention_conv]).sum()
+    
+    def forward(self, x):
+        module_output = self.module(x)
+        attention_output = self.attention_conv(x)
+        return self.act_block(torch.multiply(module_output, attention_output))
+
+class ConvTransposeAttentionLayerWrapper(nn.Module):
+    def __init__(
+        self,
+        module,
+        in_channels:int,
+        out_channels:int,
+        compression:int = 16,
+        kernel_sizes:tuple = (3,5),
+        stride:int = 1,
+        padding = 0,
+        lambda_:float = 1e-6
+    ):
+        super(ConvTransposeAttentionLayerWrapper, self).__init__()
+        self.__name__ = "ConvTransposeAttentionLayerWrapper"
+        self.module = module
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.compression = compression
+        self.stride = stride
+        self.padding = padding
+        self.kernel_sizes = kernel_sizes
+        self.lambda_ = lambda_
+        
+        out_padding = (self.kernel_sizes[1]-1)//2 
+        if self.kernel_sizes[-1] % 2 == 0: out_padding -= 1
+            
+        self.attention_conv = nn.Sequential(
+#             nn.ConvTranspose2d(self.in_channels, self.out_channels, self.kernel_sizes[0], stride, padding = self.padding),
+            nn.ConvTranspose2d(self.in_channels, self.out_channels//self.compression, self.kernel_sizes[0], stride, padding = self.padding),
+            nn.ConvTranspose2d(self.out_channels//self.compression, self.out_channels, self.kernel_sizes[1], 1, padding = out_padding),
+        )
+        self.act_block = nn.Sequential(
+            nn.BatchNorm2d(self.out_channels),
+            nn.Sigmoid()
+        )
+        
+    def attention_loss(self):
+        return self.lambda_ * torch.stack([torch.norm(layer.weight.data) for layer in self.attention_conv]).sum()
+    
+    def forward(self, x):
+        module_output = self.module(x)
+        attention_output = self.attention_conv(x)
+        return self.act_block(torch.multiply(module_output, attention_output))
+
+# Models
 class Generic_C2D_AE(nn.Module):
     def __init__(self,
                  encoder_layer_info=[
@@ -231,14 +382,14 @@ class C2D_AE_128_5x5_VAE(C2D_AE_128_5x5):
         reconstructions = self.decoder(latent.reshape(*self.view_shape))
         return reconstructions, mu, logvar
 
-class C2D_AE_3x3_Res(nn.Module):
+class C2D_AE_128_3x3_Res(nn.Module):
     def __init__(
         self,
         channels = 3,
         filters_count = [64,64,64,96,96,128],
         conv_type = "conv2d"
     ):
-        super(C2D_AE_3x3_Res, self).__init__()
+        super(C2D_AE_128_3x3_Res, self).__init__()
         self.__name__ = "C2D_AE_128_3x3_RES"
         self.channels = channels
         self.filters_count = filters_count
@@ -275,14 +426,14 @@ class C2D_AE_3x3_Res(nn.Module):
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
     
-class C2D_AE_ACB_128_3x3(nn.Module):
+class C2D_AE_128_3x3_ACB(nn.Module):
     def __init__(
         self,
         channels = 3,
         filters_count = [64,64,64,96,96,128],
         conv_type = "conv2d"
     ):
-        super(C2D_AE_ACB_128_3x3, self).__init__()
+        super(C2D_AE_128_3x3_ACB, self).__init__()
         self.__name__ = "C2D_AE_128_3x3_ACB"
         self.channels = channels
         self.filters_count = filters_count
@@ -311,14 +462,14 @@ class C2D_AE_ACB_128_3x3(nn.Module):
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
     
-class C2D_AE_ACB_128_5x5(nn.Module):
+class C2D_AE_128_5x5_ACB(nn.Module):
     def __init__(
         self,
         channels = 3,
         filters_count = [64,64,64,96,96,128],
         conv_type = "conv2d"
     ):
-        super(C2D_AE_ACB_128_5x5, self).__init__()
+        super(C2D_AE_128_5x5_ACB, self).__init__()
         self.__name__ = "C2D_AE_128_5x5_ACB"
         self.channels = channels
         self.filters_count = filters_count[1:]
@@ -345,15 +496,15 @@ class C2D_AE_ACB_128_5x5(nn.Module):
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
     
-class C2D_AE_128_PC(nn.Module):
+class C2D_AE_128_Multi_PC(nn.Module):
     def __init__(
         self,
         channels = 3,
         filters_count = [64,64,64,96,96,128],
         conv_type = "conv2d"
     ):
-        super(C2D_AE_128_PC, self).__init__()
-        self.__name__ = "C2D_AE_128_3x3_PC"
+        super(C2D_AE_128_Multi_PC, self).__init__()
+        self.__name__ = "C2D_AE_128_MULTI_PC"
         self.channels = channels
         self.filters_count = filters_count[2:]
         
@@ -407,14 +558,14 @@ class C2D_AE_128_PC(nn.Module):
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
 
-class C2D_Multi_AE(nn.Module):
+class C2D_AE_Multi_3x3(nn.Module):
     def __init__(self,
                  image_size = 128,
                  channels = 3,
                  filters_count = [64,64,96,96,128,128,256,256], 
                  conv_type = "conv2d"
                 ):
-        super(C2D_Multi_AE, self).__init__()
+        super(C2D_AE_Multi_3x3, self).__init__()
         self.image_size = image_size
         self.channels = channels
         self.filters_count = filters_count
@@ -462,7 +613,7 @@ class C2D_Multi_AE(nn.Module):
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
     
-class C2D_Multi_VAE(C2D_Multi_AE):
+class C2D_AE_Multi_3x3_VAE(C2D_AE_Multi_3x3):
     def __init__(
         self,
         image_size = 128,
@@ -470,7 +621,7 @@ class C2D_Multi_VAE(C2D_Multi_AE):
         channels = 3,
         conv_type = "conv2d"
     ):
-        C2D_Multi_AE.__init__(self, image_size = image_size, channels = channels, conv_type = conv_type)
+        C2D_AE_Multi_3x3.__init__(self, image_size = image_size, channels = channels, conv_type = conv_type)
         self.__name__ = "C2D_AE_MULTI_3x3_VAE"
         self.image_size = image_size
         self.embedding_dim = list(self.encoder(torch.rand(1, self.channels, self.image_size, self.image_size)).shape)
@@ -510,14 +661,14 @@ class C2D_Multi_VAE(C2D_Multi_AE):
         reconstructions = self.decoder(latent.reshape(*self.view_shape))
         return reconstructions, mu, logvar
 
-class C2D_DP_AE_128_3x3(nn.Module):
+class C2D_AE_128_3x3_DP(nn.Module):
     def __init__(
         self,
         channels = 3,
         filters_count = [64,64,64,96,96,128],
         conv_type = "conv2d"
     ):
-        super(C2D_DP_AE_128_3x3, self).__init__()
+        super(C2D_AE_128_3x3_DP, self).__init__()
         self.__name__ = "C2D_AE_128_3x3_DP"
         self.channels = channels
         self.filters_count = filters_count
@@ -553,75 +704,13 @@ class C2D_DP_AE_128_3x3(nn.Module):
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
 
-class AttentionWrapper(nn.Module):
-    def __init__(self, image_size, model, projection_ratio = 4):
-        super(AttentionWrapper, self).__init__()
-        self.image_size = image_size # w,h
-        self.model = model
-        self.projection_dim = (self.image_size[0] * projection_ratio, self.image_size[1] * projection_ratio)
-        self.__name__ = self.model.__name__ + "_ATTENTION"
-        
-        self.W_v = nn.Parameter(torch.randn((self.image_size[1], self.projection_dim[1]), requires_grad=True))
-        self.W_h = nn.Parameter(torch.randn((self.projection_dim[0], self.image_size[0]), requires_grad=True))
-        self.attention_activation = nn.Sigmoid()
-    
-    def attention_forward(self, x):
-        x_a = torch.matmul(torch.matmul(x, self.W_v), torch.matmul(self.W_h, x))
-        return self.attention_activation(torch.multiply(x, x_a))
-    
-    def attention_loss(self, x):
-        return torch.sum(x**2)
-        
-    def forward(self, x):
-        x_a = self.attention_forward(x)
-        encodings = self.model.encoder(x_a)
-        reconstructions = self.model.decoder(encodings)
-        return reconstructions, encodings, x_a
-
-class ConvAttentionWapper(nn.Module):
-    def __init__(self, model, kernel_sizes = (3,5), projection = 64, lambda_ = 1e-6, max_norm_clip = 1):
-        super(ConvAttentionWapper, self).__init__()
-        self.model = model
-        self.projection = projection
-        self.kernel_sizes = kernel_sizes
-        self.lambda_ = lambda_
-        self.max_norm_clip = max_norm_clip
-        
-        self.attention_conv = nn.Sequential(
-            nn.Conv2d(self.model.channels, self.projection, self.kernel_sizes[0], 1, padding = self.kernel_sizes[0]//2),
-            nn.Conv2d(self.projection, self.model.channels, self.kernel_sizes[1], 1, padding = self.kernel_sizes[1]//2),
-        )
-        self.__name__ = self.model.__name__ + "_CONV_ATTENTION"
-        self.act_block = nn.Sequential(
-            nn.BatchNorm2d(self.model.channels),
-            nn.Sigmoid()
-        )
-    
-    def attention_forward(self, x):
-#         x_a = self.attention_conv(x)
-#         return self.act_block(x_a)
-        x_a = self.attention_conv(x)
-        return self.act_block(torch.multiply(x, x_a))
-    
-    def attention_loss(self, w):
-        return self.lambda_ * torch.sqrt(torch.sum(w**2))
-#         return torch.sum(max_norm(self.attention_conv[0].weight.data, self.max_norm_clip)) + torch.sum(max_norm(self.attention_conv[1].weight.data, self.max_norm_clip))
-        
-    def forward(self, x):
-        x_a = self.attention_forward(x)
-        encodings = self.model.encoder(x_a)
-        reconstructions = self.model.decoder(encodings)
-        return reconstructions, encodings, x_a
-
-ConvAttentionWrapper = ConvAttentionWapper
-
-class AAC_AE(nn.Module):
+class C2D_AE_128_3x3_AAC(nn.Module):
     def __init__(
         self,
         channels = 3,
         filters_count = [64,64,64,128,128],
     ):
-        super(AAC_AE, self).__init__()
+        super(C2D_AE_128_3x3_AAC, self).__init__()
         self.__name__ = "C2D_AE_128_3x3_AAC"
         self.channels = channels
         self.filters_count = filters_count
@@ -771,7 +860,7 @@ class C2D_AE_128_3x3_SE(nn.Module):
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings    
 
-class C2D_DoubleHead(nn.Module):
+class C2D_AE_128_3x3_DoubleHead(nn.Module):
     def __init__(
         self,
         image_channels = 3,
@@ -779,7 +868,7 @@ class C2D_DoubleHead(nn.Module):
         filters_count = [64,64,64,96,96,128],
         conv_type = "conv2d"
     ):
-        super(C2D_DoubleHead, self).__init__()
+        super(C2D_AE_128_3x3_DoubleHead, self).__init__()
         self.__name__ = "C2D_AE_128_3x3_DOUBLEHEAD"
         self.image_channels = image_channels
         self.flow_channels = flow_channels
@@ -830,96 +919,8 @@ class C2D_DoubleHead(nn.Module):
         
         reconstructions = torch.cat((image_reconstructions, flow_reconstructions), dim = 1)
         return reconstructions, encodings
-
-class ConvAttentionLayerWrapper(nn.Module):
-    def __init__(
-        self,
-        module,
-        in_channels:int,
-        out_channels:int,
-        compression:int = 16,
-        kernel_sizes:tuple = (3,5),
-        stride:int = 1,
-        padding = 0,
-        lambda_:float = 1e-4
-    ):
-        super(ConvAttentionLayerWrapper, self).__init__()
-        self.__name__ = "ConvAttentionLayerWrapper"
-        self.module = module
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.compression = compression
-        self.stride = stride
-        self.padding = padding
-        self.kernel_sizes = kernel_sizes
-        self.lambda_ = lambda_
-        
-        out_padding = (self.kernel_sizes[1]-1)//2 
-        if self.kernel_sizes[1] % 2 == 0: out_padding -= 1
-        
-        self.attention_conv = nn.Sequential(
-#             nn.Conv2d(self.in_channels, self.out_channels, self.kernel_sizes[0], stride, padding = self.padding),
-            nn.Conv2d(self.in_channels, self.out_channels//self.compression, self.kernel_sizes[0], stride, padding = self.padding),
-            nn.Conv2d(self.out_channels//self.compression, self.out_channels, self.kernel_sizes[1], 1, padding = out_padding),
-        )
-        self.act_block = nn.Sequential(
-            nn.BatchNorm2d(self.out_channels),
-            nn.Sigmoid()
-        )
-        
-    def attention_loss(self):
-        return self.lambda_ * torch.stack([torch.norm(layer.weight.data) for layer in self.attention_conv]).sum()
     
-    def forward(self, x):
-        module_output = self.module(x)
-        attention_output = self.attention_conv(x)
-        return self.act_block(torch.multiply(module_output, attention_output))
-
-class ConvTransposeAttentionLayerWrapper(nn.Module):
-    def __init__(
-        self,
-        module,
-        in_channels:int,
-        out_channels:int,
-        compression:int = 16,
-        kernel_sizes:tuple = (3,5),
-        stride:int = 1,
-        padding = 0,
-        lambda_:float = 1e-6
-    ):
-        super(ConvTransposeAttentionLayerWrapper, self).__init__()
-        self.__name__ = "ConvTransposeAttentionLayerWrapper"
-        self.module = module
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.compression = compression
-        self.stride = stride
-        self.padding = padding
-        self.kernel_sizes = kernel_sizes
-        self.lambda_ = lambda_
-        
-        out_padding = (self.kernel_sizes[1]-1)//2 
-        if self.kernel_sizes[-1] % 2 == 0: out_padding -= 1
-            
-        self.attention_conv = nn.Sequential(
-#             nn.ConvTranspose2d(self.in_channels, self.out_channels, self.kernel_sizes[0], stride, padding = self.padding),
-            nn.ConvTranspose2d(self.in_channels, self.out_channels//self.compression, self.kernel_sizes[0], stride, padding = self.padding),
-            nn.ConvTranspose2d(self.out_channels//self.compression, self.out_channels, self.kernel_sizes[1], 1, padding = out_padding),
-        )
-        self.act_block = nn.Sequential(
-            nn.BatchNorm2d(self.out_channels),
-            nn.Sigmoid()
-        )
-        
-    def attention_loss(self):
-        return self.lambda_ * torch.stack([torch.norm(layer.weight.data) for layer in self.attention_conv]).sum()
-    
-    def forward(self, x):
-        module_output = self.module(x)
-        attention_output = self.attention_conv(x)
-        return self.act_block(torch.multiply(module_output, attention_output))
-    
-class C2D_AE_128_ALW(nn.Module):
+class C2D_AE_128_3x3_ALW(nn.Module):
     def __init__(
         self,
         channels = 3,
@@ -928,7 +929,7 @@ class C2D_AE_128_ALW(nn.Module):
         conv_type = "conv2d",
         lambda_ = 1e-3
     ):
-        super(C2D_AE_128_ALW, self).__init__()
+        super(C2D_AE_128_3x3_ALW, self).__init__()
         self.__name__ = "C2D_AE_128_3x3_ALW"
         self.channels = channels
         self.filters_count = filters_count
@@ -997,14 +998,14 @@ class C2D_AE_128_ALW(nn.Module):
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
     
-class C2D_AE_128_OriginPush(nn.Module):
+class C2D_AE_128_3x3_OriginPush(nn.Module):
     def __init__(
         self,
         channels = 3,
         filters_count = [64,64,64,96,96,128],
         conv_type = "conv2d"
     ):
-        super(C2D_AE_128_OriginPush, self).__init__()
+        super(C2D_AE_128_3x3_OriginPush, self).__init__()
         self.__name__ = "C2D_AE_128_3x3_ORIGINPUSH"
         self.channels = channels
         self.filters_count = filters_count
@@ -1034,7 +1035,7 @@ class C2D_AE_128_OriginPush(nn.Module):
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
     
-class C2D_AE_224(nn.Module):
+class C2D_AE_224_5x5(nn.Module):
     def __init__(
         self,
         channels = 3,
@@ -1046,7 +1047,7 @@ class C2D_AE_224(nn.Module):
         add_dropouts = False,
         add_res = False
     ):
-        super(C2D_AE_224, self).__init__()
+        super(C2D_AE_224_5x5, self).__init__()
         self.__name__ = "C2D_AE_224_5x5"
         self.channels = channels
         self.filters_count = filters_count
@@ -1141,7 +1142,7 @@ class C2D_AE_224(nn.Module):
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
     
-class C2D_AE_224_VAE(C2D_AE_224):
+class C2D_AE_224_5x5_VAE(C2D_AE_224_5x5):
     def __init__(
         self,
         isTrain = True,
@@ -1149,7 +1150,7 @@ class C2D_AE_224_VAE(C2D_AE_224):
         filters_count = [64,64,96,96,128],
         conv_type = "conv2d"
     ):
-        C2D_AE_224.__init__(self, channels = channels, filters_count = filters_count, conv_type = conv_type)
+        C2D_AE_224_5x5.__init__(self, channels = channels, filters_count = filters_count, conv_type = conv_type)
         self.__name__ = "C2D_AE_224_5x5_VAE"
         self.view_shape = tuple([-1] + self.embedding_dim[1:])
         self.embedding_dim = np.product(self.embedding_dim)
@@ -1187,7 +1188,7 @@ class C2D_AE_224_VAE(C2D_AE_224):
         reconstructions = self.decoder(latent.reshape(*self.view_shape))
         return reconstructions, mu, logvar
     
-class C2D_AE_ACB_224(nn.Module):
+class C2D_AE_224_5x5_ACB(nn.Module):
     def __init__(
         self,
         channels = 3,
@@ -1195,7 +1196,7 @@ class C2D_AE_ACB_224(nn.Module):
         conv_type = "conv2d",
         encoder_activation = "tanh"
     ):
-        super(C2D_AE_ACB_224, self).__init__()
+        super(C2D_AE_224_5x5_ACB, self).__init__()
         self.__name__ = "C2D_AE_224_5x5_ACB"
         self.channels = channels
         self.filters_count = filters_count
@@ -1222,52 +1223,7 @@ class C2D_AE_ACB_224(nn.Module):
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
         
-C2D_MODELS_DICT = {
-    128: {
-        "vanilla": {
-            "3x3": C2D_AE_128_3x3,
-            "5x5": C2D_AE_128_5x5
-        },
-        "acb": {
-            "3x3": C2D_AE_ACB_128_3x3,
-            "5x5": C2D_AE_ACB_128_5x5
-        },
-        "vae": {
-            "3x3": C2D_AE_128_3x3_VAE,
-            "5x5": C2D_AE_128_5x5_VAE,
-            "multi_resolution": C2D_Multi_VAE
-        },
-        "res": {
-            "3x3": C2D_AE_3x3_Res
-        },
-        "parallel": {
-            "3x3": C2D_AE_128_PC
-        },
-        "dropout": {
-            "3x3": C2D_DP_AE_128_3x3
-        },
-        "wide": {
-            "3x3": C2D_AE_128_WIDE
-        },
-        "squeeze_excitation": {
-            "3x3": C2D_AE_128_3x3_SE
-        },
-        "double_head": {
-            "3x3": C2D_DoubleHead
-        }
-    },
-    
-    224: {
-        "generic": Generic_C2D_AE,
-        "vanilla": C2D_AE_224,
-        "acb": C2D_AE_ACB_224,
-        "vae": C2D_AE_224_VAE,
-    },
-    
-    "multi_resolution": C2D_Multi_AE
-}
-
-class C2D_BEST(nn.Module):
+class C2D_AE_BEST_3x3(nn.Module):
     def __init__(
         self,
         image_size = 128,
@@ -1281,14 +1237,12 @@ class C2D_BEST(nn.Module):
         add_sqzex = True,
         add_dropouts = True,
         add_res = False,
-        add_noise = True,
         
         dropout_rate = 0.2,
         attention_lambda = 1e-6
     ):
-        super(C2D_BEST, self).__init__()
+        super(C2D_AE_BEST_3x3, self).__init__()
         self.__name__ = "C2D_AE_%d_3x3_COMBO"%(image_size)
-        if add_noise: self.__name__ += "_DeNoising"
         self.image_size = image_size
         self.channels = channels
         self.filters_count = filters_count
@@ -1297,7 +1251,7 @@ class C2D_BEST(nn.Module):
         assert (use_input_attention and use_aug_conv) != True, "Either Input Self attention Block or Attention Augmented Conv layer. Not both"
         
         s = lambda x: "Y" if x else "N"
-        self.__name__ += "_AugConv_%s|InpAttn_%s|SqzExct_%s|Res_%s|Dropouts_%s|Noise_%s|AttnLambda:%s"%(tuple(list(map(s, [use_aug_conv, use_input_attention, add_sqzex, add_res, add_dropouts, add_noise])) + ["{:.0e}".format(self.attention_lambda)]))
+        self.__name__ += "_AugConv_%s|InpAttn_%s|SqzExct_%s|Res_%s|Dropouts_%s|AttnLambda:%s"%(tuple(list(map(s, [use_aug_conv, use_input_attention, add_sqzex, add_res, add_dropouts])) + ["{:.0e}".format(self.attention_lambda)]))
 
         # Build encoder
         encoder_layers = list()
@@ -1378,3 +1332,50 @@ class C2D_BEST(nn.Module):
         encodings = self.encoder(x)
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
+
+# Models Dic
+C2D_MODELS_DICT = {
+    128: {
+        "vanilla": {
+            "3x3": C2D_AE_128_3x3,
+            "5x5": C2D_AE_128_5x5
+        },
+        "acb": {
+            "3x3": C2D_AE_128_3x3_ACB,
+            "5x5": C2D_AE_128_5x5_ACB
+        },
+        "vae": {
+            "3x3": C2D_AE_128_3x3_VAE,
+            "5x5": C2D_AE_128_5x5_VAE,
+            "multi_resolution": C2D_AE_Multi_3x3_VAE
+        },
+        "res": {
+            "3x3": C2D_AE_128_3x3_Res
+        },
+        "parallel": {
+            "3x3": C2D_AE_128_Multi_PC
+        },
+        "dropout": {
+            "3x3": C2D_AE_128_3x3_DP
+        },
+        "wide": {
+            "3x3": C2D_AE_128_WIDE
+        },
+        "squeeze_excitation": {
+            "3x3": C2D_AE_128_3x3_SE
+        },
+        "double_head": {
+            "3x3": C2D_AE_128_3x3_DoubleHead
+        }
+    },
+    
+    224: {
+        "generic": Generic_C2D_AE,
+        "vanilla": C2D_AE_224_5x5,
+        "acb": C2D_AE_224_5x5_ACB,
+        "vae": C2D_AE_224_5x5_VAE,
+    },
+    
+    "multi_resolution": C2D_AE_Multi_3x3,
+    "best": C2D_AE_BEST_3x3
+}

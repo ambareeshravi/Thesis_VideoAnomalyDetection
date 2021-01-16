@@ -296,3 +296,14 @@ def video2frames(
     
 def most_common(lst):
     return max(set(lst), key=lst.count)
+
+def complete_model_name(
+    model_type:str,
+    optimizer_type:str,
+    loss_type:str,
+    dataset_type:str,
+    image_type:str,
+    isDeNoising:bool,
+):
+    model_type += "_DeNoising" if isDeNoising else ""
+    return "%s_%s_%s_%s_%s"%(model_type, optimizer_type, loss_type, dataset_type, image_type)
