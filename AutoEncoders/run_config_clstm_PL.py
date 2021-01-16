@@ -20,15 +20,15 @@ if __name__ == '__main__':
     
     # Editable
     IMAGE_SIZE = 128
-    EPOCHS = 100
-    BATCH_SIZE = 16
+    EPOCHS = 300
+    BATCH_SIZE = 32
     IMAGE_TYPE = "normal"
     MODEL_PATH = args.model_path
     create_directory(MODEL_PATH)
     DATA_PATH = os.path.join(args.data_path, "VAD_Datasets")
     OPTIMIZER_TYPE = "adam"
     LOSS_TYPE = "mse"
-    DENOISING = False
+    DENOISING = True
     STACKED = False
     PATCH_WISE = False
     
@@ -36,11 +36,11 @@ if __name__ == '__main__':
     stackFrames = 1
     asImages = True
     if isVideo:
-        stackFrames = 16
+        stackFrames = 8
         asImages = False
         
     # Manual
-    DATA_TYPE = "ucsd2" 
+    DATA_TYPE = "avenue" 
     
     # PL Params
     PRECISION = 16 # 32
@@ -56,8 +56,8 @@ if __name__ == '__main__':
         asImages = asImages,
         image_size = IMAGE_SIZE,
         image_type = IMAGE_TYPE,
-        n_frames = 16,
-        frame_strides = [1,2,4,8,16],
+        n_frames = stackFrames,
+        frame_strides = [2,4,8,16],
         sample_stride = 1,
     )
 
@@ -65,7 +65,8 @@ if __name__ == '__main__':
     INFO("TRAINING DATA READY")
     
     # Manual
-    model = C2D_LSTM_EN(channels = CHANNELS)
+    model = CRNN_AE(image_size = IMAGE_SIZE, channels = CHANNELS, filter_count=[64,64,64,64,128], filter_sizes=[3,3,3,3,3], filter_strides=[2,2,2,2,2], n_rnn_layers=1, disableDeConvRNN=True)
+    # model = CLSTM_Seq2Seq(image_size = IMAGE_SIZE, channels = CHANNELS)
     
     # Automated model config
     model_file = "PL_%s_%s_%s_%s_%s_E%03d_BS%03d"%(model.__name__, DATA_TYPE.upper(), IMAGE_TYPE, OPTIMIZER_TYPE, LOSS_TYPE, EPOCHS, BATCH_SIZE)
@@ -82,7 +83,7 @@ if __name__ == '__main__':
         MODEL_SAVE_PATH,
         LOSS_TYPE,
         OPTIMIZER_TYPE,
-        default_learning_rate = 1e-4,
+        default_learning_rate = 1e-3,
         max_epochs = EPOCHS,
         status_rate = 25,
         lr_scheduler_kwargs = {
@@ -97,7 +98,7 @@ if __name__ == '__main__':
     # Automated Trainer
     callbacks_list = [
         EpochChange(),
-        EarlyStopping('validation_loss', min_delta=1e-6, patience=16, mode="min", verbose=True),
+        # EarlyStopping('validation_loss', min_delta=1e-6, patience=16, mode="min", verbose=True),
         GPUStatsMonitor()
     ]
     
@@ -106,12 +107,12 @@ if __name__ == '__main__':
         gpus=GPUS,
         num_nodes = NODES,
         accelerator='ddp',
-        min_epochs = 75,
+        min_epochs = 150,
         max_epochs = EPOCHS,
 #         gradient_clip_val = GRAD_CLIP_VAL,
         precision = PRECISION,
         callbacks = callbacks_list,
-        accumulate_grad_batches={50: 2, 100: 4},
+        accumulate_grad_batches={100: 2, 200: 4},
         progress_bar_refresh_rate = 0,
 #         auto_lr_find=True
     )
@@ -127,9 +128,9 @@ if __name__ == '__main__':
         asImages = True,
         image_size = IMAGE_SIZE,
         image_type = IMAGE_TYPE,
-        n_frames = 16,
+        n_frames = stackFrames,
         frame_strides = [2,4,8,16],
-        sample_stride = 3,
+        sample_stride = 1,
     )
     INFO("TESTING DATA READY")
 
