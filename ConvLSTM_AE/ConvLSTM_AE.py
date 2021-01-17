@@ -5,7 +5,7 @@ class CRNN_AE(nn.Module):
         self,
         image_size = 128,
         channels = 3,
-        filter_count = [64,64,128,128],
+        filter_count = [64,64,64,128],
         filter_sizes = [3,3,3,5],
         filter_strides = [2,2,2,2],
         n_rnn_layers = 2,
@@ -99,7 +99,7 @@ class CLSTM_AE(nn.Module):
         self,
         image_size = 128,
         channels = 3,
-        filter_count = [64,64,128,128],
+        filter_count = [64,64,64,128],
         filter_sizes = [3,3,3,5],
         filter_strides = [2,2,2,2],
         n_lstm_layers = 2,
@@ -187,7 +187,7 @@ class CLSTM_AE(nn.Module):
         reconstructions = reconstructions.transpose(1,2)
         return reconstructions, encodings
     
-class CLSTM_Seq2Seq(nn.Module):
+class CLSTM_AE_Seq2Seq(nn.Module):
     def __init__(
         self,
         image_size = 128, 
@@ -197,7 +197,7 @@ class CLSTM_Seq2Seq(nn.Module):
         filter_strides = [2,2,1],
         useBias = False
     ):
-        super(CLSTM_Seq2Seq, self).__init__()
+        super(CLSTM_AE_Seq2Seq, self).__init__()
         self.__name__ = "CRNN_AE_%d_%dx%d_SEQ2SEQ"%(image_size, most_common(filter_sizes), most_common(filter_sizes))
         self.image_size = image_size
         self.channels = channels

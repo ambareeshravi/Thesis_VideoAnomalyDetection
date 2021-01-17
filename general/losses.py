@@ -58,7 +58,7 @@ class WEIGHTED_SIMILARITY:
     def __init__(self, primary_loss = "mse", weights = [1.0, 1.0], asImages = True):
         self.main_loss = MSE_LOSS(reduction = "mean")
         if "bce" in primary_loss: self.main_loss = BCE_LOSS(reduction = "mean")
-        self.ssim_loss = SSIM()
+        self.ssim_loss = SSIM(data_range = 1.0, nonnegative_ssim=True)
         self.weights = weights
         self.asImages = asImages
         

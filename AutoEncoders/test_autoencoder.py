@@ -16,42 +16,8 @@ def pr_auc(y_true, y_pred):
     except:
         return 0.0
 
-class AutoEncoder_Tester:
-    def __init__(
-        self,
-        model,
-        dataset,
-        model_file,
-        stackFrames = 64,
-        save_vis = False,
-        n_seed = 2,
-        calcOC_SVM = False,
-        applyFilter = False,
-        filterWindow = [9,1],
-        useGPU = True
-    ):
-        self.model = model
-        self.dataset = dataset
-        self.model_file = model_file
-        self.stackFrames = stackFrames
-        self.save_vis = save_vis
-        self.n_seed = n_seed
-        self.calcOC_SVM = calcOC_SVM
-        self.applyFilter = applyFilter
-        self.filterWindow = filterWindow
-        
-        self.device = torch.device("cpu")
-        if useGPU and torch.cuda.is_available():
-            self.device = torch.device("cuda")
-            
-        self.model.to(self.device)
-        self.model.eval()
-        
-        self.NORMAL_LABEL = 1.0
-        self.ABNORMAL_LABEL = 0.0
-        
-        self.isVideo = False
-        
+class AE_PredictFunctions:
+    def __init__(self,):
         self.patchwise = False
         if "patch" in self.model_file.lower():
             self.patchwise = True
@@ -59,7 +25,7 @@ class AutoEncoder_Tester:
         self.stacked = False
         if "stack" in self.model_file.lower():
             self.stacked = True
-            if self.stackFrames == 1: self.stackFrames = 16
+            if self.stackFrames == 1 or self.stackFrames > 16: self.stackFrames = 16
             self.isVideo = True
             self.predict = self.predict_stacked
         if "translat" in self.model_file.lower():
@@ -68,41 +34,12 @@ class AutoEncoder_Tester:
             self.predict = self.predict_attention
         if "c3d" in self.model_file.lower() or "lstm" in self.model_file.lower() or "rnn" in self.model_file.lower():
             self.isVideo = True
-            if self.stackFrames == 1: self.stackFrames = 16
+            if self.stackFrames == 1 or self.stackFrames > 16: self.stackFrames = 16
         if "clstm" in self.model_file.lower() and "future" in self.model_file.lower():
             self.predict = self.predict_future
-            self.n_seed = 1
         if "clstm" in self.model_file.lower() and "seq2seq" in self.model_file.lower():
             self.predict = self.predict_sequence
-            self.n_future_steps = 4
-            
-        self.save_as = ".pkl".join(self.model_file.split(".pth.tar"))
-        self.save_path = os.path.split(self.save_as)[0]
-       
-    def regularity(self, x, applyFilter = True):
-        normalized = 1-normalize_error(x)
-        if applyFilter and self.applyFilter:
-            window = min(self.filterWindow[0], len(x))
-            if window % 2 == 0: window -= 1
-            return savgol_filter(normalized, window, self.filterWindow[1])
-        return normalized
         
-    def abs_loss(self, original, reconstruction):
-        '''
-        should actually be:
-        
-        torch.sum(torch.abs(a-b), dim = 0)
-        '''
-#         return [tensor_to_numpy(torch.norm((o-r), dim = 0)) for o,r in zip(original, reconstruction)]
-        return [tensor_to_numpy(torch.sum(torch.abs(o-r), dim = 0)) for o,r in zip(original, reconstruction)]
-    
-    def sqr_loss(self, original, reconstruction):
-        '''
-        Similar to torch.sum((a-b)**2, dim = 0)
-        '''
-#         return [tensor_to_numpy(torch.norm((o-r), dim = 0)**2) for o,r in zip(original, reconstruction)]
-        return [tensor_to_numpy(torch.sum((o-r)**2, dim = 0)) for o,r in zip(original, reconstruction)]
-    
     def predict(self, inputs):
         with torch.no_grad():
             return self.model(inputs.to(self.device))
@@ -115,9 +52,7 @@ class AutoEncoder_Tester:
             return (reconstructions, encodings)
     
     def predict_stacked(self, inputs):
-        print("inputs.shape", inputs.shape)
         stacked_images = inputs.flatten(start_dim=0, end_dim=1)
-        print("stacked_images.shape", stacked_images.shape)
         with torch.no_grad():
             reconstructions, encodings = self.model(stacked_images.to(self.device))
             reconstructions = reconstructions.unsqueeze(dim = -4)
@@ -160,14 +95,111 @@ class AutoEncoder_Tester:
         with torch.no_grad():
             predictions, encodings = self.model(inputs, future_steps = self.n_future_steps)
             return predictions, encodings
-                    
-    def plot_regularity(self, y_true, y_pred, file_name):
-        x = np.array(range(len(y_true)))
-        plt.plot(x, y_true, label = "Actual")
-        plt.plot(x, y_pred, label = "Predicted")
-        plt.plot(x, moving_average(y_pred, 2), label = "Smoothened 2")
-        plt.plot(x, moving_average(y_pred), label = "Smoothened 3")
-        plt.plot(x, moving_average(y_pred, 5), label = "Smoothened 5")
+        
+class ReconstructionsMetrics:
+    def __init__(self, ):
+        self.ssim = SSIM(data_range = 1.0, nonnegative_ssim=True)
+        self.psnr = PSNR_LOSS(limit = 1)
+
+    def abs_loss(self, original, reconstruction):
+        '''
+        should actually be:
+        
+        torch.sum(torch.abs(a-b), dim = 0)
+        '''
+        # return [tensor_to_numpy(torch.norm((o-r), dim = 0)) for o,r in zip(original, reconstruction)]
+        return [tensor_to_numpy(torch.sum(torch.abs(o-r), dim = 0)) for o,r in zip(original, reconstruction)]
+    
+    def sqr_loss(self, original, reconstruction):
+        '''
+        Similar to torch.sum((a-b)**2, dim = 0)
+        '''
+        # return [tensor_to_numpy(torch.norm((o-r), dim = 0)**2) for o,r in zip(original, reconstruction)]
+        return [tensor_to_numpy(torch.sum((o-r)**2, dim = 0)) for o,r in zip(original, reconstruction)]
+    
+    def ssim_transform(self, x):
+        '''
+        4 dims, 3 channels
+        '''
+        if len(x.shape) < 4: x = x.unsqueeze(dim = 0)
+        if x.shape[1] != 3: x = x.repeat(1,3,1,1)
+        return x
+    
+    def ssim_loss(self, original, reconstruction):
+        '''
+        SSIM needs 4 dims for images 1,c,w,h
+        '''
+        return [float(1-self.ssim(self.ssim_transform(o), self.ssim_transform(r))) for o,r in zip(original, reconstruction)]
+    
+    def psnr_loss(self, original, reconstruction):
+        '''
+        0 -> similar | 1 -> different
+        '''
+        return [float(self.psnr(o, r)) for o,r in zip(original, reconstruction)]
+    
+class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
+    def __init__(
+        self,
+        model,
+        dataset,
+        model_file,
+        stackFrames = 64,
+        save_vis = False,
+        n_seed = 2,
+        n_future_steps = 4,
+        calcOC_SVM = False,
+        applyFilter = False,
+        filterWindow = [9,1],
+        debug = False,
+        useGPU = True
+    ):
+        self.model = model
+        self.dataset = dataset
+        self.model_file = model_file
+        self.stackFrames = stackFrames
+        self.save_vis = save_vis
+        self.n_seed = n_seed
+        self.n_future_steps = n_future_steps
+        self.calcOC_SVM = calcOC_SVM
+        self.applyFilter = applyFilter
+        self.filterWindow = filterWindow
+        self.metric_names = ["absolute", "squared", "ssim", "psnr"]
+        self.debug = debug
+        
+        self.device = torch.device("cpu")
+        if useGPU and torch.cuda.is_available():
+            self.device = torch.device("cuda")
+            
+        self.model.to(self.device)
+        self.model.eval()
+        
+        self.NORMAL_LABEL = NORMAL_LABEL
+        self.ABNORMAL_LABEL = ABNORMAL_LABEL
+        
+        self.isVideo = False
+        
+        AE_PredictFunctions.__init__(self)
+        ReconstructionsMetrics.__init__(self)
+        
+        self.save_as = ".pkl".join(self.model_file.split(".pth.tar"))
+        self.save_path = os.path.split(self.save_as)[0]
+       
+    def regularity(self, x, applyFilter = True):
+        normalized = 1-normalize_error(x)
+        if applyFilter and self.applyFilter:
+            window = min(self.filterWindow[0], len(x))
+            if window % 2 == 0: window -= 1
+            return savgol_filter(normalized, window, self.filterWindow[1])
+        return normalized
+                            
+    def plot_regularity(
+        self,
+        metrics:list,
+        labels:list,
+        file_name:str,
+    ):
+        for (m, l) in zip(metrics,labels):
+            plt.plot(list(range(len(m))), m, label = l)
         plt.xlabel("Time")
         plt.ylabel("Regularity / Normalcy")
         plt.legend()
@@ -188,31 +220,78 @@ class AutoEncoder_Tester:
         format_image = lambda x: tensor_to_numpy(x).transpose(1,2,0)
         results = [np.hstack(visualize_anomalies(format_image(ip), format_image(re), lm)) for (ip, re, lm) in zip(inputs, reconstructions, loss_maps)]
         return results
-        
-    def test(self, return_results = False):
-        if "seq" in self.model_file.lower(): return True
+    
+    def get_visualization_path(self, ):
         results_visulization_path = join_paths([self.save_path, "results/"])
         if not os.path.exists(results_visulization_path):
             os.mkdir(results_visulization_path)
+        return results_visulization_path
+    
+    def get_params_dict(self, ):
+        params_dict = {
+            "encodings": list(),
+            "targets": list(),
+        }
+        for metric in self.metric_names:
+            params_dict[metric] = {
+                "loss": list(),
+                "regularity": list(),
+                "auc_roc": list(),
+                "pr_roc": list(),
+                "classification_report": {},
+                "confusion_matrix": {},
+                "eer": {},
+                "auc_roc_score": {},
+                "pr_roc_score": {},
+                "best": {}
+            }
+        return params_dict
+    
+    def predict_process(self, test_inputs, test_labels, n_frames):
+        # reshape if video
+        if self.isVideo: test_inputs = test_inputs.transpose(0,1).unsqueeze(dim = 0) # N,C,T,W,H
+
+        # predict and get outputs
+        model_outputs = self.predict(test_inputs.to(self.device))
+        reconstructions = model_outputs[0]
+
+        # reshape video to frames again
+        if self.isVideo:
+            test_inputs = test_inputs.squeeze(dim=0).transpose(0,1) # N,C,W,H
+            reconstructions = reconstructions.squeeze(dim=0).transpose(0,1) # N,C,W,H
         
-        VL_targets = list()
-        VL_abs_losses = list()
-        VL_sqr_losses = list()
-        VL_abs_regularity_scores = list()
-        VL_sqr_regularity_scores = list()
-        VL_abs_rocauc_scores = list()
-        VL_sqr_rocauc_scores = list()
-        VL_abs_prauc_scores = list()
-        VL_sqr_prauc_scores = list()
-        VL_encodings = list()
+        # Some models may not return encodings
+        try: encodings = model_outputs[1]
+        except: encodings = None
+            
+        # if last batch, only use the actual frames in the batch
+        if n_frames < self.stackFrames:
+            test_inputs = test_inputs[-n_frames:]
+            test_labels = test_labels[-n_frames:]
+            reconstructions = reconstructions[-n_frames:]
+            if encodings != None: encodings = encodings[-n_frames:]
+        
+        # use only 3 channels - for PatchWise models
+        test_inputs = to_cpu(test_inputs[..., :3, :, :])
+        reconstructions = to_cpu(reconstructions[..., :3, :, :])
+        
+        # return everything new or that is changed
+        return test_inputs, test_labels, reconstructions, encodings
+            
+    def test(self, return_results = False):
+        if "seq" in self.model_file.lower(): return True # Only for testing
+        
+        results_visulization_path = self.get_visualization_path()
+        
+        video_level_params = self.get_params_dict()
         
         # iterating through the dataset video by video
         for video_idx, (video_inputs, video_labels) in tqdm(enumerate(self.dataset)):
             
-            FL_targets = list()
-            FL_abs_losses = list()
-            FL_sqr_losses = list()
-            FL_encodings = list()
+            try: del frame_level_params
+            except: pass
+            
+            frame_level_params = self.get_params_dict()
             
             # check to save visualization
             if self.save_vis: # or video_idx == 0:
@@ -221,6 +300,7 @@ class AutoEncoder_Tester:
 
             # iterating through the video frame by frame
             for frame_idx in range(0, len(video_labels), self.stackFrames):
+            
                 # getting inputs as frames and labels correspondingly
                 test_inputs = torch.stack(video_inputs[frame_idx:(frame_idx + self.stackFrames)]) # T,C,W,H
                 test_labels = video_labels[frame_idx:(frame_idx + self.stackFrames)] # N,1
@@ -231,237 +311,143 @@ class AutoEncoder_Tester:
                     test_inputs = torch.stack(video_inputs[-self.stackFrames:])
                     test_labels = video_labels[-self.stackFrames:]
                 
-                # reshape if video
-                if self.isVideo:
-                    test_inputs = test_inputs.transpose(0,1).unsqueeze(dim = 0) # N,C,T,W,H
-                    
-                # predict and get outputs
-                model_outputs = self.predict(test_inputs.to(self.device))
-                reconstructions = model_outputs[0]
-                
-                # reshape video to frames again
-                if self.isVideo:
-                    test_inputs = test_inputs.squeeze(dim=0).transpose(0,1) # N,C,W,H
-                    reconstructions = reconstructions.squeeze(dim=0).transpose(0,1) # N,C,W,H
-                
-                # if last batch, only use the actual frames in the batch
-                if n_frames < self.stackFrames:
-                    test_inputs = test_inputs[-n_frames:]
-                    test_labels = test_labels[-n_frames:]
-                    reconstructions = reconstructions[-n_frames:]
-                    
-                # note encodings
-                if self.calcOC_SVM: 
-                    try:
-                        output_encodings = tensor_to_numpy(model_outputs[1])
-                        if n_frames < self.stackFrames:
-                            output_encodings = output_encodings[-n_frames:]
-                        FL_encodings.append(output_encodings)
-                    except Exception as e:
-                        print("Frames Encodings:", e)
-                
-                # use only 3 channels - for PatchWise models
-                test_inputs = to_cpu(test_inputs[..., :3, :, :])
-                reconstructions = to_cpu(reconstructions[..., :3, :, :])
+                # process reconstructions, encodings and reference inputs-labels
+                test_inputs, test_labels, reconstructions, encodings = self.predict_process(test_inputs, test_labels, n_frames)
+                                    
+                # note encodings if available
+                if self.calcOC_SVM and encodings != None: frame_level_params["encodings"].append(encodings)
                 
                 # calculate pixel-level loss as 2D maps
                 pixel_abs_loss = self.abs_loss(test_inputs, reconstructions) # N,W,H
                 pixel_sqr_loss = self.sqr_loss(test_inputs, reconstructions) # N,W,H
                 
+                frame_level_params["targets"] += test_labels
                 # calculate frame-level loss as scalar value
-                frame_abs_loss = [pal.sum() for pal in pixel_abs_loss] # N,1
-                frame_sqr_loss = [psl.sum() for psl in pixel_sqr_loss] # N,1
-                
-                # normalized regularity masks - 0/black normal 1/white abnormal
-                pixel_regularity_abs_mask = [np.abs(1-self.regularity(pal, applyFilter = False)) for pal in pixel_abs_loss] # Normalized between [0,1]
-                pixel_regularity_sqr_mask = [np.abs(1-self.regularity(psl, applyFilter = False)) for psl in pixel_sqr_loss] # Normalized between [0,1]
-                
-                FL_targets += test_labels
-                
-                FL_abs_losses += frame_abs_loss
-                FL_sqr_losses += frame_sqr_loss
+                frame_level_params["absolute"]["loss"] += [pal.sum() for pal in pixel_abs_loss] # N,1 
+                frame_level_params["squared"]["loss"] += [psl.sum() for psl in pixel_sqr_loss] # N,1
+                frame_level_params["ssim"]["loss"] += self.ssim_loss(test_inputs, reconstructions) # N,1
+                frame_level_params["psnr"]["loss"] += self.psnr_loss(test_inputs, reconstructions) # N,1
                 
                 # get visualization results
                 if self.save_vis: # or video_idx == 0:
+                     # normalized regularity masks - 0/black normal 1/white abnormal
+                    pixel_regularity_abs_mask = [np.abs(1-self.regularity(pal, applyFilter = False)) for pal in pixel_abs_loss] # Normalized between [0,1]
+                    pixel_regularity_sqr_mask = [np.abs(1-self.regularity(psl, applyFilter = False)) for psl in pixel_sqr_loss] # Normalized between [0,1]
                     try:                
                         VIS_frames_abs += self.visualize_results(test_inputs, reconstructions, pixel_regularity_abs_mask)
                         VIS_frames_sqr += self.visualize_results(test_inputs, reconstructions, pixel_regularity_sqr_mask)
                     except Exception as e:
-                        print("Visualization:", e)
+                        if self.debug: print("Visualization:", e)
                         self.save_vis = False
-                
-            VL_targets.append(np.asarray(FL_targets))
-            VL_abs_losses.append(np.asarray(FL_abs_losses))
-            VL_sqr_losses.append(np.asarray(FL_sqr_losses))
-            VL_abs_regularity_scores.append(self.regularity(np.array(FL_abs_losses)))
-            VL_sqr_regularity_scores.append(self.regularity(np.array(FL_sqr_losses)))
             
-            # Calculate AUC-ROC scores per video
-            try:
-                VL_abs_prauc_scores.append(pr_auc(FL_targets, VL_abs_regularity_scores[-1]))
-                VL_sqr_prauc_scores.append(pr_auc(FL_targets, VL_sqr_regularity_scores[-1]))
-            except Exception as e:
-                print("Calculation of AUC-PR score", e)
-            
-            try:
-                VL_abs_rocauc_scores.append(roc_auc_score(FL_targets, VL_abs_regularity_scores[-1]))
-                VL_sqr_rocauc_scores.append(roc_auc_score(FL_targets, VL_sqr_regularity_scores[-1]))
-                
-            except Exception as e:
-                print("Calculation of AUC-ROC score", e)
-                
+            video_level_params["targets"].append(np.asarray(frame_level_params["targets"]))
+
+            # Per video calculations
+            targets = frame_level_params["targets"]
+            for metric in self.metric_names:
+                losses = np.asarray(frame_level_params[metric]["loss"])
+                regularity = self.regularity(losses)
+                video_level_params[metric]["loss"].append(losses)
+                video_level_params[metric]["regularity"].append(regularity)
+                try: video_level_params[metric]["pr_roc"].append(pr_auc(targets, regularity))
+                except Exception as e:
+                    if self.debug: print("PR ROC", e)
+                    else: pass
+                try: video_level_params[metric]["auc_roc"].append(roc_auc_score(targets, regularity))
+                except Exception as e:
+                    if self.debug: print("AUC ROC", e)
+                    else: pass
+                            
             # Visualizations
-            self.plot_regularity(FL_targets, VL_abs_regularity_scores[-1], join_paths([results_visulization_path, "%03d_R_abs.png"%(video_idx + 1)]))
-            self.plot_regularity(FL_targets, VL_sqr_regularity_scores[-1], join_paths([results_visulization_path, "%03d_R_sqr.png"%(video_idx + 1)]))
+            self.plot_regularity(
+                metrics = [targets] + [frame_level_params[metric]["regularity"] for metric in self.metric_names],
+                labels = ["targets"] + self.metric_names,
+                file_name = "%03d_metrics.png"%(video_idx + 1)
+            )
             
             if self.save_vis: # or video_idx == 0:            
                 try:
                     frames_to_video(VIS_frames_abs, join_paths([results_visulization_path, "%03d_AV_abs"%(video_idx + 1)]))
                     frames_to_video(VIS_frames_sqr, join_paths([results_visulization_path, "%03d_AV_sqr"%(video_idx + 1)]))
                 except Exception as e:
-                    print("Video Generation:", e)
+                    if self.debug: print("Video Generation:", e)
                     self.save_vis = False
                     
             if self.calcOC_SVM: 
-                try:
-                    VL_encodings.append(FL_encodings)
+                try: video_level_params["encodings"].append(frame_level_params["encodings"])
                 except Exception as e:
-                    print("Frames Encodings:", e)
+                    if self.debug: print("Frames Encodings:", e)
+                    else: pass
         
-        VL_targets = np.asarray(VL_targets) # V,F,1
-        VL_abs_losses = np.asarray(VL_abs_losses) # V,F,1
-        VL_sqr_losses = np.asarray(VL_sqr_losses) # V,F,1
-        VL_abs_regularity_scores = np.asarray(VL_abs_regularity_scores) # V,F,1
-        VL_sqr_regularity_scores = np.asarray(VL_sqr_regularity_scores) # V,F,1
-        VL_abs_rocauc_scores = np.asarray(VL_abs_rocauc_scores) # V,1
-        VL_sqr_rocauc_scores = np.asarray(VL_sqr_rocauc_scores) # V,1
-        VL_abs_prauc_scores = np.asarray(VL_abs_prauc_scores) # V,1
-        VL_sqr_prauc_scores = np.asarray(VL_sqr_prauc_scores) # V,1
-        if self.calcOC_SVM: VL_encodings = np.asarray(VL_encodings) # V,F,E
+        # Convert everything to arrays
+        video_level_params["targets"] = np.asarray(video_level_params["targets"]) # V,F,1
+        for metric in self.metric_names:
+            for key in video_level_params[metric].keys():
+                if isinstance(video_level_params[metric][key], list):
+                    video_level_params[metric][key] = np.asarray(video_level_params[metric][key]) # V,F,1
+        if self.calcOC_SVM: video_level_params["encodings"] = np.asarray(video_level_params["encodings"]) # V,F,E
         
-        FLT_targets = flatten_2darray(VL_targets)
-            
-        # Regularize everything together
-        FLT_abs_regularity = self.regularity(flatten_2darray(VL_abs_losses))
-        FLT_sqr_regularity = self.regularity(flatten_2darray(VL_sqr_losses))
+        # Flatten params for overall calculations
+        video_level_params["flat_targets"] = flatten_2darray(video_level_params["targets"])
+        for metric in self.metric_names:
+            video_level_params[metric]["flat_loss"] = flatten_2darray(video_level_params[metric]["loss"])
+            video_level_params[metric]["flat_regularity"] = self.regularity(video_level_params[metric]["flat_loss"])
+            video_level_params[metric]["agg_regularity"] = flatten_2darray(video_level_params[metric]["regularity"])
         
-        # Aggregate regularized per video scores
-        FLT_agg_abs_regularity = flatten_2darray(VL_abs_regularity_scores)
-        FLT_agg_sqr_regularity = flatten_2darray(VL_sqr_regularity_scores)
-        
-        svm_score = 0.0
+        # One Class Unsupervised SVM
+        svm_score = False
         if self.calcOC_SVM: 
-            # One Class Unsupervised SVM
             try:
-                FLT_encodings = np.array([e.flatten() for e in flatten_2darray(VL_encodings)])
-                svm_score = self.OC_SVM(FLT_encodings, FLT_targets, tag = "")
+                video_level_params["flat_encodings"] = np.array([e.flatten() for e in flatten_2darray(video_level_params["encodings"])])
+                svm_score = self.OC_SVM(video_level_params["flat_encodings"], video_level_params["flat_targets"], tag = "")
             except Exception as e:
                 print("OneCass SVM: Encodings shape: %s, Targets shape: %s, OC_SVM Error: %s:"%(FLT_encodings.shape, FLT_targets.shape, e))
+        
+        # ---------------- CALCULATING METRICS ------------------- #
+        
+        for metric in self.metric_names:
+            metric_flat_targets = video_level_params["flat_targets"]
+            # per video mean metrics
+            video_level_params[metric]["auc_roc_score"]["mean"] = np.mean(video_level_params[metric]["auc_roc"])
+            video_level_params[metric]["pr_roc_score"]["mean"] = np.mean(video_level_params[metric]["pr_roc"])
             
-        # Mean video roc-auc
-        mean_abs_vid_aucroc = VL_abs_rocauc_scores.mean()
-        mean_sqr_vid_aucroc = VL_sqr_rocauc_scores.mean()
+            # aggregated metrics
+            metric_agg_regularity = video_level_params[metric]["agg_regularity"]
+            video_level_params[metric]["auc_roc_score"]["agg"] = roc_auc_score(metric_flat_targets, metric_agg_regularity)
+            video_level_params[metric]["pr_roc_score"]["agg"] = pr_auc(metric_flat_targets, metric_agg_regularity)
+            video_level_params[metric]["eer"]["agg"] = calculate_eer(metric_flat_targets, metric_agg_regularity)
+            video_level_params[metric]["classification_report"]["agg"] = classification_report(metric_flat_targets, np.round(metric_agg_regularity))
+            video_level_params[metric]["confusion_matrix"]["agg"] = confusion_matrix(metric_flat_targets, np.round(metric_agg_regularity))
+            
+            # overall metrics
+            metric_overall_regularity = video_level_params[metric]["flat_regularity"]
+            video_level_params[metric]["auc_roc_score"]["overall"] = roc_auc_score(metric_flat_targets, metric_overall_regularity)
+            video_level_params[metric]["pr_roc_score"]["overall"] = pr_auc(metric_flat_targets, metric_overall_regularity)
+            video_level_params[metric]["eer"]["overall"] = calculate_eer(metric_flat_targets, metric_overall_regularity)
+            video_level_params[metric]["classification_report"]["overall"] = classification_report(metric_flat_targets, np.round(metric_overall_regularity))
+            video_level_params[metric]["confusion_matrix"]["overall"] = confusion_matrix(metric_flat_targets, np.round(metric_overall_regularity))
+            
+            # best metrics
+            video_level_params[metric]["best"]["threshold"] = thresholdJ(metric_flat_targets, metric_overall_regularity)
+            video_level_params[metric]["best"]["predictions"] = scores2labels(metric_overall_regularity, video_level_params[metric]["best"]["threshold"])
+            video_level_params[metric]["best"]["classification_report"] = classification_report(metric_flat_targets, video_level_params[metric]["best"]["predictions"])
+            video_level_params[metric]["best"]["confusion_matrix"] = confusion_matrix(metric_flat_targets, video_level_params[metric]["best"]["predictions"])
         
-        # Mean video pr-auc
-        mean_abs_vid_aucpr = VL_abs_prauc_scores.mean()
-        mean_sqr_vid_aucpr = VL_sqr_prauc_scores.mean()
+        video_level_params["OC_SVM_Score"] = svm_score
+        try:
+            video_level_params["encodings"]
+            video_level_params["flat_encodings"]
+        except:
+            pass
         
-        # aggregated regularity roc-auc
-        # video-wise regularized scores [CORRECT and INTUITIVE]
-        agg_abs_reg_aucroc = roc_auc_score(FLT_targets, FLT_agg_abs_regularity)
-        agg_abs_reg_aucpr = pr_auc(FLT_targets, FLT_agg_abs_regularity)
-        agg_abs_reg_report = classification_report(FLT_targets, np.round(FLT_agg_abs_regularity))
-        agg_abs_conf_matrix = confusion_matrix(FLT_targets, np.round(FLT_agg_abs_regularity))
-        agg_abs_eer = calculate_eer(FLT_targets, FLT_agg_abs_regularity)
-        
-        agg_sqr_reg_aucroc = roc_auc_score(FLT_targets, FLT_agg_sqr_regularity)
-        agg_sqr_reg_aucpr = pr_auc(FLT_targets, FLT_agg_sqr_regularity)
-        agg_sqr_reg_report = classification_report(FLT_targets, np.round(FLT_agg_sqr_regularity))
-        agg_sqr_conf_matrix = confusion_matrix(FLT_targets, np.round(FLT_agg_sqr_regularity))
-        agg_sqr_eer = calculate_eer(FLT_targets, FLT_agg_sqr_regularity)
-        
-        # overall roc-auc
-        overall_abs_aucroc = roc_auc_score(FLT_targets, FLT_abs_regularity)
-        overall_abs_aucpr = pr_auc(FLT_targets, FLT_abs_regularity)
-        overall_abs_eer = calculate_eer(FLT_targets, FLT_abs_regularity)
-        overall_abs_report = classification_report(FLT_targets, np.round(FLT_abs_regularity))
-        
-        overall_sqr_aucroc = roc_auc_score(FLT_targets, FLT_sqr_regularity)
-        overall_sqr_aucpr = pr_auc(FLT_targets, FLT_sqr_regularity)
-        overall_sqr_eer = calculate_eer(FLT_targets, FLT_sqr_regularity)
-        overall_sqr_report = classification_report(FLT_targets, np.round(FLT_sqr_regularity))
-        
-        # threshold moving to find the best performance
-        abs_best_threshold = thresholdJ(FLT_targets, FLT_abs_regularity)
-        sqr_best_threshold = thresholdJ(FLT_targets, FLT_sqr_regularity)
-        
-        abs_best_labels = scores2labels(FLT_abs_regularity, abs_best_threshold)
-        sqr_best_labels = scores2labels(FLT_sqr_regularity, sqr_best_threshold)
-        
-        best_abs_report = classification_report(FLT_targets, abs_best_labels)
-        best_abs_conf_matrix = confusion_matrix(FLT_targets, abs_best_labels)
-        
-        best_sqr_report = classification_report(FLT_targets, sqr_best_labels)
-        best_sqr_conf_matrix = confusion_matrix(FLT_targets, sqr_best_labels)
-                
-        self.results = {
-            "AUC_ROC": {
-                "mean_abs_vid_aucroc": mean_abs_vid_aucroc,
-                "mean_sqr_vid_aucroc": mean_sqr_vid_aucroc,
-                "mean_abs_vid_aucpr": mean_abs_vid_aucpr,
-                "mean_sqr_vid_aucpr": mean_sqr_vid_aucpr,
-                
-                "agg_abs_reg_aucroc": agg_abs_reg_aucroc,
-                "agg_sqr_reg_aucroc": agg_sqr_reg_aucroc,
-                "agg_abs_reg_aucpr": agg_abs_reg_aucpr,
-                "agg_sqr_reg_aucpr": agg_sqr_reg_aucpr,
-                "agg_abs_eer": agg_abs_eer,
-                "agg_sqr_eer": agg_sqr_eer,
-                
-                "overall_abs_aucroc": overall_abs_aucroc,
-                "overall_sqr_aucroc": overall_sqr_aucroc,
-                "overall_abs_aucpr": overall_abs_aucpr,
-                "overall_sqr_aucpr": overall_sqr_aucpr,
-                "overall_abs_eer": overall_abs_eer,
-                "overall_sqr_eer": overall_sqr_eer,
-            },
-            "classification_reports": {
-                "agg_abs_reg_report": agg_abs_reg_report,
-                "agg_sqr_reg_report": agg_sqr_reg_report,
-                "overall_abs_report": overall_abs_report,
-                "overall_sqr_report": overall_sqr_report,
-                "best_abs_report": best_abs_report,
-                "best_sqr_report": best_sqr_report,
-            },
-            "confusion_matrices": {
-                "agg_abs_conf_matrix": agg_abs_conf_matrix,
-                "agg_sqr_conf_matrix": agg_sqr_conf_matrix,
-                "best_abs_conf_matrix": best_abs_conf_matrix,
-                "best_sqr_conf_matrix": best_sqr_conf_matrix,
-            },
-            "params": {
-                "targets": VL_targets,
-                "abs_losses": VL_abs_losses,
-                "sqr_losses": VL_sqr_losses,
-                "abs_regularity": VL_abs_regularity_scores,
-                "sqr_regularity": VL_sqr_regularity_scores,
-                "abs_rocauc": VL_abs_rocauc_scores,
-                "sqr_rocauc": VL_sqr_rocauc_scores,
-                "abs_best_labels": abs_best_labels,
-                "sqr_best_labels": sqr_best_labels,
-            },
-            "OC_SVM_Score": svm_score
-        }
-        
-        print("-"*20, "TEST RESULTS", "-"*20)
-        pprint(self.results["AUC_ROC"])
-        pprint(self.results["confusion_matrices"])
-        for k, v in self.results["classification_reports"].items():
-            if "agg" in k or "best" in k:
-                print(k)
-                pprint(v)
+        # ------- SAVING and DISPLAYING RESUTLS -------- #
+        print("="*20, "TEST RESULTS", "="*20)
+        for metric in self.metric_names:
+            print("-"*20, metric, "-"*20)
+            pprint(video_level_params[metric])
         print("="*54)
-                    
+        
+        self.results = video_level_params
         if self.save_as:
             with open(self.save_as, "wb") as f:
                 pkl.dump(self.results, f)
