@@ -306,4 +306,4 @@ def complete_model_name(
     isDeNoising:bool,
 ):
     model_type += "_DeNoising" if isDeNoising else ""
-    return "%s_%s_%s_%s_%s"%(model_type, optimizer_type, loss_type, dataset_type, image_type)
+    return "%s_%s_%s_%s_%s"%(model_type.upper(), optimizer_type.upper(), loss_type.upper(), dataset_type.upper(), image_type.upper())

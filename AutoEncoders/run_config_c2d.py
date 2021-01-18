@@ -72,21 +72,27 @@ if __name__ == '__main__':
         ConvAttentionWrapper(C2D_AE_224(channels = CHANNELS, add_sqzex = True)),
     ]
     
-    # LOSS_TYPES = [LOSS_TYPE] * len(MODELS_LIST)
+    LOSS_TYPES = [LOSS_TYPE] * len(MODELS_LIST)
+#     LOSS_TYPES = ["weighted", "weighted", "psnr", "psnr", "mse", "mse", "mse", "mse"]
     OPTIMIZERS_TYPES = [OPTIMIZER_TYPE] * len(MODELS_LIST)
-    LOSS_TYPES = ["weighted", "weighted", "psnr", "psnr", "mse", "mse", "mse", "mse"]
+#     OPTIMIZERS_TYPES = ["adam", "adagrad", "sgd"]
+
     model_files = [
-        "%s_%s_%s_%s_%s_E%03d_BS%03d"%(m.__name__, DATA_TYPE.upper(), IMAGE_TYPE, OPTIMIZER_TYPE, LOSS_TYPE, EPOCHS, BATCH_SIZE) for m, LOSS_TYPE, OPTIMIZERS_TYPE in zip(MODELS_LIST, LOSS_TYPES, OPTIMIZERS_TYPES)
+        complete_model_name(
+            m.__name__,
+            optimizer_type=OPTIMIZER_TYPE,
+            loss_type=LOSS_TYPE,
+            dataset_type=DATA_TYPE,
+            image_type=IMAGE_TYPE,
+            isDeNoising=DENOISING
+        ) for m, LOSS_TYPE, OPTIMIZERS_TYPE in zip(MODELS_LIST, LOSS_TYPES, OPTIMIZERS_TYPES)
     ]
     
-    if DENOISING: model_files = [mf + "_DeNoising" for mf in model_files]
     if PATCH_WISE: model_files = [mf + "_PatchWise" for mf in model_files]
     if STACKED: model_files = [mf + "_Stacked" for mf in model_files]
     
     MODEL_PATHS = [os.path.join(MODEL_PATH, mf) for mf in model_files]
     OPTIMIZERS = [select_optimizer[opt](m) for m,opt in zip(MODELS_LIST, OPTIMIZERS_TYPES)]
-    # LOSS_FUNCTIONS = [select_loss[LOSS_TYPE] for m in MODELS_LIST]
-    
     LOSS_FUNCTIONS = [select_loss[l] for l in LOSS_TYPES] # change
 
     INFO("MODEL, OPTIM, LOSS ARE READY")

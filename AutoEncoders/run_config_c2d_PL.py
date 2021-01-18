@@ -67,9 +67,15 @@ if __name__ == '__main__':
     
     # Manual
     model = C2D_AE_128_3x3_VAE(channels = CHANNELS)
+    model_file = complete_model_name(
+        model.__name__,
+        optimizer_type=OPTIMIZER_TYPE,
+        loss_type=LOSS_TYPE,
+        dataset_type=DATA_TYPE,
+        image_type=IMAGE_TYPE,
+        isDeNoising=DENOISING
+    )
     
-    model_file = "PL_%s_%s_%s_%s_%s_E%03d_BS%03d"%(model.__name__, DATA_TYPE.upper(), IMAGE_TYPE, OPTIMIZER_TYPE, LOSS_TYPE, EPOCHS, BATCH_SIZE)
-    if DENOISING: model_file += "_DeNoising"
     if STACKED: model_file += "_Stacked"
     if PATCH_WISE: model_file += "_PatchWise"
         
