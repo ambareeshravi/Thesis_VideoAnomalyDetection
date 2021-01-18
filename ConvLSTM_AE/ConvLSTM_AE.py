@@ -13,7 +13,7 @@ class CRNN_AE(nn.Module):
         useBias = False
     ):
         super(CRNN_AE, self).__init__()
-        self.__name__ = "CRNN_AE_%d_%dx%d"%(image_size, most_common(filter_sizes), most_common(filter_sizes))
+        self.__name__ = "CRNN_AE_%d_%dx%d_L%d_RL%d_DisDeConv%s"%(image_size, most_common(filter_sizes), most_common(filter_sizes), len(filter_count), n_rnn_layers, "Y" if disableDeConvRNN else "N")
         self.channels = channels
         self.image_size = image_size
         self.filter_count = filter_count
@@ -107,7 +107,7 @@ class CLSTM_AE(nn.Module):
         useBias = False
     ):
         super(CLSTM_AE, self).__init__()
-        self.__name__ = "CLSTM_AE_%d_%dx%d"%(image_size, most_common(filter_sizes), most_common(filter_sizes))
+        self.__name__ = "CLSTM_AE_%d_%dx%d_L%d_RL%d_DisDeConv%s"%(image_size, most_common(filter_sizes), most_common(filter_sizes), len(filter_count), n_rnn_layers, "Y" if disableDeConvRNN else "N")
         self.channels = channels
         self.image_size = image_size
         self.filter_count = filter_count
@@ -198,7 +198,7 @@ class CLSTM_AE_Seq2Seq(nn.Module):
         useBias = False
     ):
         super(CLSTM_AE_Seq2Seq, self).__init__()
-        self.__name__ = "CRNN_AE_%d_%dx%d_SEQ2SEQ"%(image_size, most_common(filter_sizes), most_common(filter_sizes))
+        self.__name__ = "CRNN_AE_%d_%dx%d_SEQ2SEQ_L%d"%(image_size, most_common(filter_sizes), most_common(filter_sizes), len(filter_count))
         self.image_size = image_size
         self.channels = channels
         self.filter_count = filter_count
