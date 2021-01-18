@@ -64,10 +64,17 @@ class AutoEncoderModel(AutoEncoderHelper):
         
         with open(os.path.join(self.save_path, "model.txt"), "w") as f:
             f.write(str(self.model))
+        
+        self.cl = CustomLogger(join_paths([self.save_path, "train_logs"]))
 
-    def epoch_status(self,):
-        if not self.stopTraining:            
-            print("Model:", self.model_file)
+    def epoch_status(self, epoch, epochs, epoch_st):
+        if not self.stopTraining:
+            if epoch == 1: self.cl.print(eta(epoch, epochs, (time() - epoch_st)))
+            self.cl.print("-"*60)
+            self.cl.print("Epoch: [%03d/%03d] | time/epoch: %0.2f seconds"%(epoch, epochs, (time() - epoch_st)))
+            self.cl.print("-"*60)
+            
+            self.cl.print("Model:", self.model_file)
             try:
                 d = {
                 "Training" : {"Loss -2": self.history["train_loss"][-3],
@@ -84,8 +91,8 @@ class AutoEncoderModel(AutoEncoderHelper):
                 "Training" : {"Loss" : self.history["train_loss"][-1],},
                 "Validation" : {"Loss" : self.history["validation_loss"][-1],},
                 }
-            print(pd.DataFrame(d).T)
-            print("-"*40)           
+            self.cl.print(pd.DataFrame(d).T)
+            self.cl.print("-"*40)           
      
     def train_step(self, images):
         self.model.to(self.device)
@@ -120,7 +127,7 @@ class AutoEncoderModel(AutoEncoderHelper):
                 svdd_val_loss = self.svdd.val_step(encodings)
                 self.svdd.history["epoch_val_loss"].append(svdd_val_loss.item())
                 if self.svdd_warmup_count % 50 == 0:
-                    print("*** SVDD Val Loss: %0.6f ***"%(svdd_val_loss.item()))
+                    self.cl.print("*** SVDD Val Loss: %0.6f ***"%(svdd_val_loss.item()))
                     
         self.model.to('cpu')
         self.epoch_validation_loss.append(loss.item())
@@ -226,11 +233,6 @@ class AutoEncoder_Trainer:
             
             # Print Epoch stats
             print_status = epoch % self.status_rate == 0 or epoch == 1
-            if print_status:
-                if epoch == 1: eta(epoch, self.epochs, (time() - epoch_st))
-                print("-"*60)
-                print("Epoch: [%03d/%03d] | time/epoch: %0.2f seconds"%(epoch, self.epochs, (time() - epoch_st)))
-                print("-"*60)
                 
             for model in self.autoencoder_models:
                 if model.stopTraining: continue
@@ -238,7 +240,7 @@ class AutoEncoder_Trainer:
                 model.epoch_reset()
                 if "stop" in read_txt(self.run_status_file).lower(): stopTraining = True
                 if print_status:
-                    model.epoch_status()
+                    model.epoch_status(epoch, self.epochs, epoch_st)
                     model.save()
                         
             if stopTraining:

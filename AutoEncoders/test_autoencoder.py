@@ -57,7 +57,6 @@ class AE_PredictFunctions:
         with torch.no_grad():
             reconstructions, encodings = self.model(stacked_images.to(self.device))
             reconstructions = reconstructions.unsqueeze(dim = -4)
-            print("reconstructions.shape", reconstructions.shape)
             return (reconstructions, encodings)
         
     def predict_translative(self, inputs):
@@ -186,6 +185,8 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
         
         self.save_as = ".pkl".join(self.model_file.split(".pth.tar"))
         self.save_path = os.path.split(self.save_as)[0]
+        
+        self.cl = CustomLogger(join_paths([self.save_path, "test_logger"]))
        
     def regularity(self, x, applyFilter = True):
         normalized = 1-normalize_error(x)
@@ -339,7 +340,7 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
                         VIS_frames_abs += self.visualize_results(test_inputs, reconstructions, pixel_regularity_abs_mask)
                         VIS_frames_sqr += self.visualize_results(test_inputs, reconstructions, pixel_regularity_sqr_mask)
                     except Exception as e:
-                        if self.debug: print("Visualization:", e)
+                        if self.debug: cl.print("Visualization:", e)
                         self.save_vis = False
             
             video_level_params["targets"].append(np.asarray(frame_level_params["targets"]))
@@ -354,11 +355,11 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
                 video_level_params[metric]["regularity"].append(regularity)
                 try: video_level_params[metric]["pr_roc"].append(pr_auc(targets, regularity))
                 except Exception as e:
-                    if self.debug: print("PR ROC", e)
+                    if self.debug: cl.print("PR ROC", e)
                     else: pass
                 try: video_level_params[metric]["auc_roc"].append(roc_auc_score(targets, regularity))
                 except Exception as e:
-                    if self.debug: print("AUC ROC", e)
+                    if self.debug: cl.print("AUC ROC", e)
                     else: pass
                 plot_regularity_metrics.append(regularity)
                             
@@ -374,13 +375,13 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
                     frames_to_video(VIS_frames_abs, join_paths([results_visulization_path, "%03d_AV_abs"%(video_idx + 1)]))
                     frames_to_video(VIS_frames_sqr, join_paths([results_visulization_path, "%03d_AV_sqr"%(video_idx + 1)]))
                 except Exception as e:
-                    if self.debug: print("Video Generation:", e)
+                    if self.debug: cl.print("Video Generation:", e)
                     self.save_vis = False
                     
             if self.calcOC_SVM: 
                 try: video_level_params["encodings"].append(frame_level_params["encodings"])
                 except Exception as e:
-                    if self.debug: print("Frames Encodings:", e)
+                    if self.debug: cl.print("Frames Encodings:", e)
                     else: pass
         
         # Convert everything to arrays
@@ -405,7 +406,7 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
                 video_level_params["flat_encodings"] = np.array([e.flatten() for e in flatten_2darray(video_level_params["encodings"])])
                 svm_score = self.OC_SVM(video_level_params["flat_encodings"], video_level_params["flat_targets"], tag = "")
             except Exception as e:
-                print("OneCass SVM: Encodings shape: %s, Targets shape: %s, OC_SVM Error: %s:"%(FLT_encodings.shape, FLT_targets.shape, e))
+                cl.print("OneCass SVM: Encodings shape: %s, Targets shape: %s, OC_SVM Error: %s:"%(FLT_encodings.shape, FLT_targets.shape, e))
         
         # ---------------- CALCULATING METRICS ------------------- #
         
@@ -445,9 +446,9 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
             pass
         
         # ------- SAVING and DISPLAYING RESUTLS -------- #
-        print("="*10, "TEST RESULTS", "="*10)
-        pprint(ResultsRecorder.get_results_dict(video_level_params))
-        print("="*30)
+        cl.print("="*10, "TEST RESULTS", "="*10)
+        cl.print(ResultsRecorder.get_results_dict(video_level_params))
+        cl.print("="*30)
         
         self.results = video_level_params
         if self.save_as:

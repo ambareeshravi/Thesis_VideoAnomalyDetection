@@ -147,7 +147,7 @@ def get_data_loaders(
 def eta(epoch, epochs, epoch_time):
     eta_hours = (epoch_time * (epochs - epoch)) / 3600
     eta_ts = datetime.now() + timedelta(hours = eta_hours)
-    print("Maximum estimated Time: %0.2f hours | Will be completed by: %s"%(eta_hours, str(eta_ts)[:16]))
+    return "Maximum estimated Time: %0.2f hours | Will be completed by: %s"%(eta_hours, str(eta_ts)[:16]) + "\n" + "-"*60 + "\n"
     
 def get_patches(images, patch_size = 64, overlap = 32):
     patches = list()
@@ -307,3 +307,20 @@ def complete_model_name(
 ):
     model_type += "_DeNoising" if isDeNoising else ""
     return "%s_%s_%s_%s_%s"%(model_type.upper(), optimizer_type.upper(), loss_type.upper(), dataset_type.upper(), image_type.upper())
+
+class CustomLogger:
+    def __init__(
+        self,
+        file_path:str,
+        extension:str = ".txt",
+    ):
+        self.file_path = file_path
+        if extension not in self.file_path: self.file_path += extension
+        self.f = open(self.file_path, "w")
+        
+    def print(self, *args, sep = " "):
+        self.f.write(sep.join([str(a) for a in args]) + "\n")
+        self.f.flush()
+    
+    def __del__(self):
+        self.f.close()

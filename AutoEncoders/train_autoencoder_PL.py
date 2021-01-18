@@ -38,6 +38,7 @@ class AutoEncoderLM(LightningModule, AutoEncoderHelper):
         self.MAX_EPOCHS = max_epochs
         self.lr_scheduler_kwargs = lr_scheduler_kwargs
         
+        
         # Path
         self.save_path = save_path
         create_directory(self.save_path)
@@ -49,14 +50,16 @@ class AutoEncoderLM(LightningModule, AutoEncoderHelper):
             "validation_loss": list()
         }
         
+        self.cl = CustomLogger(join_paths([self.save_path, "train_logs"]))
+        
         self.epoch_train_loss = list()
         self.epoch_validation_loss = list()
         AutoEncoderHelper.__init__(self, model_file = self.model_file, noise_var = noise_var)
                
     def epoch_status(self,):
-        print("="*60)
-        print("Epoch: [%03d/%03d] | Time: %0.2f (s) | Model: %s"%(self.EPOCH, self.MAX_EPOCHS, (self.EPOCH_END_TIME-self.EPOCH_START_TIME), self.model_file))
-        print("-"*60)
+        cl.print("="*60)
+        cl.print("Epoch: [%03d/%03d] | Time: %0.2f (s) | Model: %s"%(self.EPOCH, self.MAX_EPOCHS, (self.EPOCH_END_TIME-self.EPOCH_START_TIME), self.model_file))
+        cl.print("-"*60)
         try:
             d = {
             "Training" : {"Loss -2": self.history["train_loss"][-3],
@@ -73,8 +76,8 @@ class AutoEncoderLM(LightningModule, AutoEncoderHelper):
             "Training" : {"Loss" : self.history["train_loss"][-1],},
             "Validation" : {"Loss" : self.history["validation_loss"][-1],},
             }
-        print(pd.DataFrame(d).T)
-#         print("="*60)
+        cl.print(pd.DataFrame(d).T)
+#         cl.print("="*60)
           
     
     # LM functions

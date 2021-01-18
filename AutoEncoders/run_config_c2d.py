@@ -14,12 +14,12 @@ from PatchWise.models_PatchWise import *
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser("Parameters to run the training")
-    parser.add_argument("--data_path", type = str, help="Path to read data from")
-    parser.add_argument("--model_path", type = str, help="Path to store the models")
+    parser.add_argument("--data_path", default = "/home/ambreesh/Documents/PROJECTS/datasets/", type = str, help="Path to read data from")
+    parser.add_argument("--model_path", default = "/home/ambreesh/Documents/PROJECTS/THESIS_WORK/VAD_MODEL_TREE/", type = str, help="Path to store the models")
     args = parser.parse_args()
     
     # Editable
-    IMAGE_SIZE = 224
+    IMAGE_SIZE = 128
     EPOCHS = 300
     BATCH_SIZE = 128
     IMAGE_TYPE = "normal"
@@ -28,7 +28,7 @@ if __name__ == '__main__':
     DATA_PATH = os.path.join(args.data_path, "VAD_Datasets")
     OPTIMIZER_TYPE = "adam"
     LOSS_TYPE = "mse"
-    DENOISING = False
+    DENOISING = True
     PATCH_WISE = False
     STACKED = False
     
@@ -41,6 +41,7 @@ if __name__ == '__main__':
         
     # Manual
     DATA_TYPE = "ucsd2" 
+    MODEL_PATH = "/home/ambreesh/Documents/PROJECTS/THESIS_WORK/VAD_MODEL_TREE/" + DATA_TYPE.upper() + "/C2D/"
     
     # 1. Training
     train_data, CHANNELS = select_dataset(
@@ -51,7 +52,7 @@ if __name__ == '__main__':
         image_size = IMAGE_SIZE,
         image_type = IMAGE_TYPE,
         n_frames = 16,
-        frame_strides = [1,2,4,8,16],
+        frame_strides = [2,4,8,16],
         sample_stride = 1,
     )
 
@@ -59,17 +60,8 @@ if __name__ == '__main__':
     INFO("TRAINING DATA READY")
     
     MODELS_LIST = [
-        C2D_AE_224(channels = CHANNELS),
-        ConvAttentionWrapper(C2D_AE_224(channels = CHANNELS)),
-
-        C2D_AE_224(channels = CHANNELS),
-        ConvAttentionWrapper(C2D_AE_224(channels = CHANNELS)),
-
-        C2D_AE_224(channels = CHANNELS, add_dropouts = True),
-        ConvAttentionWrapper(C2D_AE_224(channels = CHANNELS, add_dropouts = True)),
-
-        C2D_AE_224(channels = CHANNELS, add_sqzex = True),
-        ConvAttentionWrapper(C2D_AE_224(channels = CHANNELS, add_sqzex = True)),
+        C2D_AE_128_3x3(channels = CHANNELS),
+        ConvAttentionWrapper(C2D_AE_128_3x3(channels = CHANNELS)),
     ]
     
     LOSS_TYPES = [LOSS_TYPE] * len(MODELS_LIST)
@@ -114,6 +106,7 @@ if __name__ == '__main__':
                      useGPU = True,
                      debug = True
                 )
+    
     INFO("STARTING THE TRAINING")
     trainer.train()
 
