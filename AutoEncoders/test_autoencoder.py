@@ -2,6 +2,7 @@ import sys
 sys.path.append("..")
 from general import *
 from general.visualization import *
+from general.results_handler import *
 
 from sklearn.svm import OneClassSVM
 from sklearn.metrics import *
@@ -151,6 +152,7 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
         applyFilter = False,
         filterWindow = [9,1],
         debug = False,
+        recordResults = True,
         useGPU = True
     ):
         self.model = model
@@ -164,6 +166,7 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
         self.applyFilter = applyFilter
         self.filterWindow = filterWindow
         self.metric_names = ["absolute", "squared", "ssim", "psnr"]
+        self.recordResults = recordResults
         self.debug = debug
         
         self.device = torch.device("cpu")
@@ -213,7 +216,6 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
         oc_svm = OneClassSVM()
         y_pred = oc_svm.fit_predict(features)
         score = roc_auc_score(y_true, y_pred)
-        print("AUC-ROC Score of %s OneClassSVM: %s"%(tag, score))
         return score
         
     def visualize_results(self, inputs, reconstructions, loss_maps):
@@ -344,6 +346,7 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
 
             # Per video calculations
             targets = frame_level_params["targets"]
+            plot_regularity_metrics = list()
             for metric in self.metric_names:
                 losses = np.asarray(frame_level_params[metric]["loss"])
                 regularity = self.regularity(losses)
@@ -357,12 +360,13 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
                 except Exception as e:
                     if self.debug: print("AUC ROC", e)
                     else: pass
+                plot_regularity_metrics.append(regularity)
                             
             # Visualizations
             self.plot_regularity(
-                metrics = [targets] + [frame_level_params[metric]["regularity"] for metric in self.metric_names],
+                metrics = [targets] + plot_regularity_metrics,
                 labels = ["targets"] + self.metric_names,
-                file_name = "%03d_metrics.png"%(video_idx + 1)
+                file_name = join_paths([results_visulization_path, "%03d_metrics.png"%(video_idx + 1)])
             )
             
             if self.save_vis: # or video_idx == 0:            
@@ -416,7 +420,7 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
             video_level_params[metric]["auc_roc_score"]["agg"] = roc_auc_score(metric_flat_targets, metric_agg_regularity)
             video_level_params[metric]["pr_roc_score"]["agg"] = pr_auc(metric_flat_targets, metric_agg_regularity)
             video_level_params[metric]["eer"]["agg"] = calculate_eer(metric_flat_targets, metric_agg_regularity)
-            video_level_params[metric]["classification_report"]["agg"] = classification_report(metric_flat_targets, np.round(metric_agg_regularity))
+            video_level_params[metric]["classification_report"]["agg"] = classification_report(metric_flat_targets, np.round(metric_agg_regularity), output_dict=True)
             video_level_params[metric]["confusion_matrix"]["agg"] = confusion_matrix(metric_flat_targets, np.round(metric_agg_regularity))
             
             # overall metrics
@@ -424,13 +428,13 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
             video_level_params[metric]["auc_roc_score"]["overall"] = roc_auc_score(metric_flat_targets, metric_overall_regularity)
             video_level_params[metric]["pr_roc_score"]["overall"] = pr_auc(metric_flat_targets, metric_overall_regularity)
             video_level_params[metric]["eer"]["overall"] = calculate_eer(metric_flat_targets, metric_overall_regularity)
-            video_level_params[metric]["classification_report"]["overall"] = classification_report(metric_flat_targets, np.round(metric_overall_regularity))
+            video_level_params[metric]["classification_report"]["overall"] = classification_report(metric_flat_targets, np.round(metric_overall_regularity), output_dict=True)
             video_level_params[metric]["confusion_matrix"]["overall"] = confusion_matrix(metric_flat_targets, np.round(metric_overall_regularity))
             
             # best metrics
             video_level_params[metric]["best"]["threshold"] = thresholdJ(metric_flat_targets, metric_overall_regularity)
             video_level_params[metric]["best"]["predictions"] = scores2labels(metric_overall_regularity, video_level_params[metric]["best"]["threshold"])
-            video_level_params[metric]["best"]["classification_report"] = classification_report(metric_flat_targets, video_level_params[metric]["best"]["predictions"])
+            video_level_params[metric]["best"]["classification_report"] = classification_report(metric_flat_targets, video_level_params[metric]["best"]["predictions"], output_dict=True)
             video_level_params[metric]["best"]["confusion_matrix"] = confusion_matrix(metric_flat_targets, video_level_params[metric]["best"]["predictions"])
         
         video_level_params["OC_SVM_Score"] = svm_score
@@ -441,16 +445,16 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
             pass
         
         # ------- SAVING and DISPLAYING RESUTLS -------- #
-        print("="*20, "TEST RESULTS", "="*20)
-        for metric in self.metric_names:
-            print("-"*20, metric, "-"*20)
-            pprint(video_level_params[metric])
-        print("="*54)
+        print("="*10, "TEST RESULTS", "="*10)
+        pprint(ResultsRecorder.get_results_dict(video_level_params))
+        print("="*30)
         
         self.results = video_level_params
         if self.save_as:
             with open(self.save_as, "wb") as f:
                 pkl.dump(self.results, f)
+        
+        if self.recordResults: ResultsRecorder().record_results(self.save_as)
         
         if return_results: return self.results
         return True
