@@ -147,7 +147,9 @@ def get_data_loaders(
 def eta(epoch, epochs, epoch_time):
     eta_hours = (epoch_time * (epochs - epoch)) / 3600
     eta_ts = datetime.now() + timedelta(hours = eta_hours)
-    return "Maximum estimated Time: %0.2f hours | Will be completed by: %s"%(eta_hours, str(eta_ts)[:16]) + "\n" + "-"*60 + "\n"
+    eta_string = "Maximum estimated Time: %0.2f hours | Will be completed by: %s"%(eta_hours, str(eta_ts)[:16]) + "\n" + "-"*60 + "\n"
+    print(eta_string)
+    return eta_string
     
 def get_patches(images, patch_size = 64, overlap = 32):
     patches = list()
