@@ -21,14 +21,14 @@ if __name__ == '__main__':
     # Editable
     IMAGE_SIZE = 128
     EPOCHS = 300
-    BATCH_SIZE = 128
+    BATCH_SIZE = 256
     IMAGE_TYPE = "normal"
     MODEL_PATH = args.model_path
     if not os.path.exists(MODEL_PATH): os.mkdir(MODEL_PATH)
     DATA_PATH = os.path.join(args.data_path, "VAD_Datasets")
     OPTIMIZER_TYPE = "adam"
     LOSS_TYPE = "mse"
-    DENOISING = True
+    DENOISING = False
     PATCH_WISE = False
     STACKED = False
     
@@ -40,8 +40,8 @@ if __name__ == '__main__':
         asImages = False
         
     # Manual
-    DATA_TYPE = "ucsd2" 
-    MODEL_PATH = "/home/ambreesh/Documents/PROJECTS/THESIS_WORK/VAD_MODEL_TREE/" + DATA_TYPE.upper() + "/C2D/"
+    DATA_TYPE = "subway_exit" 
+    # MODEL_PATH = "/home/ambreesh/Documents/PROJECTS/THESIS_WORK/VAD_MODEL_TREE/" + DATA_TYPE.upper() + "/C2D/"
     
     # 1. Training
     train_data, CHANNELS = select_dataset(
@@ -61,6 +61,8 @@ if __name__ == '__main__':
     
     MODELS_LIST = [
         C2D_AE_128_3x3(channels = CHANNELS),
+        ConvAttentionWrapper(C2D_AE_128_3x3(channels = CHANNELS)),
+        C2D_AE_128_5x5(channels = CHANNELS),
         ConvAttentionWrapper(C2D_AE_128_3x3(channels = CHANNELS)),
     ]
     
@@ -99,7 +101,7 @@ if __name__ == '__main__':
                      loss_criterion = LOSS_FUNCTIONS,
                      epochs = EPOCHS,
                      status_rate = 25,
-                     lr_scheduler_params = {"factor": 0.75, "patience": 4, "threshold": 1e-6},
+                     lr_scheduler_params = {"factor": 0.75, "patience": 4, "threshold": 5e-5},
                      useHalfPrecision = False,
                      run_status_file = "run_status_c2d.txt",
                      destructAll = True,
@@ -139,7 +141,7 @@ if __name__ == '__main__':
             dataset = test_data,
             model_file = ae_model.model_file,
             stackFrames = stackFrames,
-            save_vis = True,
+            save_vis = False,
             useGPU = True
         )
         results = tester.test()

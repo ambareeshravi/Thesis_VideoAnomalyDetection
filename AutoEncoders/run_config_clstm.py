@@ -19,8 +19,8 @@ if __name__ == '__main__':
     
     # Editable
     IMAGE_SIZE = 128
-    EPOCHS = 150
-    BATCH_SIZE = 24
+    EPOCHS = 300
+    BATCH_SIZE = 32
     IMAGE_TYPE = "normal"
     MODEL_PATH = args.model_path
     if not os.path.exists(MODEL_PATH): os.mkdir(MODEL_PATH)
@@ -33,7 +33,7 @@ if __name__ == '__main__':
     stackFrames = 1
     asImages = True
     if isVideo:
-        stackFrames = 16
+        stackFrames = 8
         asImages = False
         
     # Manual
@@ -47,7 +47,7 @@ if __name__ == '__main__':
         asImages = asImages,
         image_size = IMAGE_SIZE,
         image_type = IMAGE_TYPE,
-        n_frames = 16,
+        n_frames = stackFrames,
         frame_strides = [1,2,4,8,16],
         sample_stride = 1,
     )
@@ -56,8 +56,8 @@ if __name__ == '__main__':
     INFO("TRAINING DATA READY")
     
     MODELS_LIST = [
-        # CLSTM_AE_CTD(image_size = IMAGE_SIZE, channels = CHANNELS),
-        CLSTM_FULL_AE(image_size = IMAGE_SIZE, channels = CHANNELS)
+        CRNN_AE(image_size = IMAGE_SIZE, channels = CHANNELS),
+        CLSTM_AE(image_size = IMAGE_SIZE, channels = CHANNELS)
     ]
     
     LOSS_TYPES = [LOSS_TYPE] * len(MODELS_LIST)
@@ -75,10 +75,7 @@ if __name__ == '__main__':
             isDeNoising=DENOISING
         ) for m, LOSS_TYPE, OPTIMIZERS_TYPE in zip(MODELS_LIST, LOSS_TYPES, OPTIMIZERS_TYPES)
     ]
-    
-    if PATCH_WISE: model_files = [mf + "_PatchWise" for mf in model_files]
-    if STACKED: model_files = [mf + "_Stacked" for mf in model_files]
-    
+        
     MODEL_PATHS = [os.path.join(MODEL_PATH, mf) for mf in model_files]
     OPTIMIZERS = [select_optimizer[opt](m) for m,opt in zip(MODELS_LIST, OPTIMIZERS_TYPES)]
     LOSS_FUNCTIONS = [select_loss[l] for l in LOSS_TYPES] # change
@@ -95,7 +92,7 @@ if __name__ == '__main__':
                      loss_criterion = LOSS_FUNCTIONS,
                      epochs = EPOCHS,
                      status_rate = 25,
-                     lr_scheduler_params = {"factor": 0.75, "patience": 4, "threshold": 1e-6},
+                     lr_scheduler_params = {"factor": 0.75, "patience": 4, "threshold": 5e-5},
                      useHalfPrecision = False,
                      run_status_file = "run_status_clstm.txt",
                      destructAll = True,
@@ -113,7 +110,7 @@ if __name__ == '__main__':
         asImages = True,
         image_size = IMAGE_SIZE,
         image_type = IMAGE_TYPE,
-        n_frames = 16,
+        n_frames = stackFrames,
         frame_strides = [2,4,8,16],
         sample_stride = 1,
     )
@@ -127,7 +124,7 @@ if __name__ == '__main__':
             dataset = test_data,
             model_file = ae_model.model_file,
             stackFrames = stackFrames,
-            save_vis = True,
+            save_vis = False,
             useGPU = True
         )
         results = tester.test()
