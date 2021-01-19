@@ -92,7 +92,7 @@ if __name__ == '__main__':
         lr_scheduler_kwargs = {
             'factor': 0.75,
             'patience': 4,
-            'threshold': 1e-6,
+            'threshold': 5e-5,
             'verbose': True
          }
     )

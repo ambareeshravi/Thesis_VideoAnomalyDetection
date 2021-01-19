@@ -95,7 +95,7 @@ if __name__ == '__main__':
                      loss_criterion = LOSS_FUNCTIONS,
                      epochs = EPOCHS,
                      status_rate = 25,
-                     lr_scheduler_params = {"factor": 0.75, "patience": 4, "threshold": 1e-6},
+                     lr_scheduler_params = {"factor": 0.75, "patience": 4, "threshold": 5e-5},
                      useHalfPrecision = False,
                      run_status_file = "run_status_c3d.txt",
                      destructAll = True,

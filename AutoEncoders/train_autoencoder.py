@@ -15,7 +15,7 @@ class AutoEncoderModel(AutoEncoderHelper):
                  lr_scheduler_params = {
                      "factor": 0.75,
                      "patience": 4,
-                     "threshold": 1e-6,
+                     "threshold": 5e-5,
                      'verbose': True
                  },
                  early_stopping_params = {
@@ -149,7 +149,7 @@ class AutoEncoder_Trainer:
                  lr_scheduler_params = {
                      "factor": 0.75,
                      "patience": 4,
-                     "threshold": 1e-6,
+                     "threshold": 5e-5,
                      'verbose': True
                  },
                  early_stopping_params = {
