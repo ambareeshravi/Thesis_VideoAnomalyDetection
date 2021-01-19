@@ -105,7 +105,7 @@ class ResultsRecorder:
     def __init__(
         self,
         results_file:str = "VAD_AE_results.csv", 
-        sort_by:str = ["Model", "Dataset"]
+        sort_by:str = ["Dataset", "Model"]
     ):
         self.results_file = results_file
         self.sort_by = sort_by
