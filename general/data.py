@@ -15,7 +15,13 @@ class ImagesHandler:
         
     def select_image_type(self,):
         image_type = self.image_type.lower()
-        if "flow" in image_type:
+        if "flow_mask" in image_type:
+            self.image_type = "flow_mask"
+            self.read_frames = self.read_optical_flow_mask
+            returnMag = True
+            if "clr" in image_type: returnMag = False
+            self.opt_flow = OpticalFlow(returnMag = returnMag)
+        elif "flow" in image_type:
             self.image_type = "flow"
             self.n_frames += 1
             returnMag = True
@@ -56,7 +62,22 @@ class ImagesHandler:
         frame_flows = [self.opt_flow.get_optical_flow(frame_array, frame_arrays[idx+1]) for idx, frame_array in enumerate(frame_arrays[:-1])]
         flow_combined = [torch.cat((self.data_transform(Image.fromarray(image_255(frame))), self.data_transform(Image.fromarray(image_255(flow)))), dim = 0) for idx, (frame, flow) in enumerate(zip(frame_arrays[:-1], frame_flows))]
         return flow_combined
-        
+    
+    def get_flow_mask(self, frame, flow):
+        flow_binary_mask = np.uint8((flow > flow.mean()) * 1)
+#         flow_binary_mask = cv2.threshold(flow, 25, 255, cv2.THRESH_BINARY)[-1]//255
+        flow_binary_mask = cv2.dilate(flow_binary_mask, kernel = np.ones((5,5),np.uint8), iterations = 1)
+        flow_binary_mask =  cv2.morphologyEx(flow_binary_mask, cv2.MORPH_OPEN, kernel = np.ones((9,9),np.uint8))
+        return Image.fromarray(image_255(flow_binary_mask * frame))
+
+    def read_optical_flow_mask(self, files):
+        frames = [read_image(image_path) for image_path in files]
+        frame_arrays = [np.array(frame) for frame in frames]
+        frame_flows = [self.opt_flow.get_optical_flow(frame_array, frame_arrays[idx+1]) for idx, frame_array in enumerate(frame_arrays[:-1])]
+        frame_flows += [frame_flows[-1]]
+        flow_masked_frames = [self.data_transform(self.get_flow_mask(frame, flow)) for frame, flow in zip(frame_arrays, frame_flows)]
+        return flow_masked_frames
+
     # difference is useless
     def get_difference(self, frame1, frame2):
         difference = image_255(np.asarray(frame2.convert('L')) - np.asarray(frame1.convert('L')))

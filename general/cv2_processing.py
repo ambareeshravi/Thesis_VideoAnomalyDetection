@@ -19,7 +19,7 @@ class OpticalFlow:
         optical_flow_mag = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
         
         if self.returnMag:
-            return optical_flow_mag # returns 1 channel magnitude
+            return np.uint8(optical_flow_mag) # returns 1 channel magnitude
         
         hsv[...,0] = ang*180/np.pi/2
         hsv[...,2] = optical_flow_mag

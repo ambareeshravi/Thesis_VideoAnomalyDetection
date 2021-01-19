@@ -14,12 +14,12 @@ class AutoEncoderModel(AutoEncoderHelper):
                  device = torch.device("cuda"),
                  lr_scheduler_params = {
                      "factor": 0.75,
-                     "patience": 5,
-                     "threshold": 5e-5,
+                     "patience": 4,
+                     "threshold": 1e-6,
                      'verbose': True
                  },
                  early_stopping_params = {
-                     "threshold": 5e-5,
+                     "threshold": 1e-6,
                      "patience": 8
                  },
                  useHalfPrecision = False,
@@ -148,12 +148,12 @@ class AutoEncoder_Trainer:
                  status_rate = 20,
                  lr_scheduler_params = {
                      "factor": 0.75,
-                     "patience": 5,
-                     "threshold": 5e-5,
+                     "patience": 4,
+                     "threshold": 1e-6,
                      'verbose': True
                  },
                  early_stopping_params = {
-                     "threshold": 5e-5,
+                     "threshold": 1e-6,
                      "patience": 8
                  },
                  noise_var = 0.1,

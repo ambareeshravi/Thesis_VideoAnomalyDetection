@@ -148,7 +148,7 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
         n_seed = 2,
         n_future_steps = 4,
         calcOC_SVM = False,
-        applyFilter = False,
+        applyFilter = True,
         filterWindow = [9,1],
         debug = False,
         recordResults = True,
@@ -447,7 +447,8 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
         
         # ------- SAVING and DISPLAYING RESUTLS -------- #
         self.cl.print("="*10, "TEST RESULTS", "="*10)
-        self.cl.print(ResultsRecorder.get_results_dict(video_level_params))
+        processed_results_dict = ResultsRecorder.get_results_dict(video_level_params)
+        self.cl.print(processed_results_dict)
         self.cl.print("="*30)
         
         self.results = video_level_params
@@ -457,5 +458,5 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
         
         if self.recordResults: ResultsRecorder().record_results(self.save_as)
         
-        if return_results: return self.results
+        if return_results: return processed_results_dict
         return True

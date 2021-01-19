@@ -22,8 +22,8 @@ class AutoEncoderLM(LightningModule, AutoEncoderHelper):
                  status_rate = 25,
                  lr_scheduler_kwargs = {
                      'factor': 0.75,
-                     'patience': 5,
-                     'threshold': 5e-5,
+                     'patience': 4,
+                     'threshold': 1e-6,
                      'verbose': True
                  }
                 ):

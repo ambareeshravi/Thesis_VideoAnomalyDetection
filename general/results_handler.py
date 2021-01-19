@@ -9,6 +9,11 @@ class ModelParser:
     
     @staticmethod
     def getModelCategory(model_name):
+        if "|" in model_name:
+            return model_name.split("|")[0]
+        else:
+            return model_name.split("_")[0]
+        
         if "C2D" in model_name: return "C2D"
         elif "C3D" in model_name: return "C3D"
         elif "CLSTM" in model_name: return "CLSTM"
@@ -17,9 +22,9 @@ class ModelParser:
     
     @staticmethod
     def getModelResolution(model_name):
-        if "128" in model_name: return 128
-        elif "224" in model_name: return 224
-        elif "64" in model_name: return 64
+        if "128" in model_name.lower(): return 128
+        elif "224" in model_name.lower(): return 224
+        elif "64" in model_name.lower(): return 64
         else: return False
             
     @staticmethod
@@ -35,9 +40,10 @@ class ModelParser:
     
     @staticmethod
     def getImageType(model_name):
-        if "normal" in model_name: return "NORMAL"
-        elif "gray" in model_name: return "GRAYSCALE"
-        elif "flow" in model_name: return "OPTICAL_FLOW"
+        if "normal" in model_name.lower(): return "NORMAL"
+        elif "gray" in model_name.lower(): return "GRAYSCALE"
+        elif "flow_mask" in model_name.lower(): return "OPTICAL_FLOW_MASK"
+        elif "flow" in model_name.lower(): return "OPTICAL_FLOW"
         else: return False
     
     @staticmethod
@@ -71,7 +77,7 @@ class ModelParser:
         elif "res" in model_name.lower(): return "RESNet"
         elif "acb" in model_name.lower(): return "ACB"
         elif "dp" in model_name.lower(): return "Dropouts"
-        elif "se" in model_name.lower(): return "SqueezeExcitation"
+        elif "sqzex" in model_name.lower(): return "SqueezeExcitation"
         elif "pc" in model_name.lower(): return "ParallelConvs"
         elif "wide" in model_name.lower(): return "WideConvs"
         elif "double" in model_name.lower(): return "DoubleHead"
@@ -84,6 +90,7 @@ class ModelParser:
     def getConfig(model_name):
         return OrderedDict([
             ("Model", ModelParser.getModelCategory(model_name)),
+            ("Model_Path", model_name),
             ("Variant", ModelParser.getModelVariant(model_name)),
             ("Dataset", ModelParser.getDatasetType(model_name)),
             ("Image_Type", ModelParser.getImageType(model_name)),

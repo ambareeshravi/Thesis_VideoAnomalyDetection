@@ -2,6 +2,7 @@ import sys
 sys.path.append("..")
 
 from test_autoencoder import *
+from pprint import pprint
 
 def test_model(
     dataset_type,
@@ -30,7 +31,8 @@ def test_model(
         model_file = model_path,
         **tester_kwargs
     )
-    results = tester.test()
+    results = tester.test(True)
+    pprint(results)
     print("="*40)
     try: del test_data, tester
     except: pass

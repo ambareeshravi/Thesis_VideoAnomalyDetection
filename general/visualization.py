@@ -8,7 +8,7 @@ def threshold_image(image, amount = 0.9):
 #     return image_255(image > (np.max(image)*amount))
     return image_255(image > np.percentile(image, 100*amount))
 
-def erode_image(image, e_kernel = np.ones((3,3),np.uint8), iterations = 1):
+def erode_image(image, e_kernel = np.ones((2,2),np.uint8), iterations = 1):
     return cv2.erode(image, e_kernel, iterations = iterations)
 
 def morph_open_image(image, m_kernel = np.ones((2,2),np.uint8)):
