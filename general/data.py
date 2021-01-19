@@ -60,8 +60,11 @@ class ImagesHandler:
         frames = [read_image(image_path) for image_path in files]
         frame_arrays = [np.array(frame) for frame in frames]
         frame_flows = [self.opt_flow.get_optical_flow(frame_array, frame_arrays[idx+1]) for idx, frame_array in enumerate(frame_arrays[:-1])]
-        flow_combined = [torch.cat((self.data_transform(Image.fromarray(image_255(frame))), self.data_transform(Image.fromarray(image_255(flow)))), dim = 0) for idx, (frame, flow) in enumerate(zip(frame_arrays[:-1], frame_flows))]
-        return flow_combined
+        frame_flows += [frame_flows[-1]]
+        return [self.data_transform(Image.fromarray(ff)) for ff in frame_flows]
+        
+#         flow_combined = [torch.cat((self.data_transform(Image.fromarray(image_255(frame))), self.data_transform(Image.fromarray(image_255(flow)))), dim = 0) for idx, (frame, flow) in enumerate(zip(frame_arrays[:-1], frame_flows))]
+#         return flow_combined
     
     def get_flow_mask(self, frame, flow):
         flow_binary_mask = np.uint8((flow > flow.mean()) * 1)
