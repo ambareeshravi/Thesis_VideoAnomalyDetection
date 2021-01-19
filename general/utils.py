@@ -4,6 +4,10 @@ from sklearn.metrics import make_scorer, roc_curve
 from scipy.optimize import brentq
 from scipy.interpolate import interp1d
 from torchvision.utils import make_grid, save_image
+import subprocess
+
+def execute_bash(command):
+    return subprocess.getoutput(command)
 
 def load_json(file):
     if ".json" not in file: file += ".json"

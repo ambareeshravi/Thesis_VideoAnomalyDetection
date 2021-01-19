@@ -57,6 +57,7 @@ class AutoEncoderLM(LightningModule, AutoEncoderHelper):
         AutoEncoderHelper.__init__(self, model_file = self.model_file, noise_var = noise_var)
                
     def epoch_status(self,):
+        if self.EPOCH == 1: print(execute_bash("nvidia-smi"))
         cl.print("="*60)
         cl.print("Epoch: [%03d/%03d] | Time: %0.2f (s) | Model: %s"%(self.EPOCH, self.MAX_EPOCHS, (self.EPOCH_END_TIME-self.EPOCH_START_TIME), self.model_file))
         cl.print("-"*60)

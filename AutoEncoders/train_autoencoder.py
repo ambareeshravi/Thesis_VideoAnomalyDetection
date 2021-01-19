@@ -69,7 +69,9 @@ class AutoEncoderModel(AutoEncoderHelper):
 
     def epoch_status(self, epoch, epochs, epoch_st):
         if not self.stopTraining:
-            if epoch == 1: self.cl.print(eta(epoch, epochs, (time() - epoch_st)))
+            if epoch == 1:
+                self.cl.print(eta(epoch, epochs, (time() - epoch_st)))
+                print(execute_bash("nvidia-smi"))
             self.cl.print("-"*60)
             self.cl.print("Epoch: [%03d/%03d] | time/epoch: %0.2f seconds"%(epoch, epochs, (time() - epoch_st)))
             self.cl.print("-"*60)
