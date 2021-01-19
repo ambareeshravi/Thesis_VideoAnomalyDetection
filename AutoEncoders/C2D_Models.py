@@ -1224,7 +1224,7 @@ class C2D_AE_224_5x5_ACB(nn.Module):
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
         
-class C2D_AE_BEST_3x3(nn.Module):
+class C2D_AE_BEST(nn.Module):
     def __init__(
         self,
         image_size = 128,
@@ -1232,6 +1232,11 @@ class C2D_AE_BEST_3x3(nn.Module):
         filters_count = [64,64,96,96,128,128],
         encoder_activation = "tanh",
         conv_type = "conv2d",
+        
+        kernel_size = 3,
+        stride = 2,
+        stop_size = None,
+        final_kernel_size = None,
         
         use_aug_conv = False,
         use_input_attention = True,
@@ -1242,13 +1247,19 @@ class C2D_AE_BEST_3x3(nn.Module):
         dropout_rate = 0.2,
         attention_lambda = 1e-6
     ):
-        super(C2D_AE_BEST_3x3, self).__init__()
-        self.__name__ = "C2D_AE_%d_3x3_COMBO"%(image_size)
+        super(C2D_AE_BEST, self).__init__()
+        self.__name__ = "C2D_AE_%d_%dx%d_COMBO"%(image_size, kernel_size, kernel_size)
         self.image_size = image_size
         self.channels = channels
         self.filters_count = filters_count
         self.attention_lambda = attention_lambda
         
+        if final_kernel_size == None:
+            if kernel_size%2!=0: final_kernel_size = kernel_size + 1
+            else: final_kernel_size = kernel_size
+        if stop_size == None: stop_size = (kernel_size * 3) - (kernel_size // 2)
+        print(final_kernel_size, stop_size)
+            
         assert (use_input_attention and use_aug_conv) != True, "Either Input Self attention Block or Attention Augmented Conv layer. Not both"
         
         s = lambda x: "Y" if x else "N"
@@ -1261,68 +1272,68 @@ class C2D_AE_BEST_3x3(nn.Module):
         new_in_channels = self.channels
         idx = 0
         
-        while new_image_size > 5:
+        while new_image_size > stop_size:
             if idx == 0:
                 if use_aug_conv:
-                    input_layer = C2D_AE_224.get_AAC(self, new_in_channels, self.filters_count[idx], 3, 2)
+                    input_layer = C2D_AE_224.get_AAC(self, new_in_channels, self.filters_count[idx], kernel_size, stride)
                 elif use_input_attention:
                     input_layer = ConvAttentionLayerWrapper(
-                        C2D_BN_A(new_in_channels, self.filters_count[idx], 3, 2),
+                        C2D_BN_A(new_in_channels, self.filters_count[idx], kernel_size, stride),
                         in_channels=new_in_channels,
                         out_channels=self.filters_count[idx],
                         stride = 2
                     )
                     self.attention_layer = input_layer
                 else:
-                    input_layer = C2D_BN_A(new_in_channels, self.filters_count[idx], 3, 2)
+                    input_layer = C2D_BN_A(new_in_channels, self.filters_count[idx], kernel_size, stride)
                 encoder_layers.append(input_layer)
                 
             else:
                 encoder_layers.append(
-                    C2D_BN_A(new_in_channels, self.filters_count[idx], 3, 2)
+                    C2D_BN_A(new_in_channels, self.filters_count[idx], kernel_size, stride)
                 )
             
             if add_sqzex: encoder_layers.append(SE_Block(self.filters_count[idx]))
-            if add_res: encoder_layers.append(C2D_Res(self.filters_count[idx], 3))
+            if add_res: encoder_layers.append(C2D_Res(self.filters_count[idx], kernel_size))
             if add_dropouts: encoder_layers.append(nn.Dropout2d(dropout_rate))
             
-            new_image_size = getConvOutputShape(new_image_size, 3, 2)
+            new_image_size = getConvOutputShape(new_image_size, kernel_size, stride)
             new_in_channels = self.filters_count[idx]
             idx += 1
             
         encoder_layers.append(
-            C2D_BN_A(new_in_channels, self.filters_count[idx], 3, 1, activation_type=encoder_activation)
+            C2D_BN_A(new_in_channels, self.filters_count[idx], kernel_size, 1, activation_type=encoder_activation)
         )
         new_in_channels = self.filters_count[idx]
-        new_image_size = getConvOutputShape(new_image_size, 3, 1)
+        new_image_size = getConvOutputShape(new_image_size, kernel_size, 1)
         self.encoder = nn.Sequential(*encoder_layers)
         
         # Build decoder
         decoder_layers = list()
         decoder_layers.append(
-            CT2D_BN_A(new_in_channels, self.filters_count[idx-1], 3, 1)
+            CT2D_BN_A(new_in_channels, self.filters_count[idx-1], kernel_size, 1)
         )
         if add_sqzex: decoder_layers.append(SE_Block(self.filters_count[idx-1]))
-        if add_res: decoder_layers.append(CT2D_Res(self.filters_count[idx-1], 3))
+        if add_res: decoder_layers.append(CT2D_Res(self.filters_count[idx-1], kernel_size))
         if add_dropouts: decoder_layers.append(nn.Dropout2d(dropout_rate))
 
-        new_image_size = getConvTransposeOutputShape(new_image_size, 3, 2)
+        new_image_size = getConvTransposeOutputShape(new_image_size, kernel_size, stride)
         new_in_channels = self.filters_count[idx-1]
         idx -= 1
         while idx > 0:
             decoder_layers.append(
-                CT2D_BN_A(new_in_channels, self.filters_count[idx-1], 3, 2)
+                CT2D_BN_A(new_in_channels, self.filters_count[idx-1], kernel_size, stride)
             )
             
             if add_sqzex: decoder_layers.append(SE_Block(self.filters_count[idx-1]))
-            if add_res: decoder_layers.append(CT2D_Res(self.filters_count[idx-1], 3))
+            if add_res: decoder_layers.append(CT2D_Res(self.filters_count[idx-1], kernel_size))
             if add_dropouts: decoder_layers.append(nn.Dropout2d(dropout_rate))
                 
-            new_image_size = getConvTransposeOutputShape(new_image_size, 3, 2)
+            new_image_size = getConvTransposeOutputShape(new_image_size, kernel_size, stride)
             new_in_channels = self.filters_count[idx-1]
             idx -= 1
         decoder_layers.append(
-            CT2D_BN_A(new_in_channels, self.channels, 4, 2, activation_type="sigmoid")
+            CT2D_BN_A(new_in_channels, self.channels, final_kernel_size, stride, activation_type="sigmoid")
         )
         self.decoder = nn.Sequential(*decoder_layers)
     
@@ -1379,5 +1390,5 @@ C2D_MODELS_DICT = {
     },
     
     "multi_resolution": C2D_AE_Multi_3x3,
-    "best": C2D_AE_BEST_3x3
+    "best": C2D_AE_BEST
 }

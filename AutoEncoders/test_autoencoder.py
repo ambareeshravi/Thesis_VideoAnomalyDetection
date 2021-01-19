@@ -450,6 +450,7 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
         processed_results_dict = ResultsRecorder.get_results_dict(video_level_params)
         self.cl.print(processed_results_dict)
         self.cl.print("="*30)
+        print(processed_results_dict)
         
         self.results = video_level_params
         if self.save_as:
