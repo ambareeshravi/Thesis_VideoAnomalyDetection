@@ -10,9 +10,9 @@ class ModelParser:
     @staticmethod
     def getModelCategory(model_name):
         if "|" in model_name:
-            return model_name.split("|")[0]
+            return os.path.split(model_name.split("|")[0])[-1]
         else:
-            return model_name.split("_")[0]
+            return os.path.split(model_name.split("_")[0])[-1]
         
         if "C2D" in model_name: return "C2D"
         elif "C3D" in model_name: return "C3D"
