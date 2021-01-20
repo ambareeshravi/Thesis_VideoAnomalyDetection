@@ -263,7 +263,7 @@ class UCSD(ImagesHandler, VideosHandler, Attributes):
             try:
                 files_in_dir = read_directory_contents(join_paths([video_directory, "*.tif"]))
                 data, labels = self.read(files_in_dir, idx)
-                labels = labels[:len(data)]
+                assert len(data) == len(labels), "Data labels mismatch"
             except Exception as e:
                 print(e)
                 continue

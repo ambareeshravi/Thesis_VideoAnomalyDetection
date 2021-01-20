@@ -164,6 +164,7 @@ class ConvTransposeAttentionLayerWrapper(nn.Module):
 # Models
 class Generic_C2D_AE(nn.Module):
     def __init__(self,
+                 # out_channels, kernel_size, stride, padding, dilation
                  encoder_layer_info=[
                     [32,5,3,0,1],
                     [32,3,2,0,1],
@@ -207,7 +208,7 @@ class Generic_C2D_AE(nn.Module):
                 decoder_layers.append(BN_A(out_channels, is3d=False))
                 in_channels = out_channels
             else:
-                decoder_layers.append(nn.ConvTranspose2d(in_channels, self.channels, kernel_size, stride, padding = padding, output_padding = output_padding))
+                decoder_layers.append(nn.ConvTranspose2d(in_channels, self.channels, kernel_size if kernel_size%2==0 else kernel_size + 1, stride, padding = padding, output_padding = output_padding))
                 decoder_layers.append(nn.Sigmoid())
             
         self.decoder = nn.Sequential(*decoder_layers)
