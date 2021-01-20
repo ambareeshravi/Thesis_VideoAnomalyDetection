@@ -708,7 +708,7 @@ class C2D_AE_128_3x3_AAC(nn.Module):
     def __init__(
         self,
         channels = 3,
-        filters_count = [64,64,64,128,128],
+        filters_count = [64,64,64,64,128],
     ):
         super(C2D_AE_128_3x3_AAC, self).__init__()
         self.__name__ = "C2D_AE_128_3x3_AAC|"
