@@ -34,7 +34,7 @@ class ModelParser:
         elif "subway_entrance" in model_name.lower(): return "SUBWAY_ENTRANCE"
         elif "subway_exit" in model_name.lower(): return "SUBWAY_EXIT"
         elif "avenue" in model_name.lower(): return "AVENUE"
-        elif "shagai_tech" in model_name.lower(): return "SHANGAI_TECH"
+        elif "shangai_tech" in model_name.lower(): return "SHANGAI_TECH"
         elif "street_scene" in model_name.lower(): return "STREET_SCENE"
         else: return False
     
