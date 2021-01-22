@@ -192,7 +192,7 @@ class UCSD(ImagesHandler, VideosHandler, Attributes):
             transforms.Resize((self.image_size[0], self.image_size[1])),
             transforms.ToTensor()
         ]
-        if getNormalized: transforms_list += [transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
+        if getNormalized: transforms_list += [transforms.Normalize([0.5], [0.5])]
         data_transforms = transforms.Compose(transforms_list)
         
         ImagesHandler.__init__(self, data_transforms)
@@ -312,7 +312,7 @@ class StreetScene(ImagesHandler, VideosHandler, Attributes):
             transforms.Resize((self.image_size[0], self.image_size[1])),
             transforms.ToTensor()
         ]
-        if getNormalized: transforms_list += [transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
+        if getNormalized: transforms_list += [transforms.Normalize([0.5], [0.5])]
         data_transforms = transforms.Compose(transforms_list)
         
         ImagesHandler.__init__(self, data_transforms)
@@ -419,7 +419,7 @@ class Avenue(ImagesHandler, VideosHandler, Attributes):
             transforms.Resize((self.image_size[0], self.image_size[1])),
             transforms.ToTensor()
         ]
-        if getNormalized: transforms_list += [transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
+        if getNormalized: transforms_list += [transforms.Normalize([0.5], [0.5])]
         data_transforms = transforms.Compose(transforms_list)
         
         ImagesHandler.__init__(self, data_transforms)
@@ -549,7 +549,7 @@ class Subway(ImagesHandler, VideosHandler, Attributes):
             transforms.Resize((self.image_size[0], self.image_size[1])),
             transforms.ToTensor()
         ]
-        if getNormalized: transforms_list += [transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
+        if getNormalized: transforms_list += [transforms.Normalize([0.5], [0.5])]
         data_transforms = transforms.Compose(transforms_list)
         ImagesHandler.__init__(self, data_transforms)
         VideosHandler.__init__(self, data_transforms)
@@ -666,7 +666,7 @@ class ShangaiTech(ImagesHandler, VideosHandler, Attributes):
             transforms.Resize((self.image_size[0], self.image_size[1])),
             transforms.ToTensor()
         ]
-        if getNormalized: transforms_list += [transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
+        if getNormalized: transforms_list += [transforms.Normalize([0.5], [0.5])]
         data_transforms = transforms.Compose(transforms_list)
             
         ImagesHandler.__init__(self, data_transforms)
