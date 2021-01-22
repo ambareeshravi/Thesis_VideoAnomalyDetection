@@ -277,7 +277,7 @@ def video2frames(
         try: assert fps % read_fps == 0, "[ERROR]: The resultant number of frames will be imperfect"
         except:
             while fps%read_fps != 0:
-                read_fps -= 1
+                read_fps += 1
             print("Changed read_fps to", read_fps)
         check_rate = fps / read_fps 
     

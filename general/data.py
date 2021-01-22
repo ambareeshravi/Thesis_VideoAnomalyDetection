@@ -162,6 +162,7 @@ class UCSD(ImagesHandler, VideosHandler, Attributes):
                  n_frames = 16,
                  frame_strides = [2,4,8,16],
                  sample_stride = 1,
+                 getNormalized = False,
                  useCorrectedAnnotations = False
                 ):
         self.__name__ = "UCSD" + str(dataset_type)
@@ -191,6 +192,7 @@ class UCSD(ImagesHandler, VideosHandler, Attributes):
             transforms.Resize((self.image_size[0], self.image_size[1])),
             transforms.ToTensor()
         ]
+        if getNormalized: transforms_list += [transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
         data_transforms = transforms.Compose(transforms_list)
         
         ImagesHandler.__init__(self, data_transforms)
@@ -285,6 +287,7 @@ class StreetScene(ImagesHandler, VideosHandler, Attributes):
                  n_frames = 16,
                  frame_strides = [2,4,8,16],
                  sample_stride = 1,
+                 getNormalized = False,
                 ):
         self.__name__ = "Street_Scene"
         self.isTrain = isTrain
@@ -309,6 +312,7 @@ class StreetScene(ImagesHandler, VideosHandler, Attributes):
             transforms.Resize((self.image_size[0], self.image_size[1])),
             transforms.ToTensor()
         ]
+        if getNormalized: transforms_list += [transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
         data_transforms = transforms.Compose(transforms_list)
         
         ImagesHandler.__init__(self, data_transforms)
@@ -389,6 +393,7 @@ class Avenue(ImagesHandler, VideosHandler, Attributes):
                  n_frames = 16,
                  frame_strides = [2,4,8,16],
                  sample_stride = 1,
+                 getNormalized = False,
                 ):
         self.__name__ = "Avenue"
         self.isTrain = isTrain
@@ -414,6 +419,7 @@ class Avenue(ImagesHandler, VideosHandler, Attributes):
             transforms.Resize((self.image_size[0], self.image_size[1])),
             transforms.ToTensor()
         ]
+        if getNormalized: transforms_list += [transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
         data_transforms = transforms.Compose(transforms_list)
         
         ImagesHandler.__init__(self, data_transforms)
@@ -505,10 +511,12 @@ class Subway(ImagesHandler, VideosHandler, Attributes):
         n_frames = 16,
         frame_strides = [2,4,8,16],
         sample_stride = 1,
-        threshold = 1,
+        threshold = 0,
+        getNormalized = False,
     ):
         if dataset_type == 0 or (isinstance(dataset_type, str) and "Entrance" in dataset_type):
             self.dataset_type = 0
+            threshold = 10
             self.dataset_tag = "Entrance"
         else:
             self.dataset_type = 1
@@ -541,6 +549,7 @@ class Subway(ImagesHandler, VideosHandler, Attributes):
             transforms.Resize((self.image_size[0], self.image_size[1])),
             transforms.ToTensor()
         ]
+        if getNormalized: transforms_list += [transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
         data_transforms = transforms.Compose(transforms_list)
         ImagesHandler.__init__(self, data_transforms)
         VideosHandler.__init__(self, data_transforms)
@@ -579,7 +588,10 @@ class Subway(ImagesHandler, VideosHandler, Attributes):
         
         temporal_labels = np.array([NORMAL_LABEL]*len(frame_ids))
         for aafn in adjusted_anomalous_frame_numbers:
-            temporal_labels[max(0, aafn-self.threshold) : min(aafn + self.threshold, len(temporal_labels))] = ABNORMAL_LABEL
+            if self.threshold > 1:
+                temporal_labels[max(0, aafn-self.threshold) : min(aafn + self.threshold, len(temporal_labels))] = ABNORMAL_LABEL
+            else:
+                temporal_labels[aafn] = ABNORMAL_LABEL
         return np.expand_dims(temporal_labels, axis = 0)
                 
     def read_image_data(self, files_in_dir, idx):
@@ -629,6 +641,7 @@ class ShangaiTech(ImagesHandler, VideosHandler, Attributes):
         n_frames = 16,
         frame_strides = [2,4,8,16],
         sample_stride = 1,
+        getNormalized = False,
     ):
         self.__name__ = "ShangaiTech"
         self.isTrain = isTrain
@@ -653,6 +666,7 @@ class ShangaiTech(ImagesHandler, VideosHandler, Attributes):
             transforms.Resize((self.image_size[0], self.image_size[1])),
             transforms.ToTensor()
         ]
+        if getNormalized: transforms_list += [transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
         data_transforms = transforms.Compose(transforms_list)
             
         ImagesHandler.__init__(self, data_transforms)
@@ -736,6 +750,7 @@ def select_dataset(
     n_frames = 16,
     frame_strides = [2,4,8,16],
     sample_stride = 1,
+    getNormalized = False
 ):
     if not isTrain:
         asImages = True
@@ -750,6 +765,7 @@ def select_dataset(
         "n_frames": n_frames,
         "frame_strides": frame_strides,
         "sample_stride": sample_stride,
+        "getNormalized": getNormalized
     }
     
     dataset = dataset.lower()
