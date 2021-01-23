@@ -1393,3 +1393,55 @@ C2D_MODELS_DICT = {
     "multi_resolution": C2D_AE_Multi_3x3,
     "best": C2D_AE_BEST
 }
+
+
+class C2D_AE_128_LC(nn.Module):
+    def __init__(
+        self,
+        channels = 3,
+        filters_count = [64,64,96,96,128],
+        encoder_activation = "tanh",
+        conv_type = "conv2d"
+    ):
+        super(C2D_AE_128_LC, self).__init__()
+        self.__name__ = "C2D_AE_128_LayerConnected|"
+        self.channels = channels
+        self.filters_count = filters_count 
+        self.embedding_dim = [1,self.filters_count[4],4,4]
+        
+        self.encoder_layers = [
+            C2D_BN_A(self.channels, self.filters_count[0], 3, 2, conv_type = conv_type),
+            C2D_BN_A(self.filters_count[0], self.filters_count[1], 3, 2, conv_type = conv_type),
+            C2D_BN_A(self.filters_count[1], self.filters_count[2], 3, 2, conv_type = conv_type),
+            C2D_BN_A(self.filters_count[2], self.filters_count[3], 3, 2, conv_type = conv_type),
+            C2D_BN_A(self.filters_count[3], self.filters_count[4], 4, 1, conv_type = conv_type, activation_type = encoder_activation),
+        ]
+        
+        self.decoder_layers = [
+            CT2D_BN_A(self.filters_count[4], self.filters_count[3], 4, 1),
+            CT2D_BN_A(self.filters_count[3] * 2, self.filters_count[2], 3, 2),
+            CT2D_BN_A(self.filters_count[2] * 2, self.filters_count[1], 3, 2),
+            CT2D_BN_A(self.filters_count[1] * 2, self.filters_count[0], 4, 2),
+            CT2D_BN_A(self.filters_count[0], self.filters_count[0], 4, 2),
+            C2D_BN_A(self.filters_count[0], self.channels, 3, 1, activation_type = "sigmoid")
+        ]
+        
+        self.layers = nn.Sequential(*(self.encoder_layers + self.decoder_layers))
+        
+    def forward(self, x):
+        e1 = self.encoder_layers[0](x) # 64x63x63
+        e2 = self.encoder_layers[1](e1) # 64x31x31
+        e3 = self.encoder_layers[2](e2) # 96x15x15
+        e4 = self.encoder_layers[3](e3) # 96x7x7
+        e5 = self.encoder_layers[4](e4) # 128x4x4
+        
+        d1 = self.decoder_layers[0](e5) # 96x7x7
+        d2 = self.decoder_layers[1](torch.cat((d1, e4), dim = 1)) # 96x15x15
+        d3 = self.decoder_layers[2](torch.cat((d2, e3), dim = 1)) # 64x31x31
+        d4 = self.decoder_layers[3](torch.cat((d3, e2), dim = 1)) # 64x63x63
+        d5 = self.decoder_layers[4](d4) # 64x130x130
+        d6 = self.decoder_layers[5](d5) # cx128x128
+        
+        encodings = e5
+        reconstructions = d6
+        return reconstructions, encodings
