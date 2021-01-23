@@ -1421,7 +1421,8 @@ class C2D_AE_128_LC(nn.Module):
             CT2D_BN_A(self.filters_count[4], self.filters_count[3], 4, 1),
             CT2D_BN_A(self.filters_count[3] * 2, self.filters_count[2], 3, 2),
             CT2D_BN_A(self.filters_count[2] * 2, self.filters_count[1], 3, 2),
-            CT2D_BN_A(self.filters_count[1] * 2, self.filters_count[0], 4, 2),
+#             CT2D_BN_A(self.filters_count[1] * 2, self.filters_count[0], 4, 2),
+            CT2D_BN_A(self.filters_count[1], self.filters_count[0], 4, 2),
             CT2D_BN_A(self.filters_count[0], self.filters_count[0], 4, 2),
             C2D_BN_A(self.filters_count[0], self.channels, 3, 1, activation_type = "sigmoid")
         ]
@@ -1438,7 +1439,8 @@ class C2D_AE_128_LC(nn.Module):
         d1 = self.decoder_layers[0](e5) # 96x7x7
         d2 = self.decoder_layers[1](torch.cat((d1, e4), dim = 1)) # 96x15x15
         d3 = self.decoder_layers[2](torch.cat((d2, e3), dim = 1)) # 64x31x31
-        d4 = self.decoder_layers[3](torch.cat((d3, e2), dim = 1)) # 64x63x63
+#         d4 = self.decoder_layers[3](torch.cat((d3, e2), dim = 1)) # 64x63x63
+        d4 = self.decoder_layers[3](d3) # 64x63x63
         d5 = self.decoder_layers[4](d4) # 64x130x130
         d6 = self.decoder_layers[5](d5) # cx128x128
         
