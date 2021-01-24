@@ -145,7 +145,7 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
         model_file,
         stackFrames = 64,
         save_vis = False,
-        n_seed = 2,
+        n_seed = 8,
         n_future_steps = 4,
         calcOC_SVM = False,
         applyFilter = True,
