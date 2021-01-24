@@ -46,11 +46,11 @@ def visualize_anomalies(original, reconstruction, difference_map):
     result_images = [original, reconstruction, diff, erosion, thresh, morph, masked]
     return list(map(array_3channels, result_images))
 
-def frames_to_video(frames_list, video_path, ext = ".mp4", filpChannels = True):
+def frames_to_video(frames_list, video_path, ext = ".mp4", fps = 30, filpChannels = True):
     video_path += ext
     h,w,c = frames_list[0].shape
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
-    video = cv2.VideoWriter(video_path, fourcc, 30.0, (w,h))
+    video = cv2.VideoWriter(video_path, fourcc, float(fps), (w,h))
     for frame in frames_list:
         if filpChannels: frame = frame[:,:,::-1]
         video.write(frame)

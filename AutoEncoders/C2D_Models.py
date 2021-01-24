@@ -1448,3 +1448,55 @@ class C2D_AE_128_LC(nn.Module):
         encodings = e5
         reconstructions = d6
         return reconstructions, encodings
+    
+class UCSD1_AE(nn.Module):
+    def __init__(self, filters_count = [512,256,128,128,64]):
+        super(UCSD1_AE, self).__init__()
+        self.__name__ = "UCSD1_AE"
+        self.channels = 1
+        self.filters_count = filters_count
+        
+        self.encoder = nn.Sequential(
+            nn.Conv2d(in_channels=self.channels, out_channels=self.filters_count[0], kernel_size=(3,4), stride=1),
+            nn.BatchNorm2d(self.filters_count[0]),
+            nn.ReLU(),
+            nn.Conv2d(self.filters_count[0], self.filters_count[1], (3,4), stride=1),
+            nn.BatchNorm2d(self.filters_count[1]),
+            nn.ReLU(),
+            nn.AvgPool2d((2,2)),
+            nn.Conv2d(self.filters_count[1], self.filters_count[2], (3,4), stride=2),
+            nn.BatchNorm2d(self.filters_count[2]),
+            nn.ReLU(),
+            nn.AvgPool2d((2,2)),
+            nn.Conv2d(self.filters_count[2], self.filters_count[3], (3,4), stride=2),
+            nn.BatchNorm2d(self.filters_count[3]),
+            nn.ReLU(),
+            nn.Conv2d(self.filters_count[3], self.filters_count[4], (3,4), stride=2),
+            nn.BatchNorm2d(self.filters_count[4]),
+            nn.ReLU(),
+        )
+        
+        self.decoder = nn.Sequential(
+            nn.ConvTranspose2d(self.filters_count[4], self.filters_count[3], (3,5), stride=2),
+            nn.BatchNorm2d(self.filters_count[3]),
+            nn.LeakyReLU(),
+            nn.ConvTranspose2d(self.filters_count[3], self.filters_count[2], (3,4), stride=2),
+            nn.BatchNorm2d(self.filters_count[2]),
+            nn.LeakyReLU(),
+            nn.UpsamplingBilinear2d(scale_factor=(2,2)),
+            nn.ConvTranspose2d(self.filters_count[2], self.filters_count[1], (3,4), stride=2),
+            nn.BatchNorm2d(self.filters_count[1]),
+            nn.LeakyReLU(),
+            nn.UpsamplingBilinear2d(scale_factor=(2,2)),
+            nn.ConvTranspose2d(self.filters_count[1], self.filters_count[0], (3,5), stride=1),
+            nn.BatchNorm2d(self.filters_count[0]),
+            nn.LeakyReLU(),
+            nn.ConvTranspose2d(self.filters_count[0], self.channels, (3,7), stride=1),
+            nn.BatchNorm2d(self.channels),
+            nn.LeakyReLU(),
+        )
+    
+    def forward(self, x):
+        encodings = self.encoder(x)
+        reconstructions = self.decoder(encodings)
+        return reconstructions, encodings

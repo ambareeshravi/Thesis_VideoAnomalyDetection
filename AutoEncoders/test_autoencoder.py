@@ -75,9 +75,9 @@ class AE_PredictFunctions:
             if self.patchwise: reconstructions = merge_patches(reconstructions)
             return reconstructions, encodings
         
-    def predict_future(self, inputs, total_ts = 16):
+    def predict_future(self, inputs, total_ts = 12):
         with torch.no_grad():
-            future_reconstructions, future_encodings = self.model(inputs[:,:,:self.n_seed,:,:], future_steps = (total_ts - self.n_seed))
+            future_reconstructions, future_encodings = self.model(inputs[:,:,:self.n_seed,:,:], future_steps = self.n_future_steps)
             seed_reconstructions, seed_encodings = list(), list()
             for s in range(self.n_seed):
                 sr, se = self.model(inputs[:,:,s:(s+1),:,:])
