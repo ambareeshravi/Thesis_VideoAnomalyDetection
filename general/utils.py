@@ -120,9 +120,6 @@ def to_cpu(x):
 def tensor_to_numpy(x):
     return to_cpu(x).numpy()
 
-def normalize_error(x):
-    return (x - x.min()) / (x.max() - x.min())
-
 def flatten_2darray(array):
     return np.array([item for sublist in array for item in sublist])
 
