@@ -273,6 +273,10 @@ class CT3D_Res(nn.Module):
 # ---------------------------------------- # 
     
 class TimeDistributed(nn.Module):
+    '''
+    2nd dim / dim = 1
+    self.module(x[:,i,...])
+    '''
     def __init__(self, module):
         # bs, ts, c, w, h
         super(TimeDistributed, self).__init__()

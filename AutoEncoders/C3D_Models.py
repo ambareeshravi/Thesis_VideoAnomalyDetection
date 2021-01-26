@@ -286,3 +286,44 @@ C3D_MODELS_DICT = {
         "multi_resolution": C3D_AE_Multi_3x3
     }
 }
+
+class C23D(nn.Module):
+    def __init__(
+        self,
+        channels = 3,
+        filters_count = [64,64,96,96,128]
+    ):
+        super(C23D, self).__init__()
+        self.channels = channels
+        self.filters_count = filters_count
+        
+        self.c2d_encoder = nn.Sequential(
+            TimeDistributed(C2D_BN_A(self.channels, self.filters_count[0], 3, 2)),
+            TimeDistributed(C2D_BN_A(self.filters_count[0], self.filters_count[1], 3, 2)),
+            TimeDistributed(C2D_BN_A(self.filters_count[1], self.filters_count[2], 3, 2)),
+        )
+        
+        self.c3d_encoder = nn.Sequential(
+            C3D_BN_A(self.filters_count[2], self.filters_count[3], 3, 2),
+            C3D_BN_A(self.filters_count[3], self.filters_count[4], 4, 2)
+        )
+        
+        self.ct3d_decoder = nn.Sequential(
+            CT3D_BN_A(self.filters_count[4], self.filters_count[3], 5, 2),
+            CT3D_BN_A(self.filters_count[3], self.filters_count[2], (4,3,3), 2),
+        )
+        
+        self.ct2d_decoder = nn.Sequential(
+            TimeDistributed(CT2D_BN_A(self.filters_count[2], self.filters_count[1], 3, 2)),
+            TimeDistributed(CT2D_BN_A(self.filters_count[1], self.filters_count[0], 3, 2)),
+            TimeDistributed(CT2D_BN_A(self.filters_count[0], self.channels, 4, 2)),
+        )
+        
+    def forward(self, x):
+        c2d_out = self.c2d_encoder(x.permute(0,2,1,3,4))
+        c3d_out = self.c3d_encoder(c2d_out.permute(0,2,1,3,4))
+        ct3d_out = self.ct3d_decoder(c3d_out)
+        ct2d_out = self.ct2d_decoder(ct3d_out.permute(0,2,1,3,4))
+        encodings = c3d_out.permute(0,2,1,3,4)
+        reconstructions = ct2d_out.permute(0,2,1,3,4)
+        return reconstructions, encodings
