@@ -305,11 +305,11 @@ class C23D(nn.Module):
         
         self.c3d_encoder = nn.Sequential(
             C3D_BN_A(self.filters_count[2], self.filters_count[3], 3, 2),
-            C3D_BN_A(self.filters_count[3], self.filters_count[4], 4, 2)
+            C3D_BN_A(self.filters_count[3], self.filters_count[4], 3, 2)
         )
         
         self.ct3d_decoder = nn.Sequential(
-            CT3D_BN_A(self.filters_count[4], self.filters_count[3], 5, 2),
+            CT3D_BN_A(self.filters_count[4], self.filters_count[3], 3, 2),
             CT3D_BN_A(self.filters_count[3], self.filters_count[2], (4,3,3), 2),
         )
         
