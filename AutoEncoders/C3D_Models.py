@@ -294,6 +294,7 @@ class C23D(nn.Module):
         filters_count = [64,64,96,96,128]
     ):
         super(C23D, self).__init__()
+        self.__name__  = "C23D_AE|"
         self.channels = channels
         self.filters_count = filters_count
         
