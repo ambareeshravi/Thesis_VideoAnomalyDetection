@@ -210,7 +210,9 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
         else:
             self.regularity = regularity
             
-        if self.setEval: self.model.eval() # should i disable this because of batch norm?!!!!!!
+        if self.setEval: self.model.eval() 
+        # should i disable this because of batch norm?!!!!!!
+        # https://discuss.pytorch.org/t/model-eval-gives-incorrect-loss-for-model-with-batchnorm-layers/7561/47
                             
     def plot_regularity(
         self,
