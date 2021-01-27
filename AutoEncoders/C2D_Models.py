@@ -67,10 +67,10 @@ class ConvAttentionWapper(nn.Module):
         
     def forward(self, x):
         x_a = self.attention_forward(x)
-        reconstructions, encodings = self.model(x_a)
+        model_returns = list(self.model(x_a))
 #         encodings = self.model.encoder(x_a)
 #         reconstructions = self.model.decoder(encodings)
-        return reconstructions, encodings, x_a
+        return tuple(model_returns + [x_a])
 
 ConvAttentionWrapper = ConvAttentionWapper
 
