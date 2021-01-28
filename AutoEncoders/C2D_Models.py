@@ -11,6 +11,31 @@ from attention_conv import AugmentedConv
 
 # Attention Modules
 
+class LinearAttentionLayer(nn.Module):
+    '''
+    ut = tanh(W ht + b)
+    alpha = softmax(v.T ut)
+    
+    s = sum(t = 1 -> M) alpha_t h_t
+    '''
+    def __init__(
+        self,
+        inp_dim
+    ):
+        super(LinearAttentionLayer, self).__init__()
+        self.inp_dim = inp_dim
+        self.Wb = nn.Linear(self.inp_dim, self.inp_dim)
+        self.v = torch.autograd.Variable(torch.rand(self.inp_dim, 1), requires_grad = True)
+        self.tanh = nn.Tanh()
+        self.softmax = nn.Softmax(dim = 1)
+        
+    def forward(self, x):
+        Wx = self.Wb(x)
+        v_t_repeat = (self.v.T.to(self.Wb.weight.device)).repeat(Wx.shape[0], 1)
+        u_t = torch.multiply(v_t_repeat, self.tanh(Wx))
+        alpha = self.softmax(u_t)
+        return torch.multiply(x, alpha)
+
 class AttentionWrapper(nn.Module):
     def __init__(self, image_size, model, projection_ratio = 4):
         super(AttentionWrapper, self).__init__()
