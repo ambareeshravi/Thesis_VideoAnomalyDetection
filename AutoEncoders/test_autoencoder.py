@@ -90,7 +90,7 @@ class AE_PredictFunctions:
             self.predict = self.predict_translative
         if "attention" in self.model_file.lower():
             self.predict = self.predict_attention
-        if "c3d" in self.model_file.lower() or "lstm" in self.model_file.lower() or "rnn" in self.model_file.lower():
+        if "c3d" in self.model_file.lower() or "lstm" in self.model_file.lower() or "rnn" in self.model_file.lower() or "gru" in self.model_file.lower():
             self.isVideo = True
             if self.stackFrames == 1 or self.stackFrames > 16: self.stackFrames = 16
         self.isFuture = False
@@ -292,21 +292,21 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
             try: encodings = model_outputs[1]
             except: encodings = None
 
-            # if last batch, only use the actual frames in the batch
-            if n_frames < self.stackFrames:
-                test_inputs = test_inputs[-n_frames:]
-                test_labels = test_labels[-n_frames:]
-                reconstructions = reconstructions[-n_frames:]
-                if encodings != None: encodings = encodings[-n_frames:]
-
         # reshape video to frames again
         if self.isVideo:
             test_inputs = test_inputs.squeeze(dim=0).transpose(0,1) # N,C,W,H
             reconstructions = reconstructions.squeeze(dim=0).transpose(0,1) # N,C,W,H
+
+        # if last batch, only use the actual frames in the batch
+        if self.isVideo and n_frames < self.stackFrames and not self.isSequence:
+            test_inputs = test_inputs[-n_frames:]
+            test_labels = test_labels[-n_frames:]
+            reconstructions = reconstructions[-n_frames:]
+            if encodings != None: encodings = encodings[-n_frames:]
             
         # use only 3 channels - for PatchWise models
-        test_inputs = to_cpu(test_inputs[..., :3, :, :])
-        reconstructions = to_cpu(reconstructions[..., :3, :, :])
+        test_inputs = to_cpu(test_inputs[:, :3, :, :])
+        reconstructions = to_cpu(reconstructions[:, :3, :, :])
 
         # return everything new or that is changed
         return test_inputs, test_labels, reconstructions, encodings
@@ -417,7 +417,7 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
                     except Exception as e:
                         if self.debug: print(e)
                         continue
-                    if n_frames <= self.n_seed: break
+                    if n_frames <= self.n_seed: continue
                 else:
                     # getting inputs as frames and labels correspondingly
                     test_inputs = torch.stack(video_inputs[frame_idx:end_idx]) # T,C,W,H
@@ -425,14 +425,16 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
                 
                     # correcting the shape of last_batch
                     n_frames = len(test_labels)
-                    if n_frames < self.stackFrames:
+                    if self.isVideo and n_frames < self.stackFrames:
                         test_inputs = torch.stack(video_inputs[-self.stackFrames:])
                         test_labels = video_labels[-self.stackFrames:]
                 
                 # process reconstructions, encodings and reference inputs-labels
                 test_inputs, test_labels, reconstructions, encodings = self.predict_process(frame_idx, test_inputs, test_labels, n_frames)
                 
-                if len(test_inputs)!=len(reconstructions): break
+                if len(test_inputs)!=len(reconstructions):
+                    print("test inputs [%d] != reconstructions [%d]"%(len(test_inputs), len(reconstructions)))
+                    continue
                     
                 # note encodings if available
                 if self.calcOC_SVM and encodings != None: frame_level_params["encodings"].append(encodings)
@@ -501,6 +503,7 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
                     if self.debug: self.cl.print("Frames Encodings:", e)
                     else: pass
         
+        self.video_level_params = video_level_params
         self.setup_for_calc(video_level_params)
         self.oc_svm_calc(video_level_params)
         self.calculate_metrics(video_level_params)
