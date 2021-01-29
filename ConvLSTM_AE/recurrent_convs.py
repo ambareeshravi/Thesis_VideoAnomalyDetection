@@ -87,6 +87,97 @@ class ConvTransposeRNN_Cell(ConvRNN_Cell):
         self.states_shape = [self.out_channels, self.output_shape, self.output_shape]
         
         self.conv_Wo = nn.ConvTranspose2d(self.out_channels, self.out_channels, self.hidden_kernel_size, 1, self.hidden_padding, output_padding = output_padding, bias = useBias)
+
+class ConvGRU_Cell(nn.Module):
+    def __init__(
+        self,
+        input_size:int,
+        in_channels:int = 32,
+        out_channels:int = 32,
+        kernel_size:int = 3,
+        stride:int = 1,
+        padding:int = 0,
+        useBias:int = True
+    ):
+        '''
+        rg_t = sigmoid(W_ir * x + W_hr * h_t-1)
+        r = tanh(rg_t @ (W_h1*ht-1) + W_x1*xt)
+        
+        ug_t = sigmoid(W_iu * x_t + W_hu * h_t-1)
+        u = ug_t @ h_t-1
+        
+        h_t = r @ (1-ug_t) + u
+        '''
+        super(ConvGRU_Cell, self).__init__()
+        # Params
+        self.input_size = input_size
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.padding = padding
+        
+        self.tanh = nn.Tanh()
+        self.sigmoid = nn.Sigmoid()
+        
+        self.conv_Wx = nn.Conv2d(self.in_channels, 3 * self.out_channels, self.kernel_size, self.stride, self.padding, bias = useBias)
+        self.output_shape = getConvOutputShape(self.input_size, self.kernel_size, self.stride, self.padding)
+        
+        self.hidden_padding = self.kernel_size//2
+        self.conv_Wh = nn.Conv2d(self.out_channels, 3 * self.out_channels, self.kernel_size, 1, self.hidden_padding, bias = useBias)
+        self.states_shape = [self.out_channels, self.output_shape, self.output_shape]
+        
+        self.conv_Wo = nn.Conv2d(self.out_channels, self.out_channels, self.kernel_size, 1, self.hidden_padding, bias = useBias)
+        
+    def init_states(self, bs):
+        return torch.autograd.Variable(torch.zeros(tuple([bs] + self.states_shape), device = self.conv_Wx.weight.device), requires_grad = True)
+    
+    def forward(self, x, h_p = None):
+        bs, ch, w, h = x.shape
+        if h_p == None: h_p = self.init_states(bs)
+        
+        W_xr, W_x1, W_xu = self.conv_Wx(x).split(self.out_channels, dim = 1)
+        W_hr, W_h1, W_hu = self.conv_Wh(h_p).split(self.out_channels, dim = 1)
+        
+        rg_t = self.sigmoid(W_xr + W_hr)
+        r = self.tanh((rg_t @ W_h1) + W_x1)
+        
+        ug_t = self.sigmoid(W_xu + W_hu)
+        h_n = (r @ (1 - ug_t)) + (h_p @ ug_t)
+        y_n = self.conv_Wo(h_n)
+        return y_n, h_n
+    
+class ConvTransposeGRU_Cell(ConvGRU_Cell):
+    def __init__(
+        self,
+        input_size:int,
+        in_channels:int = 32,
+        out_channels:int = 32,
+        kernel_size:int = 3,
+        stride:int = 1,
+        padding:int = 0,
+        output_padding:int = 0,
+        useBias:int = True
+    ):
+        super(ConvTransposeGRU_Cell, self).__init__(input_size = input_size)
+        # Params
+        self.input_size = input_size
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.padding = padding
+        
+        self.conv_Wx = nn.ConvTranspose2d(self.in_channels, 3 * self.out_channels, self.kernel_size, self.stride, self.padding, output_padding = output_padding, bias = useBias)
+        self.output_shape = getConvTransposeOutputShape(self.input_size, self.kernel_size, self.stride, self.padding, output_padding)
+        
+        self.hidden_kernel_size = (self.kernel_size - 1) if (self.kernel_size%2==0) else self.kernel_size
+        self.hidden_padding = (self.kernel_size - 1)//2
+        
+        self.conv_Wh = nn.ConvTranspose2d(self.out_channels, 3 * self.out_channels, self.hidden_kernel_size, 1, self.hidden_padding, output_padding = output_padding, bias = useBias)
+        self.states_shape = [self.out_channels, self.output_shape, self.output_shape]
+        
+        self.conv_Wo = nn.ConvTranspose2d(self.out_channels, self.out_channels, self.hidden_kernel_size, 1, self.hidden_padding, output_padding = output_padding, bias = useBias)
         
 class ConvLSTM_Cell(nn.Module):
     def __init__(

@@ -94,6 +94,100 @@ class CRNN_AE(nn.Module):
         reconstructions = reconstructions.transpose(1,2)
         return reconstructions, encodings
     
+class CGRU_AE(nn.Module):
+    def __init__(
+        self,
+        image_size = 128,
+        channels = 3,
+        filter_count = [64,64,64,128],
+        filter_sizes = [3,3,3,5],
+        filter_strides = [2,2,2,2],
+        n_gru_layers = 2,
+        disableDeConvGRU = True,
+        useBias = False
+    ):
+        super(CGRU_AE, self).__init__()
+        self.__name__ = "CGRU_AE_%d_%dx%d_L-%d_RL-%d_DisDeConv-%s|"%(image_size, most_common(filter_sizes), most_common(filter_sizes), len(filter_count), n_gru_layers, "Y" if disableDeConvGRU else "N")
+        self.channels = channels
+        self.image_size = image_size
+        self.filter_count = filter_count
+        self.filter_sizes = filter_sizes
+        self.filter_strides = filter_strides
+        self.disableDeConvGRU = disableDeConvGRU
+        
+        self.n_layers = len(self.filter_count)
+        self.n_gru_layers = n_gru_layers
+        self.n_normal = self.n_layers - self.n_gru_layers
+        
+        assert len(filter_count) == len(filter_sizes), "Number of filter sizes and count should be the same"
+        assert len(filter_count) == len(filter_strides), "Number of filter strides and count should be the same"
+        
+        current_input_shape = self.image_size
+        in_channels = self.channels
+        
+        self.encoder_layers = list()
+        for idx, (n, k, s) in enumerate(zip(self.filter_count, self.filter_sizes, self.filter_strides)):
+            if (self.n_layers - idx) > self.n_gru_layers:
+                insert = TimeDistributed(C2D_BN_A(in_channels, n, k, s))
+            else:
+                insert = ConvGRU_Cell(current_input_shape, in_channels, n, k, s, useBias=useBias)
+            self.encoder_layers.append(insert)
+            current_input_shape = getConvOutputShape(current_input_shape, k, s)
+            in_channels = n
+            
+        self.decoder_layers = list()
+        
+        for idx, (n, k, s) in enumerate(zip(self.filter_count[::-1], self.filter_sizes[::-1], self.filter_strides[::-1])):
+            oc_idx = len(self.filter_count) - (2 + idx)
+            activation_type = "leaky_relu"
+            if oc_idx > -1: out_channels = self.filter_count[oc_idx]
+            else:
+                out_channels = self.channels
+                if k%2 !=0: k += 1
+                activation_type = "sigmoid"
+            if idx < self.n_gru_layers and not self.disableDeConvGRU:
+                insert = ConvTransposeGRU_Cell(current_input_shape, n, out_channels, k, s, useBias=useBias)
+            else:
+                insert = TimeDistributed(CT2D_BN_A(n, out_channels, k, s, activation_type = activation_type))
+            self.decoder_layers.append(insert)
+            current_input_shape = getConvTransposeOutputShape(current_input_shape, k, s)
+        
+        # For cuda use
+        self.modules = nn.ModuleList(self.encoder_layers + self.decoder_layers)
+                                
+    def forward(self, x):
+        bs,c,ts,w,h = x.shape
+        preliminary_encodings = nn.Sequential(*self.encoder_layers[:(self.n_layers - self.n_gru_layers)])(x.permute(0,2,1,3,4)) # bs,ts,c,w,h
+        # preliminary_encodings -> bs,ts,c,w,h
+        
+        if self.n_gru_layers != 0:
+            states_list = [None] * 2 * self.n_gru_layers
+            current_input = preliminary_encodings
+            gru_outputs = list()
+            gru_layers = self.encoder_layers[self.n_normal:]
+            if not self.disableDeConvGRU: gru_layers += self.decoder_layers[:self.n_gru_layers]
+            for idx, layer in enumerate(gru_layers):
+                layer_outputs = list()
+                states = states_list[idx]
+                for t in range(ts):
+                    y, h = layer(current_input[:,t,...], states)
+                    layer_outputs.append(y)
+                    states = h
+                layer_output = torch.stack(layer_outputs, dim = 1) # b,ts,c,w,h
+                gru_outputs.append(layer_output)
+                current_input = layer_output
+                states_list[idx] = states
+            encodings = gru_outputs[self.n_gru_layers - 1].transpose(1,2)
+        else:
+            layer_output = preliminary_encodings
+            encodings = layer_output
+        
+        decode_index = self.n_gru_layers
+        if self.disableDeConvGRU: decode_index = 0
+        reconstructions = nn.Sequential(*self.decoder_layers[decode_index:])(layer_output)
+        reconstructions = reconstructions.transpose(1,2)
+        return reconstructions, encodings
+    
 class CLSTM_AE(nn.Module):
     def __init__(
         self,
@@ -298,6 +392,120 @@ class CRNN_AE_Seq2Seq(nn.Module):
         decoder_outputs = torch.stack(decoder_outputs) # ts,bs,c,w,h
         decoder_outputs = decoder_outputs.permute(1,0,2,3,4) # ts,bs,c,w,h -> bs,ts,c,w,h
         decoder_outputs = nn.Sequential(*self.decoder_layers[self.n_rnn_layers:])(decoder_outputs) # bs,ts,c,w,h
+        reconstructions = self.conv3d(decoder_outputs.permute(0,2,1,3,4)) # bs,ts,c,w,h -> bs,c,ts,w,h
+        return reconstructions, encodings
+
+class CGRU_AE_Seq2Seq(nn.Module):
+    def __init__(
+        self,
+        image_size = 128, 
+        channels = 3,
+        filter_count = [64,64,128,128],
+        filter_sizes = [3,3,3,3],
+        filter_strides = [2,2,2,1],
+        n_gru_layers = 1,
+        disableDeConvGRU = False,
+        useBias = False
+    ):
+        super(CGRU_AE_Seq2Seq, self).__init__()
+        self.__name__ = "CGRU_AE_%d_%dx%d_SEQ2SEQ_L-%d_RL-%d_DisDeConv-%s|"%(image_size, most_common(filter_sizes), most_common(filter_sizes), len(filter_count), n_gru_layers, "Y" if disableDeConvGRU else "N")
+        self.image_size = image_size
+        self.channels = channels
+        self.filter_count = filter_count
+        self.filter_sizes = filter_sizes
+        self.filter_strides = filter_strides
+        self.disableDeConvGRU = disableDeConvGRU
+        
+        self.n_layers = len(self.filter_count)
+        self.n_gru_layers = n_gru_layers
+        self.n_normal = self.n_layers - self.n_gru_layers
+        
+        assert n_gru_layers > 0, "There should be at least one GRU layer"
+        assert self.filter_count[-1] == self.filter_count[-2], "Last two filter counts should be same"
+        assert len(filter_count) == len(filter_sizes), "Number of filter sizes and count should be the same"
+        assert len(filter_count) == len(filter_strides), "Number of filter strides and count should be the same"
+        
+        current_input_shape = self.image_size
+        in_channels = self.channels
+        
+        self.encoder_layers = list()
+        for idx, (n, k, s) in enumerate(zip(self.filter_count, self.filter_sizes, self.filter_strides)):
+            if (self.n_layers - idx) > self.n_gru_layers:
+                insert = TimeDistributed(C2D_BN_A(in_channels, n, k, s))
+            else:
+                insert = ConvGRU_Cell(current_input_shape, in_channels, n, k, s, useBias=useBias)
+            self.encoder_layers.append(insert)
+            current_input_shape = getConvOutputShape(current_input_shape, k, s)
+            in_channels = n
+            
+        self.decoder_layers = list()
+        
+        for idx, (n, k, s) in enumerate(zip(self.filter_count[::-1], self.filter_sizes[::-1], self.filter_strides[::-1])):
+            oc_idx = len(self.filter_count) - (2 + idx)
+            activation_type = "leaky_relu"
+            if oc_idx > -1: out_channels = self.filter_count[oc_idx]
+            else:
+#                 out_channels = self.channels
+                if k%2 !=0: k *= 2
+#                 activation_type = "sigmoid"
+            if idx < self.n_gru_layers and not self.disableDeConvGRU:
+                insert = ConvTransposeGRU_Cell(current_input_shape, n, out_channels, k, s, useBias=useBias)
+            else:
+                insert = TimeDistributed(CT2D_BN_A(n, out_channels, k, s, activation_type = activation_type))
+            self.decoder_layers.append(insert)
+            current_input_shape = getConvTransposeOutputShape(current_input_shape, k, s)
+            
+        # For cuda use
+        self.modules = nn.ModuleList(self.encoder_layers + self.decoder_layers)
+        self.conv3d = C3D_BN_A(self.filter_count[0], self.channels, (1,self.filter_sizes[-1],self.filter_sizes[-1]), 1, activation_type = "sigmoid")
+        self.adjust_pool = nn.AvgPool2d(3, 1)
+    
+    def forward(self, x, future_steps = 0):
+        bs,c,ts,w,h = x.shape
+        preliminary_encodings = nn.Sequential(*self.encoder_layers[:(self.n_layers - self.n_gru_layers)])(x.permute(0,2,1,3,4)) # bs,ts,c,w,h
+        # preliminary_encodings -> bs,ts,c,w,h
+
+        preliminary_encodings = preliminary_encodings.permute(1,0,2,3,4) # ts,[bs,c,w,h]
+        if future_steps == 0: future_steps = ts
+        
+        # Encoding
+        encoder_states = [None]*self.n_gru_layers
+        current_input = preliminary_encodings
+        encoder_outputs = list()
+        gru_layers = self.encoder_layers[self.n_normal:]
+        
+        for idx, layer in enumerate(gru_layers):
+            layer_outputs = list()
+            states = encoder_states[idx]
+            for t in range(ts):
+                y, states = layer(current_input[t], states)
+                layer_outputs.append(y)
+            layer_outputs = torch.stack(layer_outputs)
+            encoder_outputs.append(layer_outputs)
+            current_input = layer_outputs
+            encoder_states[idx] = states
+            
+        encodings = y
+        
+        # Decoder
+        current_input = encodings
+        decoder_states = [None]*self.n_gru_layers
+        decoder_outputs = list()
+        gru_layers = self.decoder_layers[:self.n_gru_layers]
+        
+        for t in range(future_steps):
+            for idx, layer in enumerate(gru_layers):
+                y, states = layer(current_input, decoder_states[idx])
+                decoder_states[idx] = states
+                current_input = y
+                if idx == 0:
+                    next_ts_input = current_input
+            current_input = self.adjust_pool(next_ts_input)
+            decoder_outputs.append(y)
+        
+        decoder_outputs = torch.stack(decoder_outputs) # ts,bs,c,w,h
+        decoder_outputs = decoder_outputs.permute(1,0,2,3,4) # ts,bs,c,w,h -> bs,ts,c,w,h
+        decoder_outputs = nn.Sequential(*self.decoder_layers[self.n_gru_layers:])(decoder_outputs) # bs,ts,c,w,h
         reconstructions = self.conv3d(decoder_outputs.permute(0,2,1,3,4)) # bs,ts,c,w,h -> bs,c,ts,w,h
         return reconstructions, encodings
     
