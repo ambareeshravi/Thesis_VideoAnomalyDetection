@@ -83,7 +83,7 @@ class AE_PredictFunctions:
         self.stacked = False
         if "stack" in self.model_file.lower():
             self.stacked = True
-            if self.stackFrames == 1 or self.stackFrames > 16: self.stackFrames = 16
+            if self.stackFrames == 1 or self.stackFrames > 16: self.stackFrames = 8 # changed from 16
             self.isVideo = True
             self.predict = self.predict_stacked
         if "translat" in self.model_file.lower():
