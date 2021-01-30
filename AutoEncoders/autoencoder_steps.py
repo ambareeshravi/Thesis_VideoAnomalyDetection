@@ -69,6 +69,7 @@ class AutoEncoderHelper:
         
         # Attention step
         if "attention" in self.model_file.lower():
+            self.isAttention = True
             self.step = self.attention_step
         
         # Future prediction step

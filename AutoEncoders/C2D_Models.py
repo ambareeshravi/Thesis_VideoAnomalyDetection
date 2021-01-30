@@ -97,6 +97,46 @@ class ConvAttentionWapper(nn.Module):
 #         reconstructions = self.model.decoder(encodings)
         return tuple(model_returns + [x_a])
 
+class RNN_ConvAttentionWapper(nn.Module):
+    '''
+    Inputs B,T,C,W,H
+    '''
+    def __init__(self, model, kernel_sizes = (3,5), projection = 64, lambda_ = 1e-6, max_norm_clip = 1):
+        super(RNN_ConvAttentionWapper, self).__init__()
+        self.model = model
+        self.projection = projection
+        self.kernel_sizes = kernel_sizes
+        self.lambda_ = lambda_
+        self.max_norm_clip = max_norm_clip
+        
+        self.attention_conv = nn.Sequential(
+            nn.Conv2d(self.model.channels, self.projection, self.kernel_sizes[0], 1, padding = self.kernel_sizes[0]//2),
+            nn.Conv2d(self.projection, self.model.channels, self.kernel_sizes[1], 1, padding = self.kernel_sizes[1]//2),
+        )
+        self.__name__ = self.model.__name__ + "_RNN_CONV_ATTENTION"
+        self.rnn_attention_conv = TimeDistributed(self.attention_conv)
+        self.act_block = nn.Sequential(
+            nn.BatchNorm2d(self.model.channels),
+            nn.Sigmoid()
+        )
+        self.rnn_act_block = TimeDistributed(self.act_block)
+    
+    def attention_forward(self, x):
+        # x -> bs,ts,c,w,h
+        x_a = self.rnn_attention_conv(x)
+        # x_a -> bs,ts,c,w,h
+        return self.rnn_act_block(torch.multiply(x, x_a)) # output -> bs,tc,c,w,h
+    
+    def attention_loss(self, w):
+        return self.lambda_ * torch.sqrt(torch.sum(w**2))
+        
+    def forward(self, x):
+        # original x -> bs,c,ts,w,h
+        x_a = self.attention_forward(x.permute(0,2,1,3,4))
+        x_a = x_a.permute(0,2,1,3,4) # bs,c,ts,w,h
+        model_returns = list(self.model(x_a))
+        return tuple(model_returns + [x_a])
+
 ConvAttentionWrapper = ConvAttentionWapper
 
 class ConvAttentionLayerWrapper(nn.Module):
