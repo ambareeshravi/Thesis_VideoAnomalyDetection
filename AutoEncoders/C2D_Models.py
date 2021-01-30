@@ -97,12 +97,12 @@ class ConvAttentionWapper(nn.Module):
 #         reconstructions = self.model.decoder(encodings)
         return tuple(model_returns + [x_a])
 
-class RNN_ConvAttentionWapper(nn.Module):
+class RNN_ConvAttentionWrapper(nn.Module):
     '''
-    Inputs B,T,C,W,H
+    Converts inputs to B,T,C,W,H for processing and returns original shape
     '''
     def __init__(self, model, kernel_sizes = (3,5), projection = 64, lambda_ = 1e-6, max_norm_clip = 1):
-        super(RNN_ConvAttentionWapper, self).__init__()
+        super(RNN_ConvAttentionWrapper, self).__init__()
         self.model = model
         self.projection = projection
         self.kernel_sizes = kernel_sizes
