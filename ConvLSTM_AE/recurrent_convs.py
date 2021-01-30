@@ -140,10 +140,10 @@ class ConvGRU_Cell(nn.Module):
         W_hr, W_h1, W_hu = self.conv_Wh(h_p).split(self.out_channels, dim = 1)
         
         rg_t = self.sigmoid(W_xr + W_hr)
-        r = self.tanh((rg_t @ W_h1) + W_x1)
+        r = self.tanh(torch.multiply(rg_t, W_h1) + W_x1)
         
         ug_t = self.sigmoid(W_xu + W_hu)
-        h_n = (r @ (1 - ug_t)) + (h_p @ ug_t)
+        h_n = torch.multiply(r, (1 - ug_t)) + torch.multiply(h_p, ug_t)
         y_n = self.conv_Wo(h_n)
         return y_n, h_n
     
