@@ -100,6 +100,7 @@ class ConvGRU_Cell(nn.Module):
         useBias:int = True
     ):
         '''
+        @ here is not mat mul - it is element wise mul/hadamard product
         rg_t = sigmoid(W_ir * x + W_hr * h_t-1)
         r = tanh(rg_t @ (W_h1*ht-1) + W_x1*xt)
         
