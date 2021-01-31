@@ -149,7 +149,173 @@ class Attributes:
     
     def __getitem__(self, idx):
         return self.data[idx], self.labels[idx]
+    
+# ------------------- Image Anomaly Datasets ------------------#
 
+class HAM10000(ImagesHandler, Attributes):
+    def __init__(self,
+                 parent_path = "../../../Image-Anomlay-Detection/HAM10000_SPLIT/",
+                 isTrain = True,
+                 asImages = True,
+                 image_size = 128,
+                 image_type = "normal",
+                 n_frames = 16,
+                 frame_strides = [2,4,8,16],
+                 sample_stride = 1,
+                 getNormalized = False,
+                 useAllAbnormal = False,
+                 size = 100
+                ):
+        self.__name__ = "HAM10000"
+        self.isTrain = isTrain
+        self.asImages = True
+        self.image_size = image_size
+        self.image_type = image_type
+        self.n_frames = n_frames
+        self.frame_strides = frame_strides
+        self.sample_stride = sample_stride
+        self.useAllAbnormal = useAllAbnormal
+        self.size = size
+        
+        if isinstance(self.image_size, int): self.image_size = (self.image_size, self.image_size)
+        
+        transforms_list = [
+            transforms.Resize((self.image_size[0], self.image_size[1])),
+            transforms.ToTensor()
+        ]
+        
+        if getNormalized: transforms_list += [transforms.Normalize([0.5], [0.5])]
+        data_transforms = transforms.Compose(transforms_list)
+        
+        ImagesHandler.__init__(self, data_transforms)
+        self.data_path = parent_path
+        
+        if self.isTrain:
+            self.parent_directory = join_paths([self.data_path, "NORMAL/nv"])
+        else:
+            self.asImages = True
+            self.sample_stride = 1
+            self.abnormal_test_directory = join_paths([self.data_path, "ABNORMAL"])
+            self.normal_test_directory = join_paths([self.data_path, "NORMAL_TEST/nv"])
+            self.frame_strides = [1]
+            
+        self.create_dataset()
+        Attributes.__init__(self)
+        
+    def create_dataset(self):
+        self.data, self.labels = list(), list()
+        if self.isTrain:
+            train_images = read_directory_contents(join_paths([self.parent_directory, "*"]))
+            self.data = self.read_frames(train_images)
+            self.labels = [NORMAL_LABEL] * len(self.data)
+        else:
+            normal_test_files = read_directory_contents(join_paths([self.normal_test_directory, "*"]))
+            if self.useAllAbnormal: files_in_dir = normal_test_files
+            else: files_in_dir = np.random.choice(normal_test_files, size = self.size)
+            
+            self.normal_files = files_in_dir
+            normal_data = self.read_frames(files_in_dir)
+            normal_labels = [NORMAL_LABEL] * len(normal_data)
+            
+            
+            self.abnormal_files = dict()
+            for abnormal_dir in read_directory_contents(join_paths([self.abnormal_test_directory, "*"])):
+                abnormal_type = abnormal_dir.split("/")[-1].lower()
+                abnormal_dir = join_paths([abnormal_dir, abnormal_type])
+                abnormal_test_files = read_directory_contents(join_paths([abnormal_dir, "*"]))
+                if self.useAllAbnormal: files_in_dir = abnormal_test_files
+                else: files_in_dir = np.random.choice(abnormal_test_files, size = self.size)
+                self.abnormal_files[abnormal_type] = files_in_dir
+                
+                abnormal_data = self.read_frames(files_in_dir)
+                abnormal_labels = [ABNORMAL_LABEL] * len(abnormal_data)
+                
+                self.data.append(normal_data + abnormal_data)
+                self.labels.append(normal_labels + abnormal_labels)
+                
+class IR_DISTRACTION(ImagesHandler, Attributes):
+    def __init__(self,
+                 parent_path = "/media/ambreesh/datasets/IR_DISTRACTION/",
+                 isTrain = True,
+                 asImages = True,
+                 image_size = 128,
+                 image_type = "normal",
+                 n_frames = 16,
+                 frame_strides = [2,4,8,16],
+                 sample_stride = 1,
+                 getNormalized = False,
+                 useAllAbnormal = False,
+                 size = 100
+                ):
+        self.__name__ = "IR_DISTRACTION"
+        self.isTrain = isTrain
+        self.asImages = True
+        self.image_size = image_size
+        self.image_type = image_type
+        self.n_frames = n_frames
+        self.frame_strides = frame_strides
+        self.sample_stride = sample_stride
+        self.useAllAbnormal = useAllAbnormal
+        self.size = size
+        
+        if isinstance(self.image_size, int): self.image_size = (self.image_size, self.image_size)
+        
+        transforms_list = [
+            transforms.Resize((self.image_size[0], self.image_size[1])),
+            transforms.ToTensor()
+        ]
+        
+        if getNormalized: transforms_list += [transforms.Normalize([0.5], [0.5])]
+        data_transforms = transforms.Compose(transforms_list)
+        
+        ImagesHandler.__init__(self, data_transforms)
+        self.data_path = parent_path
+        
+        if self.isTrain:
+            self.parent_directory = join_paths([self.data_path, "NORMAL_TRAIN/normal_train/"])
+        else:
+            self.asImages = True
+            self.sample_stride = 1
+            self.abnormal_test_directory = join_paths([self.data_path, "ABNORMAL_TEST"])
+            self.normal_test_directory = join_paths([self.data_path, "NORMAL_TEST/normal_test/"])
+            self.frame_strides = [1]
+            
+        self.create_dataset()
+        Attributes.__init__(self)
+        
+    def create_dataset(self):
+        self.data, self.labels = list(), list()
+        if self.isTrain:
+            train_images = read_directory_contents(join_paths([self.parent_directory, "*"]))
+            self.data = self.read_frames(train_images)
+            self.labels = [NORMAL_LABEL] * len(self.data)
+        else:
+            normal_test_files = read_directory_contents(join_paths([self.normal_test_directory, "*"]))
+            if self.useAllAbnormal: files_in_dir = normal_test_files
+            else: files_in_dir = np.random.choice(normal_test_files, size = self.size)
+            
+            self.normal_files = files_in_dir
+            normal_data = self.read_frames(files_in_dir)
+            normal_labels = [NORMAL_LABEL] * len(normal_data)
+            
+            
+            self.abnormal_files = dict()
+            for abnormal_dir in read_directory_contents(join_paths([self.abnormal_test_directory, "*"])):
+                abnormal_type = abnormal_dir.split("/")[-1].lower()
+                abnormal_dir = join_paths([abnormal_dir, abnormal_type])
+                abnormal_test_files = read_directory_contents(join_paths([abnormal_dir, "*"]))
+                if self.useAllAbnormal: files_in_dir = abnormal_test_files
+                else: files_in_dir = np.random.choice(abnormal_test_files, size = self.size)
+                self.abnormal_files[abnormal_type] = files_in_dir
+                
+                abnormal_data = self.read_frames(files_in_dir)
+                abnormal_labels = [ABNORMAL_LABEL] * len(abnormal_data)
+                
+                self.data.append(normal_data + abnormal_data)
+                self.labels.append(normal_labels + abnormal_labels)
+                
+
+# ------------------- Video Anomaly Datasets ------------------#
 # UCSD Data
 class UCSD(ImagesHandler, VideosHandler, Attributes):
     def __init__(self,
