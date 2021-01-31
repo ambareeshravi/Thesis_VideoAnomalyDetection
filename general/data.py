@@ -936,21 +936,25 @@ def select_dataset(
     
     dataset = dataset.lower()
     flow_channels = 0
-    if image_type == "flow": flow_channels += 3
+    if image_type == "flow": flow_channels = 1
     if "ucsd1" in dataset:
-        return UCSD(dataset_type = 1, **kwargs), 1 + flow_channels
+        return UCSD(dataset_type = 1, **kwargs), 1 if flow_channels == 0 else 1
     elif "ucsd2" in dataset:
-        return UCSD(dataset_type = 2, **kwargs), 1 + flow_channels
+        return UCSD(dataset_type = 2, **kwargs), 1 if flow_channels == 0 else 1
     elif "street" in dataset:
-        return StreetScene(**kwargs), 3 + flow_channels
+        return StreetScene(**kwargs), 3 if flow_channels == 0 else 1
     elif "avenue" in dataset:
-        return Avenue(**kwargs), 3 + flow_channels
+        return Avenue(**kwargs), 3 if flow_channels == 0 else 1
     elif "shangai" in dataset:
-        return ShangaiTech(**kwargs), 3 + flow_channels
+        return ShangaiTech(**kwargs), 3 if flow_channels == 0 else 1
     elif "subway" in dataset:
         if "entrance" in dataset: dataset_type = 0
         else: dataset_type = 1
-        return Subway(dataset_type = dataset_type, **kwargs), 1 + flow_channels
+        return Subway(dataset_type = dataset_type, **kwargs), 1 if flow_channels == 0 else 1
+    elif "ham" in dataset:
+        return HAM10000(**kwargs), 3
+    elif "distraction" in dataset:
+        return IR_DISTRACTION(**kwargs), 3
     
 class CombineDatasets(Attributes):
     def __init__(self, *datasets):
