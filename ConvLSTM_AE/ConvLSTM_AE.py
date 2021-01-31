@@ -835,8 +835,8 @@ class BiCRNN_AE(nn.Module):
         f_layer_output, f_encodings = self.rnn_forward(preliminary_encodings)
         b_layer_output, b_encodings = self.rnn_forward(self.flip_temporal(preliminary_encodings), isBackward = True)
         
-        layer_output = torch.mean(torch.stack([f_layer_output, self.flip_temporal(b_layer_output)]), dim = 0).squeeze(dim=0)
-        encodings = torch.mean(torch.stack([f_encodings, self.flip_temporal(b_encodings)]), dim = 0).squeeze(dim=0)
+        layer_output = torch.mean(torch.stack([f_layer_output, self.flip_temporal(b_layer_output)]), dim = 0) #.squeeze(dim=0)
+        encodings = torch.mean(torch.stack([f_encodings, self.flip_temporal(b_encodings)]), dim = 0) #.squeeze(dim=0)
         
         decode_index = self.n_rnn_layers
         if self.disableDeConvRNN: decode_index = 0
