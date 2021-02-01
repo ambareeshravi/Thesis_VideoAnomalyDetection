@@ -128,8 +128,6 @@ class ConvGRU_Cell(nn.Module):
         self.conv_Wh = nn.Conv2d(self.out_channels, 3 * self.out_channels, self.kernel_size, 1, self.hidden_padding, bias = useBias)
         self.states_shape = [self.out_channels, self.output_shape, self.output_shape]
         
-        self.conv_Wo = nn.Conv2d(self.out_channels, self.out_channels, self.kernel_size, 1, self.hidden_padding, bias = useBias)
-        
     def init_states(self, bs):
         return torch.autograd.Variable(torch.zeros(tuple([bs] + self.states_shape), device = self.conv_Wx.weight.device), requires_grad = True)
     
@@ -145,8 +143,7 @@ class ConvGRU_Cell(nn.Module):
         
         ug_t = self.sigmoid(W_xu + W_hu)
         h_n = torch.multiply(r, (1 - ug_t)) + torch.multiply(h_p, ug_t)
-        y_n = self.conv_Wo(h_n)
-        return y_n, h_n
+        return h_n, h_n
     
 class ConvTransposeGRU_Cell(ConvGRU_Cell):
     def __init__(

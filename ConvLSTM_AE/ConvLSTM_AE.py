@@ -1,5 +1,6 @@
 from .recurrent_convs import *
 
+# Recurrent Conv AutoEncoders
 class CRNN_AE(nn.Module):
     def __init__(
         self,
@@ -281,6 +282,7 @@ class CLSTM_AE(nn.Module):
         reconstructions = reconstructions.transpose(1,2)
         return reconstructions, encodings
 
+# Predictive Sequence2Sequence Recurrent Convs
 class CRNN_AE_Seq2Seq(nn.Module):
     def __init__(
         self,
@@ -508,7 +510,7 @@ class CGRU_AE_Seq2Seq(nn.Module):
         decoder_outputs = nn.Sequential(*self.decoder_layers[self.n_gru_layers:])(decoder_outputs) # bs,ts,c,w,h
         reconstructions = self.conv3d(decoder_outputs.permute(0,2,1,3,4)) # bs,ts,c,w,h -> bs,c,ts,w,h
         return reconstructions, encodings
-    
+
 class CLSTM_AE_Seq2Seq(nn.Module):
     def __init__(
         self,
@@ -623,6 +625,7 @@ class CLSTM_AE_Seq2Seq(nn.Module):
         reconstructions = self.conv3d(decoder_outputs.permute(0,2,1,3,4)) # bs,ts,c,w,h -> bs,c,ts,w,h
         return reconstructions, encodings
     
+# Attention Recurrent Conv
 class CRNN_AE_ATTN(nn.Module):
     def __init__(
         self,
@@ -723,7 +726,8 @@ class CRNN_AE_ATTN(nn.Module):
         reconstructions = nn.Sequential(*self.decoder_layers[decode_index:])(layer_output)
         reconstructions = reconstructions.transpose(1,2)
         return reconstructions, encodings
-    
+
+# Bidirectional Recurrent Convs
 class BiCRNN_AE(nn.Module):
     def __init__(
         self,
@@ -840,6 +844,245 @@ class BiCRNN_AE(nn.Module):
         
         decode_index = self.n_rnn_layers
         if self.disableDeConvRNN: decode_index = 0
+        reconstructions = nn.Sequential(*self.decoder_layers[decode_index:])(layer_output)
+        reconstructions = reconstructions.transpose(1,2)
+        return reconstructions, encodings
+    
+class BiCGRU_AE(nn.Module):
+    def __init__(
+        self,
+        image_size = 128,
+        channels = 3,
+        filter_count = [64,64,64,128],
+        filter_sizes = [3,3,3,5],
+        filter_strides = [2,2,2,2],
+        n_gru_layers = 2,
+        disableDeConvGRU = True,
+        useBias = False
+    ):
+        super(BiCGRU_AE, self).__init__()
+        self.__name__ = "BiCGRU_AE_%d_%dx%d_L-%d_RL-%d_DisDeConv-%s|"%(image_size, most_common(filter_sizes), most_common(filter_sizes), len(filter_count), n_gru_layers, "Y" if disableDeConvGRU else "N")
+        self.channels = channels
+        self.image_size = image_size
+        self.filter_count = filter_count
+        self.filter_sizes = filter_sizes
+        self.filter_strides = filter_strides
+        self.disableDeConvGRU = disableDeConvGRU
+        
+        self.n_layers = len(self.filter_count)
+        self.n_gru_layers = n_gru_layers
+        self.n_normal = self.n_layers - self.n_gru_layers
+        
+        assert len(filter_count) == len(filter_sizes), "Number of filter sizes and count should be the same"
+        assert len(filter_count) == len(filter_strides), "Number of filter strides and count should be the same"
+        
+        current_input_shape = self.image_size
+        in_channels = self.channels
+        
+        self.encoder_layers = list()
+        for idx, (n, k, s) in enumerate(zip(self.filter_count, self.filter_sizes, self.filter_strides)):
+            if (self.n_layers - idx) > self.n_gru_layers:
+                insert = TimeDistributed(C2D_BN_A(in_channels, n, k, s))
+            else:
+                insert = nn.ModuleList([
+                    ConvGRU_Cell(current_input_shape, in_channels, n, k, s, useBias=useBias),
+                    ConvGRU_Cell(current_input_shape, in_channels, n, k, s, useBias=useBias)
+                ])
+                
+            self.encoder_layers.append(insert)
+            current_input_shape = getConvOutputShape(current_input_shape, k, s)
+            in_channels = n
+            
+        self.decoder_layers = list()
+        
+        for idx, (n, k, s) in enumerate(zip(self.filter_count[::-1], self.filter_sizes[::-1], self.filter_strides[::-1])):
+            oc_idx = len(self.filter_count) - (2 + idx)
+            activation_type = "leaky_relu"
+            if oc_idx > -1: out_channels = self.filter_count[oc_idx]
+            else:
+                out_channels = self.channels
+                if k%2 !=0: k += 1
+                activation_type = "sigmoid"
+            if idx < self.n_gru_layers and not self.disableDeConvGRU:
+                insert = nn.ModuleList([
+                    ConvTransposeGRU_Cell(current_input_shape, n, out_channels, k, s, useBias=useBias),
+                    ConvTransposeGRU_Cell(current_input_shape, n, out_channels, k, s, useBias=useBias)
+                ])
+            else:
+                insert = TimeDistributed(CT2D_BN_A(n, out_channels, k, s, activation_type = activation_type))
+            self.decoder_layers.append(insert)
+            current_input_shape = getConvTransposeOutputShape(current_input_shape, k, s)
+        
+        # For cuda use
+        self.modules = nn.ModuleList(self.encoder_layers + self.decoder_layers)
+
+    def gru_forward(self, x, isBackward = False):
+        bs,ts,c,w,h = x.shape
+        
+        gru_layer_idx = 0
+        if isBackward: gru_layer_idx = 1
+        # x -> bs,ts,c,w,h
+        
+        if self.n_gru_layers != 0:
+            states_list = [None] * 2 * self.n_gru_layers
+            current_input = x
+            gru_outputs = list()
+            gru_layers = self.encoder_layers[self.n_normal:]
+            if not self.disableDeConvGRU: gru_layers += self.decoder_layers[:self.n_gru_layers]
+            for idx, layer in enumerate(gru_layers):
+                layer_outputs = list()
+                states = states_list[idx]
+                for t in range(ts):
+                    y, h = layer[gru_layer_idx](current_input[:,t,...], states)
+                    layer_outputs.append(y)
+                    states = h
+                layer_output = torch.stack(layer_outputs, dim = 1) # b,ts,c,w,h
+                gru_outputs.append(layer_output)
+                current_input = layer_output
+                states_list[idx] = states
+            encodings = gru_outputs[self.n_gru_layers - 1].transpose(1,2)
+        else:
+            layer_output = x
+            encodings = layer_output
+        return layer_output, encodings
+    
+    def flip_temporal(self, x):
+        # temporal_idx = 1
+        return torch.fliplr(x.transpose(0,1)).transpose(0,1)
+        
+    def forward(self, x):
+    
+        bs,c,ts,w,h = x.shape
+        preliminary_encodings = nn.Sequential(*self.encoder_layers[:(self.n_layers - self.n_gru_layers)])(x.permute(0,2,1,3,4)) # bs,ts,c,w,h
+        # preliminary_encodings -> bs,ts,c,w,h
+        
+        f_layer_output, f_encodings = self.gru_forward(preliminary_encodings)
+        b_layer_output, b_encodings = self.gru_forward(self.flip_temporal(preliminary_encodings), isBackward = True)
+        
+        layer_output = torch.mean(torch.stack([f_layer_output, self.flip_temporal(b_layer_output)]), dim = 0) #.squeeze(dim=0)
+        encodings = torch.mean(torch.stack([f_encodings, self.flip_temporal(b_encodings)]), dim = 0) #.squeeze(dim=0)
+        
+        decode_index = self.n_gru_layers
+        if self.disableDeConvGRU: decode_index = 0
+        reconstructions = nn.Sequential(*self.decoder_layers[decode_index:])(layer_output)
+        reconstructions = reconstructions.transpose(1,2)
+        return reconstructions, encodings
+    
+class BiCLSTM_AE(nn.Module):
+    def __init__(
+        self,
+        image_size = 128,
+        channels = 3,
+        filter_count = [64,64,64,128],
+        filter_sizes = [3,3,3,5],
+        filter_strides = [2,2,2,2],
+        n_lstm_layers = 2,
+        disableDeConvLSTM = True,
+        useBias = False
+    ):
+        super(BiCLSTM_AE, self).__init__()
+        self.__name__ = "BiCLSTM_AE_%d_%dx%d_L-%d_RL-%d_DisDeConv-%s|"%(image_size, most_common(filter_sizes), most_common(filter_sizes), len(filter_count), n_lstm_layers, "Y" if disableDeConvLSTM else "N")
+        self.channels = channels
+        self.image_size = image_size
+        self.filter_count = filter_count
+        self.filter_sizes = filter_sizes
+        self.filter_strides = filter_strides
+        self.disableDeConvLSTM = disableDeConvLSTM
+        
+        self.n_layers = len(self.filter_count)
+        self.n_lstm_layers = n_lstm_layers
+        self.n_normal = self.n_layers - self.n_lstm_layers
+        
+        assert len(filter_count) == len(filter_sizes), "Number of filter sizes and count should be the same"
+        assert len(filter_count) == len(filter_strides), "Number of filter strides and count should be the same"
+        
+        current_input_shape = self.image_size
+        in_channels = self.channels
+        
+        self.encoder_layers = list()
+        for idx, (n, k, s) in enumerate(zip(self.filter_count, self.filter_sizes, self.filter_strides)):
+            if (self.n_layers - idx) > self.n_lstm_layers:
+                insert = TimeDistributed(C2D_BN_A(in_channels, n, k, s))
+            else:
+                insert = nn.ModuleList([
+                    ConvLSTM_Cell(current_input_shape, in_channels, n, k, s, useBias=useBias),
+                    ConvLSTM_Cell(current_input_shape, in_channels, n, k, s, useBias=useBias)
+                ])
+                
+            self.encoder_layers.append(insert)
+            current_input_shape = getConvOutputShape(current_input_shape, k, s)
+            in_channels = n
+            
+        self.decoder_layers = list()
+        
+        for idx, (n, k, s) in enumerate(zip(self.filter_count[::-1], self.filter_sizes[::-1], self.filter_strides[::-1])):
+            oc_idx = len(self.filter_count) - (2 + idx)
+            activation_type = "leaky_relu"
+            if oc_idx > -1: out_channels = self.filter_count[oc_idx]
+            else:
+                out_channels = self.channels
+                if k%2 !=0: k += 1
+                activation_type = "sigmoid"
+            if idx < self.n_lstm_layers and not self.disableDeConvLSTM:
+                insert = nn.ModuleList([
+                    ConvTransposeLSTM_Cell(current_input_shape, n, out_channels, k, s, useBias=useBias),
+                    ConvTransposeLSTM_Cell(current_input_shape, n, out_channels, k, s, useBias=useBias)
+                ])
+            else:
+                insert = TimeDistributed(CT2D_BN_A(n, out_channels, k, s, activation_type = activation_type))
+            self.decoder_layers.append(insert)
+            current_input_shape = getConvTransposeOutputShape(current_input_shape, k, s)
+        
+        # For cuda use
+        self.modules = nn.ModuleList(self.encoder_layers + self.decoder_layers)
+
+    def lstm_forward(self, x, isBackward = False):
+        bs,ts,c,w,h = x.shape
+        
+        lstm_layer_idx = 0
+        if isBackward: lstm_layer_idx = 1
+        # x -> bs,ts,c,w,h
+        
+        if self.n_lstm_layers != 0:
+            states_list = [None] * 2 * self.n_lstm_layers
+            current_input = x
+            lstm_outputs = list()
+            lstm_layers = self.encoder_layers[self.n_normal:]
+            if not self.disableDeConvLSTM: lstm_layers += self.decoder_layers[:self.n_lstm_layers]
+            for idx, layer in enumerate(lstm_layers):
+                layer_outputs = list()
+                states = states_list[idx]
+                for t in range(ts):
+                    states = layer[lstm_layer_idx](current_input[:,t,...], states)
+                    layer_outputs.append(states[0])
+                layer_output = torch.stack(layer_outputs, dim = 1) # b,ts,c,w,h
+                lstm_outputs.append(layer_output)
+                current_input = layer_output
+                states_list[idx] = states
+            encodings = lstm_outputs[self.n_lstm_layers - 1].transpose(1,2)
+        else:
+            layer_output = x
+            encodings = layer_output
+        return layer_output, encodings
+    
+    def flip_temporal(self, x):
+        # temporal_idx = 1
+        return torch.fliplr(x.transpose(0,1)).transpose(0,1)
+                                
+    def forward(self, x):
+            
+        bs,c,ts,w,h = x.shape
+        preliminary_encodings = nn.Sequential(*self.encoder_layers[:(self.n_layers - self.n_lstm_layers)])(x.permute(0,2,1,3,4)) # bs,ts,c,w,h
+        # preliminary_encodings -> bs,ts,c,w,h
+        
+        f_layer_output, f_encodings = self.lstm_forward(preliminary_encodings)
+        b_layer_output, b_encodings = self.lstm_forward(self.flip_temporal(preliminary_encodings), isBackward = True)
+        
+        layer_output = torch.mean(torch.stack([f_layer_output, self.flip_temporal(b_layer_output)]), dim = 0) #.squeeze(dim=0)
+        encodings = torch.mean(torch.stack([f_encodings, self.flip_temporal(b_encodings)]), dim = 0) #.squeeze(dim=0)
+        
+        decode_index = self.n_lstm_layers
+        if self.disableDeConvLSTM: decode_index = 0
         reconstructions = nn.Sequential(*self.decoder_layers[decode_index:])(layer_output)
         reconstructions = reconstructions.transpose(1,2)
         return reconstructions, encodings
