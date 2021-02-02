@@ -154,7 +154,7 @@ class Attributes:
 
 class HAM10000(ImagesHandler, Attributes):
     def __init__(self,
-                 parent_path = "../../../Image-Anomlay-Detection/HAM10000_SPLIT/",
+                 parent_path = "../../../datasets/VAD_Datasets/",
                  isTrain = True,
                  asImages = True,
                  image_size = 128,
@@ -188,7 +188,7 @@ class HAM10000(ImagesHandler, Attributes):
         data_transforms = transforms.Compose(transforms_list)
         
         ImagesHandler.__init__(self, data_transforms)
-        self.data_path = parent_path
+        self.data_path = join_paths([parent_path, "HAM10000_SPLIT"])
         
         if self.isTrain:
             self.parent_directory = join_paths([self.data_path, "NORMAL/nv"])
