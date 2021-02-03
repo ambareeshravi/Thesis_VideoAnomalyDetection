@@ -207,8 +207,11 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
         elif "median" in regularity_type.lower():
             self.regularity = lambda x: median_regularity(x, window = regularity_kwargs["median_window"])
             
-        else:
+        elif "regular" in regularity_type.lower():
             self.regularity = regularity
+        
+        else:
+            self.regularity = lambda x: x
             
         if self.setEval: self.model.eval() 
         # should i disable this because of batch norm?!!!!!!

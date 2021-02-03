@@ -78,6 +78,9 @@ class AutoEncoderHelper:
             
         if "clstm" in self.model_file.lower() and "seq2seq" in self.model_file.lower():
             self.step = self.sequence_step
+            
+        if "rnn" in self.model_file.lower() or "lstm" in self.model_file.lower() or "gru" in self.model_file.lower():
+            self.step = self.masked_step
         
         self.isSVDD_enabled = False
         if "svdd" in self.model_file.lower():
@@ -204,6 +207,14 @@ class AutoEncoderHelper:
     def future_step(self, images):
         reconstructions, encodings = self.model(self.get_inputs(images)[:,:,:-1,:,:])
         return self.loss_criterion(images[:,:,1:,:,:], reconstructions)
+    
+    def masked_step(self, images):
+        bs,c,ts,w,h = images.shape
+        mask_indices = np.unique(np.random.randint(low = 0, high = ts, size = ts // 3))
+        masked_images = images[:,:,mask_indices,:,:] * 0.0
+        reconstructions, encodings = self.model(images)
+        loss = self.loss_criterion(images[:,:,mask_indices,:,:], reconstructions[:,:,mask_indices,:,:])
+        return loss
     
     def sequence_step(self, images):
         video_chunks = self.get_inputs(images) # bs,c,ts,w,h
