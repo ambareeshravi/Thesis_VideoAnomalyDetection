@@ -163,7 +163,7 @@ class HAM10000(ImagesHandler, Attributes):
                  frame_strides = [2,4,8,16],
                  sample_stride = 1,
                  getNormalized = False,
-                 useAllAbnormal = False,
+                 useAllAbnormal = True,
                  size = 100
                 ):
         self.__name__ = "HAM10000"
