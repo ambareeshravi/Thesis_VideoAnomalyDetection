@@ -570,7 +570,7 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
         overall_results["mean_roc_auc_score"] = np.mean(overall_results["roc_auc_score"])
         self.results = overall_results
         
-        print("Per anomaly AUC-ROC scores: %s | Mean AUC-ROC Score"(overall_results["roc_auc_score"], overall_results["mean_roc_auc_score"]))
+        print("Per anomaly AUC-ROC scores: %s | Mean AUC-ROC Score: %s"%(overall_results["roc_auc_score"], overall_results["mean_roc_auc_score"]))
         if self.save_as:
             with open(self.save_as, "wb") as f:
                 pkl.dump(self.results, f)
