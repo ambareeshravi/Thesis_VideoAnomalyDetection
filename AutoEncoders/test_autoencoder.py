@@ -11,6 +11,7 @@ from scipy.ndimage.filters import median_filter
 
 from pprint import pprint
 
+# Calculation of AUC PR
 def pr_auc(y_true, y_pred):
     try:
         precision, recall, thresholds = precision_recall_curve(y_true, y_pred, pos_label = ABNORMAL_LABEL)
@@ -18,6 +19,7 @@ def pr_auc(y_true, y_pred):
     except:
         return 0.0
 
+# Regularity and filtering
 def normalize(x):
     return (x - x.min())/(x.max() - x.min())
 
@@ -35,6 +37,7 @@ def savgol_regularity(x, window, range_):
 def median_regularity(x, window = 50):
     return regularity(median_filter(x, size=window))
 
+# Loss metrics for scoring anomalies
 class ReconstructionsMetrics:
     def __init__(self, ):
         self.ssim = SSIM(data_range = 1.0, nonnegative_ssim=True)
@@ -74,6 +77,7 @@ class ReconstructionsMetrics:
         assert len(original) == len(reconstruction), "PSNR LOSS len mismatch %d != %d"%(len(original), len(reconstruction))
         return [float(self.psnr(o, r)) for o,r in zip(original, reconstruction)]
 
+# Prediction methods of various AEs
 class AE_PredictFunctions:
     def __init__(self,):
         self.patchwise = False
@@ -143,7 +147,8 @@ class AE_PredictFunctions:
         with torch.no_grad():
             predictions, _ = self.model(inputs, future_steps = future_steps)
         return predictions
-                    
+
+# Testing AEs
 class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
     def __init__(
         self,
@@ -169,6 +174,12 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
         self.model = model
         self.dataset = dataset
         self.model_file = model_file
+        
+        self.isIAD = False
+        if "ham10000" in self.model_file.lower() or "distraction" in self.model_file.lower():
+            self.isIAD = True
+            regularity_type = "normalized_regularity"
+            
         self.stackFrames = stackFrames
         self.save_vis = save_vis
         self.n_seed = n_seed
@@ -216,6 +227,8 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
         if self.setEval: self.model.eval() 
         # should i disable this because of batch norm?!!!!!!
         # https://discuss.pytorch.org/t/model-eval-gives-incorrect-loss-for-model-with-batchnorm-layers/7561/47
+        
+        if self.isIAD: self.test = self.test_IAD
                             
     def plot_regularity(
         self,
@@ -515,3 +528,52 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
         processed_results_dict = self.save_display_results(video_level_params)
         if return_results: return processed_results_dict
         return True
+    
+    def test_IAD(self, return_results = False):
+               
+        overall_results = {
+            "targets": list(),
+            "loss": list(),
+            "normalized_regularity": list(),
+            "roc_auc_score": list()
+        }
+        
+        for anomaly_idx, (anomaly_images, anomaly_labels) in tqdm(enumerate(self.dataset)):
+            
+            per_anomaly_results = {
+                "targets": list(),
+                "loss": list(),
+                "normalized_regularity": list(),
+                "roc_auc_score": list()
+            }
+            
+            for frame_idx in range(0, len(anomaly_labels), self.stackFrames):
+                test_images = torch.stack(anomaly_images[frame_idx:(frame_idx + self.stackFrames)])
+                test_labels = anomaly_labels[frame_idx:(frame_idx + self.stackFrames)]
+                reconstructions, encodings = self.predict(test_images)
+                per_anomaly_results["targets"] += test_labels
+                per_anomaly_results["loss"] += self.sqr_loss(test_images, to_cpu(reconstructions))
+            per_anomaly_results["targets"] = np.array(per_anomaly_results["targets"])
+            overall_results["targets"].append(per_anomaly_results["targets"])
+            
+            per_anomaly_results["loss"] = np.array(per_anomaly_results["loss"])
+            overall_results["loss"].append(per_anomaly_results["loss"])
+            
+            per_anomaly_results["normalized_regularity"] = normalized_regularity(per_anomaly_results["loss"])
+            overall_results["normalized_regularity"].append(per_anomaly_results["normalized_regularity"])
+            
+            per_anomaly_results["roc_auc_score"] = roc_auc_score(per_anomaly_results["targets"], per_anomaly_results["normalized_regularity"])
+            overall_results["roc_auc_score"].append(per_anomaly_results["roc_auc_score"])
+            
+        for param, param_list in overall_results.items():
+            overall_results[param] = np.array(param_list)
+        overall_results["mean_roc_auc_score"] = np.mean(overall_results["roc_auc_score"])
+        self.results = overall_results
+        
+        print("Per anomaly AUC-ROC scores: %s | Mean AUC-ROC Score"(overall_results["roc_auc_score"], overall_results["mean_roc_auc_score"]))
+        if self.save_as:
+            with open(self.save_as, "wb") as f:
+                pkl.dump(self.results, f)
+                
+        if return_results: return self.results
+        return True    

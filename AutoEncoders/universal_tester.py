@@ -19,6 +19,7 @@ def test_model(
         'image_size': 128,
         'image_type': 'normal'
     },
+    return_results = False
 ):
     test_data, channels = select_dataset(dataset_type, isTrain = False, **dataset_kwargs)
     load_model(model, model_path)
@@ -31,8 +32,9 @@ def test_model(
         model_file = model_path,
         **tester_kwargs
     )
-    results = tester.test(True)
-    pprint(results)
+    results = tester.test(return_results)
     print("="*40)
     try: del test_data, tester
     except: pass
+    if return_results: return results
+    else: return True
