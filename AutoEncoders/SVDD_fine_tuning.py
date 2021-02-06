@@ -21,7 +21,7 @@ class SVDD_FineTuner:
         model,
         model_path: str,
         dataset_type: str,
-        lr = 1e-6,
+        lr = 5e-7,
         batch_size = 256,
         epochs = [2,5,10,20],
         dataset_kwargs = {

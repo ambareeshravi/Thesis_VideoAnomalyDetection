@@ -550,7 +550,8 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
             for frame_idx in range(0, len(anomaly_labels), self.stackFrames):
                 test_images = torch.stack(anomaly_images[frame_idx:(frame_idx + self.stackFrames)])
                 test_labels = anomaly_labels[frame_idx:(frame_idx + self.stackFrames)]
-                reconstructions, encodings = self.predict(test_images)
+                model_outputs = self.predict(test_images)
+                reconstructions = model_outputs[0]
                 per_anomaly_results["targets"] += test_labels
                 per_anomaly_results["loss"] += self.sqr_loss(test_images, to_cpu(reconstructions))
             per_anomaly_results["targets"] = np.array(per_anomaly_results["targets"])
