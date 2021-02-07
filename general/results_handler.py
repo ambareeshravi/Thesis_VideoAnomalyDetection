@@ -92,7 +92,7 @@ class ModelParser:
     def getConfig(model_name):
         return OrderedDict([
             ("Model", ModelParser.getModelCategory(model_name)),
-            ("Model_Path", model_name),
+            ("Model_Path", model_name[-20:]),
             ("Variant", ModelParser.getModelVariant(model_name)),
             ("Dataset", ModelParser.getDatasetType(model_name)),
             ("Image_Type", ModelParser.getImageType(model_name)),
