@@ -68,6 +68,7 @@ class AutoEncoderModel(AutoEncoderHelper):
         self.cl = CustomLogger(join_paths([self.save_path, "train_logs"]))
 
     def epoch_status(self, epoch, epochs, epoch_st):
+        if epoch == 1: print("Model:", self.model_file)
         if not self.stopTraining:
             if epoch == 1:
                 self.cl.print(eta(epoch, epochs, (time() - epoch_st)))
