@@ -307,9 +307,12 @@ def complete_model_name(
     dataset_type:str,
     image_type:str,
     isDeNoising:bool,
+    extra:str="",
 ):
     model_type += "_DeNoising" if isDeNoising else ""
-    return "%s_%s_%s_%s_%s"%(model_type.upper(), optimizer_type.upper(), loss_type.upper(), dataset_type.upper(), image_type.upper())
+    model_name = "%s_%s_%s_%s_%s"%(model_type.upper(), optimizer_type.upper(), loss_type.upper(), dataset_type.upper(), image_type.upper())
+    if len(extra) > 0: model_name += "-{%s}"%(extra)
+    return model_name
 
 class CustomLogger:
     def __init__(
