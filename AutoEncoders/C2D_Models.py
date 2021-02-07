@@ -74,7 +74,7 @@ class ConvAttentionWapper(nn.Module):
             nn.Conv2d(self.model.channels, self.projection, self.kernel_sizes[0], 1, padding = self.kernel_sizes[0]//2),
             nn.Conv2d(self.projection, self.model.channels, self.kernel_sizes[1], 1, padding = self.kernel_sizes[1]//2),
         )
-        self.__name__ = self.model.__name__ + "_CONV_ATTENTION"
+        self.__name__ = self.model.__name__ + "_CONV_ATTENTION_P%s_L%s"%(self.projection, self,lambda_)
         self.act_block = nn.Sequential(
             nn.BatchNorm2d(self.model.channels),
             nn.Sigmoid()
