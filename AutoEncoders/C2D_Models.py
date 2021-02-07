@@ -62,19 +62,21 @@ class AttentionWrapper(nn.Module):
         return reconstructions, encodings, x_a
 
 class ConvAttentionWapper(nn.Module):
-    def __init__(self, model, kernel_sizes = (3,5), projection = 64, lambda_ = 1e-6, max_norm_clip = 1):
+    def __init__(self, model, kernel_sizes = (3,5), projection = 64, channels = None, lambda_ = 1e-6, max_norm_clip = 1):
         super(ConvAttentionWapper, self).__init__()
         self.model = model
         self.projection = projection
         self.kernel_sizes = kernel_sizes
         self.lambda_ = lambda_
         self.max_norm_clip = max_norm_clip
+        self.out_channels = self.model.channels
+        if channels != None: self.out_channels = channels
         
         self.attention_conv = nn.Sequential(
             nn.Conv2d(self.model.channels, self.projection, self.kernel_sizes[0], 1, padding = self.kernel_sizes[0]//2),
-            nn.Conv2d(self.projection, self.model.channels, self.kernel_sizes[1], 1, padding = self.kernel_sizes[1]//2),
+            nn.Conv2d(self.projection, self.out_channels, self.kernel_sizes[1], 1, padding = self.kernel_sizes[1]//2),
         )
-        self.__name__ = self.model.__name__ + "_CONV_ATTENTION_P%s_L%s"%(self.projection, self.lambda_)
+        self.__name__ = self.model.__name__ + "_CONV_ATTENTION_P%s_L%s_C%s"%(self.projection, self.lambda_, self.out_channels)
         self.act_block = nn.Sequential(
             nn.BatchNorm2d(self.model.channels),
             nn.Sigmoid()
