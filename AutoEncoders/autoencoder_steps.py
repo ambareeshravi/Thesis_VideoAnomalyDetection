@@ -68,7 +68,11 @@ class AutoEncoderHelper:
             self.sigma = 0.1
         
         # Attention step
-        if "attention" in self.model_file.lower():
+        if "softmax_attention" in self.model_file.lower():
+            self.isAttention = True
+            self.step = self.softmax_attention_step
+            
+        if "conv_attention" in self.model_file.lower():
             self.isAttention = True
             self.step = self.attention_step
         
@@ -184,6 +188,11 @@ class AutoEncoderHelper:
             pass
         
         return self.loss_criterion(images, reconstructions)
+    
+    def softmax_attention_step(self, images):
+        reconstructions, encodings, attention_activations = self.model(self.get_inputs(images))
+        loss = self.loss_criterion(images, reconstructions)
+        return loss
     
     def attention_step(self, images):
         if self.patchwise: images = get_patches(images)
