@@ -391,6 +391,7 @@ class MV_TEC(ImagesHandler, Attributes):
                         sub_type_labels = [ABNORMAL_LABEL] * len(sub_type_images)
                     category_data += sub_type_images
                     category_labels += sub_type_labels
+                if len(category_data) < 1: continue
                 self.data.append(category_data)
                 self.labels.append(category_labels)
                 

@@ -788,19 +788,19 @@ class C2D_AE_128_3x3_AAC(nn.Module):
         self.embedding_dim = [1,self.filters_count[4],4,4]
         
         self.encoder = nn.Sequential(
-            AugmentedConv(in_channels=self.channels, out_channels=self.filters_count[0]//4, kernel_size=3, dk = self.filters_count[0]//8, dv = 1, Nh = 1,  stride = 2),
-            nn.BatchNorm2d(self.filters_count[0]//4),
+            AugmentedConv(in_channels=self.channels, out_channels=self.filters_count[0], kernel_size=3, dk = self.filters_count[0]//8, dv = 1, Nh = 1,  stride = 2),
+            nn.BatchNorm2d(self.filters_count[0]),
             nn.ReLU(),
-            AugmentedConv(in_channels=self.filters_count[0]//4, out_channels=self.filters_count[1]//4, kernel_size=3, dk = self.filters_count[1]//8, dv = 1, Nh = 1,  stride = 2),
-            nn.BatchNorm2d(self.filters_count[1]//4),
+            AugmentedConv(in_channels=self.filters_count[0], out_channels=self.filters_count[1], kernel_size=3, dk = self.filters_count[1]//8, dv = 1, Nh = 1,  stride = 2),
+            nn.BatchNorm2d(self.filters_count[1]),
             nn.ReLU(),
-            AugmentedConv(in_channels=self.filters_count[1]//4, out_channels=self.filters_count[2]//4, kernel_size=3, dk = self.filters_count[2]//8, dv = 1, Nh = 1,  stride = 2),
-            nn.BatchNorm2d(self.filters_count[2]//4),
+            AugmentedConv(in_channels=self.filters_count[1], out_channels=self.filters_count[2], kernel_size=3, dk = self.filters_count[2]//8, dv = 1, Nh = 1,  stride = 2),
+            nn.BatchNorm2d(self.filters_count[2]),
             nn.ReLU(),
-            AugmentedConv(in_channels=self.filters_count[2]//4, out_channels=self.filters_count[3]//4, kernel_size=3, dk = self.filters_count[4]//8, dv = 1, Nh = 1,  stride = 2),
-            nn.BatchNorm2d(self.filters_count[3]//4),
+            AugmentedConv(in_channels=self.filters_count[2], out_channels=self.filters_count[3], kernel_size=3, dk = self.filters_count[4]//8, dv = 1, Nh = 1,  stride = 2),
+            nn.BatchNorm2d(self.filters_count[3]),
             nn.ReLU(),
-            nn.Conv2d(self.filters_count[3]//4, self.filters_count[4], 5, 1),
+            nn.Conv2d(self.filters_count[3], self.filters_count[4], 5, 1),
             nn.BatchNorm2d(self.filters_count[4]),
             nn.Tanh(),
         )

@@ -20,6 +20,11 @@ activations_dict = {
 }
 
 # ------------------------------------------------------- #
+def count_parameters(model, onlyTrainable = True):
+    if onlyTrainable:
+        return sum([p.numel() for p in model.parameters() if p.requires_grad])
+    else:
+        return sum([p.numel() for p in model.parameters()])
 
 def HalfPrecision(model, first = True):
     if first: model.half()
