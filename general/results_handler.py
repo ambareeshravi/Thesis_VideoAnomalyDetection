@@ -38,6 +38,7 @@ class ModelParser:
         elif "street_scene" in model_name.lower(): return "STREET_SCENE"
         elif "ham" in model_name.lower(): return "HAM10000"
         elif "distraction" in model_name.lower(): return "IR_DISTRACTION"
+        elif "mv_tec" in model_name.lower(): return "MV_TEC"
         else: return False
     
     @staticmethod

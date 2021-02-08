@@ -362,12 +362,21 @@ class MV_TEC(ImagesHandler, Attributes):
             
         self.create_dataset()
         Attributes.__init__(self)
+    
+    def color_channels(self, images):
+        corrected = list()
+        for img in images:
+            if (img.shape[0] != 3) and self.image_type != "grayscale":
+                corrected.append(img.repeat(3,1,1))
+            else:
+                corrected.append(img)
+        return corrected
         
     def create_dataset(self):
         self.data, self.labels = list(), list()
         if self.isTrain:
             for category in tqdm(self.directories_list):
-                self.data += self.read_frames(read_directory_contents(join_paths([category, "train", "good", "*"])))
+                self.data += self.color_channels(self.read_frames(read_directory_contents(join_paths([category, "train", "good", "*"]))))
             self.labels = [NORMAL_LABEL] * len(self.data)            
         else:
             for category in tqdm(self.directories_list):
@@ -375,7 +384,7 @@ class MV_TEC(ImagesHandler, Attributes):
                 category_test_dir = join_paths([category, "test"])
                 sub_types = read_directory_contents(join_paths([category_test_dir, "*"]))
                 for sub_type in sub_types:
-                    sub_type_images = self.read_frames(read_directory_contents(join_paths([sub_type, "*"])))
+                    sub_type_images = self.color_channels(self.read_frames(read_directory_contents(join_paths([sub_type, "*"]))))
                     if "good" in sub_type:
                         sub_type_labels = [NORMAL_LABEL] * len(sub_type_images)
                     else:
@@ -1025,6 +1034,8 @@ def select_dataset(
         return HAM10000(**kwargs), 3
     elif "distraction" in dataset:
         return IR_DISTRACTION(**kwargs), 3
+    elif "mv_tec" in dataset:
+        return MV_TEC(**kwargs), 3
     
 class CombineDatasets(Attributes):
     def __init__(self, *datasets):

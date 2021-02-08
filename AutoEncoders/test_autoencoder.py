@@ -176,7 +176,7 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
         self.model_file = model_file
         
         self.isIAD = False
-        if "ham10000" in self.model_file.lower() or "distraction" in self.model_file.lower():
+        if "ham10000" in self.model_file.lower() or "distraction" in self.model_file.lower() or "mv_tec" in self.model_file.lower():
             self.isIAD = True
             regularity_type = "normalized_regularity"
             
