@@ -314,7 +314,77 @@ class IR_DISTRACTION(ImagesHandler, Attributes):
                 self.data.append(normal_data + abnormal_data)
                 self.labels.append(normal_labels + abnormal_labels)
                 
-
+class MV_TEC(ImagesHandler, Attributes):
+    def __init__(self,
+                 parent_path = "../../../datasets/VAD_Datasets/",
+                 isTrain = True,
+                 asImages = True,
+                 image_size = 128,
+                 image_type = "normal",
+                 n_frames = 16,
+                 frame_strides = [2,4,8,16],
+                 sample_stride = 1,
+                 getNormalized = False,
+                 useAllAbnormal = False,
+                 size = 100
+                ):
+        self.__name__ = "MV_TEC"
+        self.isTrain = isTrain
+        self.asImages = True
+        self.image_size = image_size
+        self.image_type = image_type
+        self.n_frames = n_frames
+        self.frame_strides = frame_strides
+        self.sample_stride = sample_stride
+        self.useAllAbnormal = useAllAbnormal
+        self.size = size
+        
+        if isinstance(self.image_size, int): self.image_size = (self.image_size, self.image_size)
+        
+        transforms_list = [
+            transforms.Resize((self.image_size[0], self.image_size[1])),
+            transforms.ToTensor()
+        ]
+        
+        if getNormalized: transforms_list += [transforms.Normalize([0.5], [0.5])]
+        data_transforms = transforms.Compose(transforms_list)
+        
+        ImagesHandler.__init__(self, data_transforms)
+        self.data_path = join_paths([parent_path, "MV_TEC"])
+        self.directories_list = read_directory_contents(join_paths([self.data_path, "*"]))
+        
+        if self.isTrain:
+            pass
+        else:
+            self.asImages = True
+            self.sample_stride = 1
+            self.frame_strides = [1]
+            
+        self.create_dataset()
+        Attributes.__init__(self)
+        
+    def create_dataset(self):
+        self.data, self.labels = list(), list()
+        if self.isTrain:
+            for category in tqdm(self.directories_list):
+                self.data += self.read_frames(read_directory_contents(join_paths([category, "train", "good", "*"])))
+            self.labels = [NORMAL_LABEL] * len(self.data)            
+        else:
+            for category in tqdm(self.directories_list):
+                category_data, category_labels = list(), list()
+                category_test_dir = join_paths([category, "test"])
+                sub_types = read_directory_contents(join_paths([category_test_dir, "*"]))
+                for sub_type in sub_types:
+                    sub_type_images = self.read_frames(read_directory_contents(join_paths([sub_type, "*"])))
+                    if "good" in sub_type:
+                        sub_type_labels = [NORMAL_LABEL] * len(sub_type_images)
+                    else:
+                        sub_type_labels = [ABNORMAL_LABEL] * len(sub_type_images)
+                    category_data += sub_type_images
+                    category_labels += sub_type_labels
+                self.data.append(category_data)
+                self.labels.append(category_labels)
+                
 # ------------------- Video Anomaly Datasets ------------------#
 # UCSD Data
 class UCSD(ImagesHandler, VideosHandler, Attributes):
