@@ -1,9 +1,8 @@
 import sys
 sys.path.append("..")
 
-from torch.nn import functional as F
-
 from general import *
+from general.all_imports import *
 from general.model_utils import *
 from general.losses import max_norm
 
@@ -146,7 +145,7 @@ class SoftMaxConvAttentionWrapper2(nn.Module):
             nn.Sigmoid()
         )
         self.__name__ = self.model.__name__ + "_SOFTMAX_ATTENTION_2_P%s_C%s"%(self.projection, self.out_channels)
-        self.avg_pool = nn.AvgPool2d((5,5), 1, padding = 2)
+        self.max_pool = nn.MaxPool2d((5,5), 1, padding = 2)
     
     def attention_forward(self, x):
         attention_activations = self.attention_conv(x)
@@ -156,7 +155,7 @@ class SoftMaxConvAttentionWrapper2(nn.Module):
         hs = F.softmax(h, dim = -2)
         x_a = torch.matmul(hs, vs)
         x_a = (x_a - x_a.min()) / (x_a.max() - x_a.min())
-        return torch.multiply(x, self.avg_pool(x_a))
+        return torch.multiply(x, self.max_pool(x_a))
            
     def forward(self, x):
         x_a = self.attention_forward(x)

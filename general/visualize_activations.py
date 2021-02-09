@@ -1,4 +1,7 @@
 import torch
+torch.manual_seed(0)
+torch.cuda.manual_seed(0)
+
 from torchvision.utils import make_grid, save_image
 from PIL import Image
 from .utils import *

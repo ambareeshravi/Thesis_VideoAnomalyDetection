@@ -1,6 +1,6 @@
-import torch
-from torch import nn
-import numpy as np
+import sys
+sys.path.append("..")
+from general.all_imports import *
 
 '''
 https://github.com/lukasruff/Deep-SVDD-PyTorch/blob/master/src/optim/deepSVDD_trainer.py

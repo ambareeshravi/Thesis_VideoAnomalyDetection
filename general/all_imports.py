@@ -3,12 +3,10 @@ matplotlib.use('Agg')
 import os
 import shutil
 import numpy as np
-np.random.seed(0)
 import pandas as pd
 import pickle as pkl
 import json
 import torch
-torch.manual_seed(0)
 import gc
 
 from datetime import datetime, timedelta
@@ -30,7 +28,8 @@ from torch.utils.data import DataLoader
 from .utils import *
 import cv2
 
-torch.manual_seed(0)
-np.random.seed(0)
-
 from collections import OrderedDict
+
+np.random.seed(0)
+torch.manual_seed(0)
+torch.cuda.manual_seed(0)

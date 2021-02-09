@@ -1,7 +1,6 @@
-import torch
-from torch import nn
 import sys
 sys.path.append("..")
+from general.all_imports import *
 from general.utils import *
 from SVM.deep_SVDD import DeepSVDD
 

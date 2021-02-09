@@ -1,6 +1,6 @@
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
+import sys
+sys.path.append("..")
+from general.all_imports import *
 
 class AugmentedConv(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, dk = 1, dv = 1, Nh = 1, shape=0, relative=False, stride=1):

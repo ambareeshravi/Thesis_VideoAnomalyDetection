@@ -1,6 +1,6 @@
-import torch
-from torch import nn
-import numpy as np
+import sys
+sys.path.append("..")
+from general.all_imports import *
 
 class EmbeddingTranslator(nn.Module):
     def __init__(self, embedding_size = [1,128,2,2]):

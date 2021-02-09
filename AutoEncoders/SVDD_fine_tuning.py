@@ -1,7 +1,6 @@
-import torch
-from torch import nn
 import sys
 sys.path.append("..")
+from general.all_imports import *
 from general.model_utils import *
 from general.data import *
 from general.utils import *
