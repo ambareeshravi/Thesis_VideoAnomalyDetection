@@ -29,7 +29,13 @@ from .utils import *
 import cv2
 
 from collections import OrderedDict
+import random
 
-np.random.seed(0)
-torch.manual_seed(0)
-torch.cuda.manual_seed(0)
+MANUAL_SEED = 42
+np.random.seed(MANUAL_SEED)
+torch.manual_seed(MANUAL_SEED)
+torch.cuda.manual_seed(MANUAL_SEED)
+torch.cuda.manual_seed_all(MANUAL_SEED)
+random.seed(MANUAL_SEED)
+torch.backends.cudnn.deterministic=True
+torch.backends.cudnn.benchmark = False

@@ -131,6 +131,9 @@ def moving_average(x, window = 3):
 def add_noise(img, var = 0.1):
     return img + (torch.randn(img.size(), device = img.device) * var * torch.randint(0, 2, img.shape, device = img.device))
 
+def _init_fn(worker_id):
+    np.random.seed(int(MANUAL_SEED))
+                   
 def get_data_loaders(
     data,
     batch_size = 64,
@@ -141,8 +144,8 @@ def get_data_loaders(
     split_point = int((1-val_split) * len(data))
     train_data, val_data = torch.utils.data.random_split(data, [split_point, len(data)-split_point])
 
-    train_loader = torch.utils.data.DataLoader(train_data, batch_size = batch_size, shuffle=True,  num_workers = num_workers, pin_memory=True)
-    val_loader = torch.utils.data.DataLoader(val_data, batch_size = batch_size, shuffle=False, num_workers = num_workers, pin_memory=True)
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size = batch_size, shuffle=True,  num_workers = num_workers, pin_memory=True, worker_init_fn=_init_fn)
+    val_loader = torch.utils.data.DataLoader(val_data, batch_size = batch_size, shuffle=False, num_workers = num_workers, pin_memory=True, worker_init_fn=_init_fn)
     return train_loader, val_loader
 
 def eta(epoch, epochs, epoch_time):
