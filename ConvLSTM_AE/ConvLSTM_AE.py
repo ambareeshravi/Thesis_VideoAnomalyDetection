@@ -14,7 +14,7 @@ class CRNN_AE(nn.Module):
         useBias = False
     ):
         super(CRNN_AE, self).__init__()
-        self.__name__ = "CRNN_AE_%d_%dx%d_L-%d_RL-%d_DisDeConv-%s|"%(image_size, most_common(filter_sizes), most_common(filter_sizes), len(filter_count), n_rnn_layers, "Y" if disableDeConvRNN else "N")
+        self.__name__ = "CRNN_AE_%d_%dx%d_L-%d_RL-%d_DisDeConv-%s-"%(image_size, most_common(filter_sizes), most_common(filter_sizes), len(filter_count), n_rnn_layers, "Y" if disableDeConvRNN else "N")
         self.channels = channels
         self.image_size = image_size
         self.filter_count = filter_count
@@ -108,7 +108,7 @@ class CGRU_AE(nn.Module):
         useBias = False
     ):
         super(CGRU_AE, self).__init__()
-        self.__name__ = "CGRU_AE_%d_%dx%d_L-%d_RL-%d_DisDeConv-%s|"%(image_size, most_common(filter_sizes), most_common(filter_sizes), len(filter_count), n_gru_layers, "Y" if disableDeConvGRU else "N")
+        self.__name__ = "CGRU_AE_%d_%dx%d_L-%d_RL-%d_DisDeConv-%s-"%(image_size, most_common(filter_sizes), most_common(filter_sizes), len(filter_count), n_gru_layers, "Y" if disableDeConvGRU else "N")
         self.channels = channels
         self.image_size = image_size
         self.filter_count = filter_count
@@ -202,7 +202,7 @@ class CLSTM_AE(nn.Module):
         useBias = False
     ):
         super(CLSTM_AE, self).__init__()
-        self.__name__ = "CLSTM_AE_%d_%dx%d_L-%d_RL-%d_DisDeConv-%s|"%(image_size, most_common(filter_sizes), most_common(filter_sizes), len(filter_count), n_lstm_layers, "Y" if disableDeConvLSTM else "N")
+        self.__name__ = "CLSTM_AE_%d_%dx%d_L-%d_RL-%d_DisDeConv-%s-"%(image_size, most_common(filter_sizes), most_common(filter_sizes), len(filter_count), n_lstm_layers, "Y" if disableDeConvLSTM else "N")
         self.channels = channels
         self.image_size = image_size
         self.filter_count = filter_count
@@ -296,7 +296,7 @@ class CRNN_AE_Seq2Seq(nn.Module):
         useBias = False
     ):
         super(CRNN_AE_Seq2Seq, self).__init__()
-        self.__name__ = "CRNN_AE_%d_%dx%d_SEQ2SEQ_L-%d_RL-%d_DisDeConv-%s|"%(image_size, most_common(filter_sizes), most_common(filter_sizes), len(filter_count), n_rnn_layers, "Y" if disableDeConvRNN else "N")
+        self.__name__ = "CRNN_AE_%d_%dx%d_SEQ2SEQ_L-%d_RL-%d_DisDeConv-%s-"%(image_size, most_common(filter_sizes), most_common(filter_sizes), len(filter_count), n_rnn_layers, "Y" if disableDeConvRNN else "N")
         self.image_size = image_size
         self.channels = channels
         self.filter_count = filter_count
@@ -410,7 +410,7 @@ class CGRU_AE_Seq2Seq(nn.Module):
         useBias = False
     ):
         super(CGRU_AE_Seq2Seq, self).__init__()
-        self.__name__ = "CGRU_AE_%d_%dx%d_SEQ2SEQ_L-%d_RL-%d_DisDeConv-%s|"%(image_size, most_common(filter_sizes), most_common(filter_sizes), len(filter_count), n_gru_layers, "Y" if disableDeConvGRU else "N")
+        self.__name__ = "CGRU_AE_%d_%dx%d_SEQ2SEQ_L-%d_RL-%d_DisDeConv-%s-"%(image_size, most_common(filter_sizes), most_common(filter_sizes), len(filter_count), n_gru_layers, "Y" if disableDeConvGRU else "N")
         self.image_size = image_size
         self.channels = channels
         self.filter_count = filter_count
@@ -524,7 +524,7 @@ class CLSTM_AE_Seq2Seq(nn.Module):
         useBias = False
     ):
         super(CLSTM_AE_Seq2Seq, self).__init__()
-        self.__name__ = "CLSTM_AE_%d_%dx%d_SEQ2SEQ_L-%d_RL-%d_DisDeConv-%s|"%(image_size, most_common(filter_sizes), most_common(filter_sizes), len(filter_count), n_lstm_layers, "Y" if disableDeConvLSTM else "N")
+        self.__name__ = "CLSTM_AE_%d_%dx%d_SEQ2SEQ_L-%d_RL-%d_DisDeConv-%s-"%(image_size, most_common(filter_sizes), most_common(filter_sizes), len(filter_count), n_lstm_layers, "Y" if disableDeConvLSTM else "N")
         self.image_size = image_size
         self.channels = channels
         self.filter_count = filter_count
@@ -639,7 +639,7 @@ class CRNN_AE_ATTN(nn.Module):
         useBias = False
     ):
         super(CRNN_AE_ATTN, self).__init__()
-        self.__name__ = "CRNN_AE_ATTN_%d_%dx%d_L-%d_RL-%d_DisDeConv-%s|"%(image_size, most_common(filter_sizes), most_common(filter_sizes), len(filter_count), n_rnn_layers, "Y" if disableDeConvRNN else "N")
+        self.__name__ = "CRNN_AE_ATTN_%d_%dx%d_L-%d_RL-%d_DisDeConv-%s-"%(image_size, most_common(filter_sizes), most_common(filter_sizes), len(filter_count), n_rnn_layers, "Y" if disableDeConvRNN else "N")
         self.channels = channels
         self.image_size = image_size
         self.filter_count = filter_count
@@ -741,7 +741,7 @@ class BiCRNN_AE(nn.Module):
         useBias = False
     ):
         super(BiCRNN_AE, self).__init__()
-        self.__name__ = "BiCRNN_AE_%d_%dx%d_L-%d_RL-%d_DisDeConv-%s|"%(image_size, most_common(filter_sizes), most_common(filter_sizes), len(filter_count), n_rnn_layers, "Y" if disableDeConvRNN else "N")
+        self.__name__ = "BiCRNN_AE_%d_%dx%d_L-%d_RL-%d_DisDeConv-%s-"%(image_size, most_common(filter_sizes), most_common(filter_sizes), len(filter_count), n_rnn_layers, "Y" if disableDeConvRNN else "N")
         self.channels = channels
         self.image_size = image_size
         self.filter_count = filter_count
@@ -861,7 +861,7 @@ class BiCGRU_AE(nn.Module):
         useBias = False
     ):
         super(BiCGRU_AE, self).__init__()
-        self.__name__ = "BiCGRU_AE_%d_%dx%d_L-%d_RL-%d_DisDeConv-%s|"%(image_size, most_common(filter_sizes), most_common(filter_sizes), len(filter_count), n_gru_layers, "Y" if disableDeConvGRU else "N")
+        self.__name__ = "BiCGRU_AE_%d_%dx%d_L-%d_RL-%d_DisDeConv-%s-"%(image_size, most_common(filter_sizes), most_common(filter_sizes), len(filter_count), n_gru_layers, "Y" if disableDeConvGRU else "N")
         self.channels = channels
         self.image_size = image_size
         self.filter_count = filter_count
@@ -981,7 +981,7 @@ class BiCLSTM_AE(nn.Module):
         useBias = False
     ):
         super(BiCLSTM_AE, self).__init__()
-        self.__name__ = "BiCLSTM_AE_%d_%dx%d_L-%d_RL-%d_DisDeConv-%s|"%(image_size, most_common(filter_sizes), most_common(filter_sizes), len(filter_count), n_lstm_layers, "Y" if disableDeConvLSTM else "N")
+        self.__name__ = "BiCLSTM_AE_%d_%dx%d_L-%d_RL-%d_DisDeConv-%s-"%(image_size, most_common(filter_sizes), most_common(filter_sizes), len(filter_count), n_lstm_layers, "Y" if disableDeConvLSTM else "N")
         self.channels = channels
         self.image_size = image_size
         self.filter_count = filter_count

@@ -11,6 +11,8 @@ class ModelParser:
     def getModelCategory(model_name):
         if "|" in model_name:
             return os.path.split(model_name.split("|")[0])[-1]
+        elif "-" in model_name:
+            return os.path.split(model_name.split("-")[0])[-1]
         else:
             return os.path.split(model_name.split("_")[0])[-1]
         
@@ -93,7 +95,7 @@ class ModelParser:
     def getConfig(model_name):
         return OrderedDict([
             ("Model", ModelParser.getModelCategory(model_name)),
-            ("Model_Path", model_name[-20:]),
+            ("Model_Path", model_name[-40:]),
             ("Variant", ModelParser.getModelVariant(model_name)),
             ("Dataset", ModelParser.getDatasetType(model_name)),
             ("Image_Type", ModelParser.getImageType(model_name)),

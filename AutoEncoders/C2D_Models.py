@@ -314,7 +314,7 @@ class Generic_C2D_AE(nn.Module):
                  image_size = 224
                 ):
         super(Generic_C2D_AE, self).__init__()
-        self.__name__ = "C2D_AE_Generic_Generic|"
+        self.__name__ = "C2D_AE_Generic_Generic-"
         self.channels = channels
         
         encoder_layers = list()
@@ -360,7 +360,7 @@ class C2D_AE_128_3x3(nn.Module):
         conv_type = "conv2d"
     ):
         super(C2D_AE_128_3x3, self).__init__()
-        self.__name__ = "C2D_AE_128_3x3|"
+        self.__name__ = "C2D_AE_128_3x3-"
         self.channels = channels
         self.filters_count = filters_count
         self.embedding_dim = [1,self.filters_count[4],4,4]
@@ -397,7 +397,7 @@ class C2D_AE_128_5x5(nn.Module):
         conv_type = "conv2d"
     ):
         super(C2D_AE_128_5x5, self).__init__()
-        self.__name__ = "C2D_AE_128_5x5|"
+        self.__name__ = "C2D_AE_128_5x5-"
         self.channels = channels
         self.filters_count = filters_count
         self.embedding_dim = [1,self.filters_count[4],4,4]
@@ -433,7 +433,7 @@ class C2D_AE_128_3x3_VAE(C2D_AE_128_3x3):
         conv_type = "conv2d"
     ):
         C2D_AE_128_3x3.__init__(self, channels = channels, filters_count = filters_count, conv_type = conv_type)
-        self.__name__ = "C2D_AE_128_3x3_VAE|"
+        self.__name__ = "C2D_AE_128_3x3_VAE-"
         self.view_shape = tuple([-1] + self.embedding_dim[1:])
         self.embedding_dim = np.product(self.embedding_dim)
         self.isTrain = isTrain
@@ -479,7 +479,7 @@ class C2D_AE_128_5x5_VAE(C2D_AE_128_5x5):
         conv_type = "conv2d"
     ):
         C2D_AE_128_5x5.__init__(self, channels = channels, filters_count = filters_count, conv_type = conv_type)
-        self.__name__ = "C2D_AE_128_5x5_VAE|"
+        self.__name__ = "C2D_AE_128_5x5_VAE-"
         self.view_shape = tuple([-1] + self.embedding_dim[1:])
         self.embedding_dim = np.product(self.embedding_dim)
         self.isTrain = isTrain
@@ -524,7 +524,7 @@ class C2D_AE_128_3x3_Res(nn.Module):
         conv_type = "conv2d"
     ):
         super(C2D_AE_128_3x3_Res, self).__init__()
-        self.__name__ = "C2D_AE_128_3x3_RES|"
+        self.__name__ = "C2D_AE_128_3x3_RES-"
         self.channels = channels
         self.filters_count = filters_count
         
@@ -568,7 +568,7 @@ class C2D_AE_128_3x3_ACB(nn.Module):
         conv_type = "conv2d"
     ):
         super(C2D_AE_128_3x3_ACB, self).__init__()
-        self.__name__ = "C2D_AE_128_3x3_ACB|"
+        self.__name__ = "C2D_AE_128_3x3_ACB-"
         self.channels = channels
         self.filters_count = filters_count
         
@@ -604,7 +604,7 @@ class C2D_AE_128_5x5_ACB(nn.Module):
         conv_type = "conv2d"
     ):
         super(C2D_AE_128_5x5_ACB, self).__init__()
-        self.__name__ = "C2D_AE_128_5x5_ACB|"
+        self.__name__ = "C2D_AE_128_5x5_ACB-"
         self.channels = channels
         self.filters_count = filters_count[1:]
         
@@ -638,7 +638,7 @@ class C2D_AE_128_Multi_PC(nn.Module):
         conv_type = "conv2d"
     ):
         super(C2D_AE_128_Multi_PC, self).__init__()
-        self.__name__ = "C2D_AE_128_MULTI_PC|"
+        self.__name__ = "C2D_AE_128_MULTI_PC-"
         self.channels = channels
         self.filters_count = filters_count[2:]
         
@@ -703,7 +703,7 @@ class C2D_AE_Multi_3x3(nn.Module):
         self.image_size = image_size
         self.channels = channels
         self.filters_count = filters_count
-        self.__name__ = "C2D_AE_MULTI_3x3|"
+        self.__name__ = "C2D_AE_MULTI_3x3-"
         
         encoder_layers = list()
         new_image_size = self.image_size
@@ -756,7 +756,7 @@ class C2D_AE_Multi_3x3_VAE(C2D_AE_Multi_3x3):
         conv_type = "conv2d"
     ):
         C2D_AE_Multi_3x3.__init__(self, image_size = image_size, channels = channels, conv_type = conv_type)
-        self.__name__ = "C2D_AE_MULTI_3x3_VAE|"
+        self.__name__ = "C2D_AE_MULTI_3x3_VAE-"
         self.image_size = image_size
         self.embedding_dim = list(self.encoder(torch.rand(1, self.channels, self.image_size, self.image_size)).shape)
         self.view_shape = tuple([-1] + self.embedding_dim[1:])
@@ -803,7 +803,7 @@ class C2D_AE_128_3x3_DP(nn.Module):
         conv_type = "conv2d"
     ):
         super(C2D_AE_128_3x3_DP, self).__init__()
-        self.__name__ = "C2D_AE_128_3x3_DP|"
+        self.__name__ = "C2D_AE_128_3x3_DP-"
         self.channels = channels
         self.filters_count = filters_count
         self.embedding_dim = [1,self.filters_count[4],4,4]
@@ -845,7 +845,7 @@ class C2D_AE_128_3x3_AAC(nn.Module):
         filters_count = [64,64,64,64,128],
     ):
         super(C2D_AE_128_3x3_AAC, self).__init__()
-        self.__name__ = "C2D_AE_128_3x3_AAC|"
+        self.__name__ = "C2D_AE_128_3x3_AAC-"
         self.channels = channels
         self.filters_count = filters_count
         self.embedding_dim = [1,self.filters_count[4],4,4]
@@ -890,7 +890,7 @@ class C2D_AE_128_WIDE(nn.Module):
         filters_count = [48,48,96,96,128,128]
     ):
         super(C2D_AE_128_WIDE, self).__init__()
-        self.__name__ = "C2D_AE_128_WIDE|"
+        self.__name__ = "C2D_AE_128_WIDE-"
         self.channels = channels
         self.filters_count = filters_count
         self.embedding_dim = [1,self.filters_count[4],4,4]
@@ -957,7 +957,7 @@ class C2D_AE_128_3x3_SQZEX(nn.Module):
         conv_type = "conv2d"
     ):
         super(C2D_AE_128_3x3_SQZEX, self).__init__()
-        self.__name__ = "C2D_AE_128_3x3_SQZEX|"
+        self.__name__ = "C2D_AE_128_3x3_SQZEX-"
         self.channels = channels
         self.filters_count = filters_count
         self.embedding_dim = [1,self.filters_count[4],4,4]
@@ -1003,7 +1003,7 @@ class C2D_AE_128_3x3_DoubleHead(nn.Module):
         conv_type = "conv2d"
     ):
         super(C2D_AE_128_3x3_DoubleHead, self).__init__()
-        self.__name__ = "C2D_AE_128_3x3_DOUBLEHEAD|"
+        self.__name__ = "C2D_AE_128_3x3_DOUBLEHEAD-"
         self.image_channels = image_channels
         self.flow_channels = flow_channels
         self.filters_count = filters_count
@@ -1064,7 +1064,7 @@ class C2D_AE_128_3x3_ALW(nn.Module):
         lambda_ = 1e-3
     ):
         super(C2D_AE_128_3x3_ALW, self).__init__()
-        self.__name__ = "C2D_AE_128_3x3_ALW|"
+        self.__name__ = "C2D_AE_128_3x3_ALW-"
         self.channels = channels
         self.filters_count = filters_count
         self.embedding_dim = [1,self.filters_count[4],4,4]
@@ -1140,7 +1140,7 @@ class C2D_AE_128_3x3_OriginPush(nn.Module):
         conv_type = "conv2d"
     ):
         super(C2D_AE_128_3x3_OriginPush, self).__init__()
-        self.__name__ = "C2D_AE_128_3x3_ORIGINPUSH|"
+        self.__name__ = "C2D_AE_128_3x3_ORIGINPUSH-"
         self.channels = channels
         self.filters_count = filters_count
         self.embedding_dim = [1,self.filters_count[4],4,4]
@@ -1198,7 +1198,7 @@ class C2D_AE_224_5x5(nn.Module):
             self.__name__ += "_RES"
         if add_sqzex:
             self.__name__ += "_SQZEX"
-        self.__name__ += "|"
+        self.__name__ += "-"
         
         assert (add_res and add_sqzex) != True, "Either Squeeze Excitation Block or Residual Block. Not both"
         
@@ -1286,7 +1286,7 @@ class C2D_AE_224_5x5_VAE(C2D_AE_224_5x5):
         conv_type = "conv2d"
     ):
         C2D_AE_224_5x5.__init__(self, channels = channels, filters_count = filters_count, conv_type = conv_type)
-        self.__name__ = "C2D_AE_224_5x5_VAE|"
+        self.__name__ = "C2D_AE_224_5x5_VAE-"
         self.view_shape = tuple([-1] + self.embedding_dim[1:])
         self.embedding_dim = np.product(self.embedding_dim)
         self.isTrain = isTrain
@@ -1332,7 +1332,7 @@ class C2D_AE_224_5x5_ACB(nn.Module):
         encoder_activation = "tanh"
     ):
         super(C2D_AE_224_5x5_ACB, self).__init__()
-        self.__name__ = "C2D_AE_224_5x5_ACB|"
+        self.__name__ = "C2D_AE_224_5x5_ACB-"
         self.channels = channels
         self.filters_count = filters_count
         self.embedding_dim = [1, self.filters_count[4], 4, 4] # check and change
@@ -1398,7 +1398,7 @@ class C2D_AE_BEST(nn.Module):
         
         s = lambda x: "Y" if x else "N"
         self.__name__ += "_AAC_%s_ATTENTION_%s_SQZEX_%s_RES_%s_RP_%s_AttnLambda:%s"%(tuple(list(map(s, [use_aug_conv, use_input_attention, add_sqzex, add_res, add_dropouts])) + ["{:.0e}".format(self.attention_lambda)]))
-        self.__name__ += "|"
+        self.__name__ += "-"
 
         # Build encoder
         encoder_layers = list()
@@ -1537,7 +1537,7 @@ class C2D_AE_128_LC(nn.Module):
         conv_type = "conv2d"
     ):
         super(C2D_AE_128_LC, self).__init__()
-        self.__name__ = "C2D_AE_128_LayerConnected|"
+        self.__name__ = "C2D_AE_128_LayerConnected-"
         self.channels = channels
         self.filters_count = filters_count 
         self.embedding_dim = [1,self.filters_count[4],4,4]

@@ -28,7 +28,7 @@ class C3D_AE_Generic(nn.Module):
                  n_frames = 16,
                  debug = False):
         super(C3D_AE_Generic, self).__init__()
-        self.__name__ = "C3D_AE_Generic_Generic|"
+        self.__name__ = "C3D_AE_Generic_Generic-"
         self.channels = channels
         self.debug = debug
         
@@ -74,7 +74,7 @@ class C3D_AE_128_3x3(nn.Module):
         conv_type = "conv3d"
     ):
         super(C3D_AE_128_3x3, self).__init__()
-        self.__name__ = "C3D_AE_128_3x3|"
+        self.__name__ = "C3D_AE_128_3x3-"
         self.channels = channels
         self.filters_count = filters_count
         self.embedding_dim = [1, self.filters_count[4], 1, 4, 4]
@@ -111,7 +111,7 @@ class C3D_AE_128_3x3_Res(nn.Module):
         conv_type = "conv3d"
     ):
         super(C3D_AE_128_3x3_Res, self).__init__()
-        self.__name__ = "C3D_AE_128_3x3_RES|"
+        self.__name__ = "C3D_AE_128_3x3_RES-"
         self.channels = channels
         self.filters_count = filters_count
         
@@ -157,7 +157,7 @@ class C3D2D_AE_128_3x3(nn.Module):
         conv_type = "conv3d"
     ):
         super(C3D2D_AE_128_3x3, self).__init__()
-        self.__name__ = "C3D2D_AE_128_3x3|"
+        self.__name__ = "C3D2D_AE_128_3x3-"
         self.channels = channels
         self.filters_count = filters_count
         
@@ -198,7 +198,7 @@ class C3D_AE_Multi_3x3(nn.Module):
         conv_type = "conv3d"
     ):
         super(C3D_AE_Multi_3x3, self).__init__()
-        self.__name__ = "C3D_AE_MULTI_3x3|"
+        self.__name__ = "C3D_AE_MULTI_3x3-"
         self.channels = channels
         self.filters_count = filters_count
         
@@ -234,7 +234,7 @@ class C3D_AE_128_3x3_VAE(C3D_AE_128_3x3):
         conv_type = "conv3d"
     ):
         C3D_AE_128_3x3.__init__(self, channels = channels, filters_count = filters_count, conv_type = conv_type)
-        self.__name__ = "C3D_AE_128_3x3_VAE|"
+        self.__name__ = "C3D_AE_128_3x3_VAE-"
         self.view_shape = tuple([-1] + self.embedding_dim[1:])
         self.embedding_dim = np.product(self.embedding_dim)
         self.isTrain = isTrain
@@ -295,7 +295,7 @@ class C23D(nn.Module):
         filters_count = [64,64,96,96,128]
     ):
         super(C23D, self).__init__()
-        self.__name__  = "C23D_AE|"
+        self.__name__  = "C23D_AE-"
         self.channels = channels
         self.filters_count = filters_count
         

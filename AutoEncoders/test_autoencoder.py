@@ -170,15 +170,17 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
         debug = False,
         recordResults = True,
         setEval = True,
+        forceNormalTest = False,
         useGPU = True
     ):
         self.model = model
         self.dataset = dataset
         self.model_file = model_file
+        self.forceNormalTest = forceNormalTest
         
         self.isIAD = False
-        if "ham10000" in self.model_file.lower() or "distraction" in self.model_file.lower() or "mv_tec" in self.model_file.lower():
-            self.isIAD = True
+        if ("ham10000" in self.model_file.lower() or "distraction" in self.model_file.lower() or "mv_tec" in self.model_file.lower()):
+            if not self.forceNormalTest: self.isIAD = True
             regularity_type = "normalized_regularity"
             
         self.stackFrames = stackFrames
