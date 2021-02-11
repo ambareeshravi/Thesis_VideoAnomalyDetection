@@ -135,12 +135,13 @@ class ResultsRecorder:
                     
         results_dict = OrderedDict(sorted(results_dict.items()))
         
-        for cr_key in cr_keys:
+        for type_ in ["agg", "overall"]:
+            for cr_key in cr_keys:
+                for metric in metrics:
+                    insert("%s_%s_%s"%(cr_key, metric, type_), results[metric]["best"][type_]["classification_report"]["weighted avg"][cr_key])
+
             for metric in metrics:
-                insert("%s_%s"%(cr_key, metric), results[metric]["best"]["classification_report"]["weighted avg"][cr_key])
-                
-        for metric in metrics:
-            insert("conf_mat_%s"%(metric), ",".join(list(map(str, flatten_2darray(results[metric]["best"]["confusion_matrix"]).tolist()))))
+                insert("conf_mat_%s_%s"%(metric, type_), ",".join(list(map(str, flatten_2darray(results[metric]["best"][type_]["confusion_matrix"]).tolist()))))
             
         return results_dict
     

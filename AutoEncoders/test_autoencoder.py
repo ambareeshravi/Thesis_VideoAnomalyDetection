@@ -15,8 +15,7 @@ from pprint import pprint
 # Calculation of AUC PR
 def pr_auc(y_true, y_pred):
     try:
-        precision, recall, thresholds = precision_recall_curve(y_true, y_pred, pos_label = ABNORMAL_LABEL)
-        return auc(recall, precision)
+        return max(average_precision_score(y_true, y_pred, pos_label = NORMAL_LABEL), average_precision_score(y_true, y_pred, pos_label = ABNORMAL_LABEL))
     except:
         return 0.0
 
@@ -277,7 +276,7 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
                 "loss": list(),
                 "regularity": list(),
                 "auc_roc": list(),
-                "pr_roc": list(),
+                "pr_roc": list(), # AUC PR wrongly mentioned as PR ROC :P
                 "classification_report": {},
                 "confusion_matrix": {},
                 "eer": {},
@@ -385,10 +384,13 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
             video_level_params[metric]["confusion_matrix"]["overall"] = confusion_matrix(metric_flat_targets, np.round(metric_overall_regularity))
             
             # best metrics
-            video_level_params[metric]["best"]["threshold"] = thresholdJ(metric_flat_targets, metric_overall_regularity)
-            video_level_params[metric]["best"]["predictions"] = scores2labels(metric_overall_regularity, video_level_params[metric]["best"]["threshold"])
-            video_level_params[metric]["best"]["classification_report"] = classification_report(metric_flat_targets, video_level_params[metric]["best"]["predictions"], output_dict=True)
-            video_level_params[metric]["best"]["confusion_matrix"] = confusion_matrix(metric_flat_targets, video_level_params[metric]["best"]["predictions"])
+            for best_type, type_regularity in zip(["agg", "overall"], [metric_agg_regularity, metric_overall_regularity]):
+                video_level_params[metric]["best"][best_type] = {}
+                
+                video_level_params[metric]["best"][best_type]["threshold"] = thresholdJ(metric_flat_targets, type_regularity)
+                video_level_params[metric]["best"][best_type]["predictions"] = scores2labels(type_regularity, video_level_params[metric]["best"][best_type]["threshold"])
+                video_level_params[metric]["best"][best_type]["classification_report"] = classification_report(metric_flat_targets, video_level_params[metric]["best"][best_type]["predictions"], output_dict=True)
+                video_level_params[metric]["best"][best_type]["confusion_matrix"] = confusion_matrix(metric_flat_targets, video_level_params[metric]["best"][best_type]["predictions"])
             
     def save_display_results(self, video_level_params):
         # ------- SAVING and DISPLAYING RESUTLS -------- #
