@@ -92,7 +92,7 @@ class AE_PredictFunctions:
             self.predict = self.predict_stacked
         if "translat" in self.model_file.lower():
             self.predict = self.predict_translative
-        if "attention" in self.model_file.lower():
+        if "conv_attention" in self.model_file.lower() or "softmax_attention" in self.model_file.lower():
             self.predict = self.predict_attention
         if "c3d" in self.model_file.lower() or "lstm" in self.model_file.lower() or "rnn" in self.model_file.lower() or "gru" in self.model_file.lower():
             self.isVideo = True
@@ -168,14 +168,17 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
         },
         debug = False,
         recordResults = True,
+        printResults = True,
         setEval = True,
         forceNormalTest = False,
+        filename_addon = "",
         useGPU = True
     ):
         self.model = model
         self.dataset = dataset
         self.model_file = model_file
         self.forceNormalTest = forceNormalTest
+        self.printResults = printResults
         
         self.isIAD = False
         if ("ham10000" in self.model_file.lower() or "distraction" in self.model_file.lower() or "mv_tec" in self.model_file.lower()):
@@ -190,6 +193,7 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
         self.metric_names = ["absolute", "squared", "ssim", "psnr"]
         self.recordResults = recordResults
         self.setEval = setEval
+        self.filename_addon = filename_addon
         self.debug = debug
         
         self.device = torch.device("cpu")
@@ -206,10 +210,10 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
         AE_PredictFunctions.__init__(self)
         ReconstructionsMetrics.__init__(self)
         
-        self.save_as = ".pkl".join(self.model_file.split(".pth.tar"))
+        self.save_as = ("_%s.pkl"%(self.filename_addon)).join(self.model_file.split(".pth.tar"))
         self.save_path = os.path.split(self.save_as)[0]
         
-        self.cl = CustomLogger(join_paths([self.save_path, "test_logs"]))
+        self.cl = CustomLogger(join_paths([self.save_path, "test_logs_%s"%(self.filename_addon)]))
         
         if "normalize" in regularity_type.lower():
             self.regularity = normalized_regularity
@@ -398,7 +402,7 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
         processed_results_dict = ResultsRecorder.get_results_dict(video_level_params)
         self.cl.print(processed_results_dict)
         self.cl.print("="*30)
-        print(processed_results_dict)
+        if self.printResults: print(processed_results_dict)
         
         self.results = video_level_params
         if self.save_as:
@@ -531,7 +535,7 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
         
         self.video_level_params = video_level_params
         processed_results_dict = self.save_display_results(video_level_params)
-        if return_results: return processed_results_dict
+        if return_results: return self.results
         return True
     
     def test_IAD(self, return_results = False):
@@ -576,7 +580,7 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
         overall_results["mean_roc_auc_score"] = np.mean(overall_results["roc_auc_score"])
         self.results = overall_results
         
-        print("Per anomaly AUC-ROC scores: %s | Mean AUC-ROC Score: %s"%(overall_results["roc_auc_score"], overall_results["mean_roc_auc_score"]))
+        if self.printResults: print("Per anomaly AUC-ROC scores: %s | Mean AUC-ROC Score: %s"%(overall_results["roc_auc_score"], overall_results["mean_roc_auc_score"]))
         if self.save_as:
             with open(self.save_as, "wb") as f:
                 pkl.dump(self.results, f)

@@ -3,6 +3,7 @@ matplotlib.use('Agg')
 import os
 import shutil
 import numpy as np
+np.seterr(divide='ignore', invalid='ignore')
 import pandas as pd
 import pickle as pkl
 import json

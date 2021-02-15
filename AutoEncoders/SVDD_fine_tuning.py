@@ -21,8 +21,9 @@ class SVDD_FineTuner:
         model_path: str,
         dataset_type: str,
         lr = 5e-7,
-        batch_size = 256,
-        epochs = [2,5,10,20],
+        batch_size = 128,
+        epochs = [1,2,5,10,20],
+        filename_addon = "",
         dataset_kwargs = {
             "image_size": 128,
             "image_type": "normal",
@@ -31,25 +32,37 @@ class SVDD_FineTuner:
                 "stackFrames": 1,
                 "save_vis": False,
                 "n_seed": 8,
+                "recordResults": False,
+                "printResults": True,
+                "setEval": True,
+                "forceNormalTest": True,
+                "filename_addon": "SVDD",
                 "useGPU": True
             },
         testOriginal = False,
+        returnResults = False,
         useGPU = True
     ):
         self.model = model
         self.model_path = model_path
         self.dataset_type = dataset_type
+        self.returnResults = returnResults
+        self.filename_addon = "_%s_"%(filename_addon)
+        
+        self.results = dict()
         
         self.test_data, channels = select_dataset(dataset_type, isTrain = False, sample_stride = 1, asImages = True, **dataset_kwargs)
         self.tester = AutoEncoder_Tester(
                         model = self.model,
                         dataset = self.test_data,
                         model_file = self.model_path,
-                        save_vis = False,
+                        **tester_kwargs
                     )
 
         
-        if testOriginal: self.tester.test()
+        if testOriginal: 
+            original_results = self.tester.test(return_results = self.returnResults)
+            self.results[0] = original_results
 
         self.lr = lr
         self.batch_size = batch_size
@@ -96,11 +109,16 @@ class SVDD_FineTuner:
             self.fit(epochs, original_epochs = e)
             INFO("Training Completed. Testing the model now...")
             
-            self.tester.model = self.model
-            self.tester.model_file = ("_SVDD%d.pth.tar"%(e)).join(self.model_path.split(".pth.tar"))
-            self.tester.model.to(self.tester.device)
-            self.tester.model.eval()
-            self.tester.test()
+            try: del self.tester
+            except: pass
+            self.tester = AutoEncoder_Tester(
+                            model = self.model,
+                            dataset = self.test_data,
+                            model_file = ("_SVDD%d.pth.tar"%(e)).join(self.model_path.split(".pth.tar")),
+                            **tester_kwargs
+                    )
+            results = self.tester.test(return_results = self.returnResults)
+            if self.returnResults: self.results[e] = results
             print("="*40)
         
     def get_train_encodings(self):
@@ -108,7 +126,8 @@ class SVDD_FineTuner:
         self.model.eval()
         for image in tqdm(self.train_data.data):
             with torch.no_grad():
-                e = self.model.encoder(image.unsqueeze(dim = 0).to(self.device))
+                try: e = self.model.encoder(image.unsqueeze(dim = 0).to(self.device))
+                except: e = self.model.model.encoder(image.unsqueeze(dim = 0).to(self.device))
                 encodings.append(e.detach().flatten(start_dim = 1, end_dim = -1).cpu())
         encodings = torch.cat(encodings)
         return encodings
@@ -122,7 +141,8 @@ class SVDD_FineTuner:
             self.model.train()
             for batch_train_idx, batch_train_data in enumerate(self.train_loader):
                 train_images, train_labels = batch_train_data
-                train_encodings = self.model.encoder(train_images.to(self.device))
+                try: train_encodings = self.model.encoder(train_images.to(self.device))
+                except: train_encodings = self.model.model.encoder(train_images.to(self.device))
                 train_loss = self.svdd.train_step(train_encodings)
                 epoch_train_loss.append(train_loss.item())
 
@@ -130,7 +150,8 @@ class SVDD_FineTuner:
             for batch_val_idx, batch_val_data in enumerate(self.val_loader):
                 val_images, val_labels = batch_val_data
                 with torch.no_grad():
-                    val_encodings = self.model.encoder(val_images.to(self.device))
+                    try: val_encodings = self.model.encoder(val_images.to(self.device))
+                    except: val_encodings = self.model.model.encoder(val_images.to(self.device))
                     val_loss = self.svdd.val_step(val_encodings)
                     epoch_val_loss.append(val_loss.item())
             epoch_train_loss = np.mean(epoch_train_loss)
@@ -140,4 +161,4 @@ class SVDD_FineTuner:
             val_loss_list.append(epoch_val_loss)
             print("Epoch [%d/%d] | Train Loss: %0.6f | Val Loss: %0.6f | Time: (%d) s"%(epoch, epochs, epoch_train_loss, epoch_val_loss, (time()-epoch_st)))
         
-        save_model(self.model, ("_SVDD%d.pth.tar"%(original_epochs)).join(self.model_path.split(".pth.tar")))
+        save_model(self.model, ("_SVDD%s%d.pth.tar"%(self.filename_addon, original_epochs)).join(self.model_path.split(".pth.tar")))

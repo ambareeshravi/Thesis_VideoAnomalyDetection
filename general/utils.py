@@ -40,6 +40,7 @@ def join_paths(paths):
     return path
 
 def read_directory_contents(directory):
+    if "*" not in directory: directory = join_paths([directory, "*"])
     return sorted(glob(directory))
 
 def read_image(image_path, asGray = False):
