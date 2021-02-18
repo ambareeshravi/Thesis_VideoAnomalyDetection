@@ -244,7 +244,7 @@ class IR_DISTRACTION(ImagesHandler, Attributes):
                  frame_strides = [2,4,8,16],
                  sample_stride = 1,
                  getNormalized = False,
-                 useAllAbnormal = False,
+                 useAllAbnormal = True,
                  size = 100
                 ):
         self.__name__ = "IR_DISTRACTION"
@@ -325,7 +325,7 @@ class MV_TEC(ImagesHandler, Attributes):
                  frame_strides = [2,4,8,16],
                  sample_stride = 1,
                  getNormalized = False,
-                 useAllAbnormal = False,
+                 useAllAbnormal = True,
                  size = 100
                 ):
         self.__name__ = "MV_TEC"
