@@ -162,6 +162,37 @@ class SoftMaxConvAttentionWrapper2(nn.Module):
         model_returns = list(self.model(x_a))
         return tuple(model_returns + [x_a])
     
+class SoftMaxConvAttentionWrapper3(nn.Module):
+    def __init__(self, model, kernel_sizes = (3,5), projection = 64, channels = None):
+        super(SoftMaxConvAttentionWrapper3, self).__init__()
+        self.model = model
+        self.projection = projection
+        self.kernel_sizes = kernel_sizes
+        self.out_channels = self.model.channels
+        if channels != None: self.out_channels = channels
+        
+        self.attention_conv = nn.Sequential(
+            nn.Conv2d(self.model.channels, self.projection, self.kernel_sizes[0], 1, padding = self.kernel_sizes[0]//2),
+            nn.Conv2d(self.projection, self.out_channels, self.kernel_sizes[1], 1, padding = self.kernel_sizes[1]//2),
+            nn.BatchNorm2d(self.out_channels),
+#             nn.Sigmoid()
+        )
+        self.__name__ = self.model.__name__ + "_SOFTMAX_ATTENTION_3_P%s_C%s"%(self.projection, self.out_channels)
+        
+    def attention_forward(self, x):
+        attention_activations = self.attention_conv(x)
+        v = torch.mean(attention_activations, keepdim = True, axis = -2)
+        h = torch.mean(attention_activations, keepdim = True, axis = -1)
+        vs = F.softmax(v, dim = -1)
+        hs = F.softmax(h, dim = -2)
+        x_a = torch.matmul(hs, vs)
+        return torch.multiply(x, x_a)
+           
+    def forward(self, x):
+        x_a = self.attention_forward(x)
+        model_returns = list(self.model(x_a))
+        return tuple(model_returns + [x_a])
+    
 class RNN_ConvAttentionWrapper(nn.Module):
     '''
     Converts inputs to B,T,C,W,H for processing and returns original shape
