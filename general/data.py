@@ -166,6 +166,7 @@ class HAM10000(ImagesHandler, Attributes):
                  useAllAbnormal = True,
                  size = 100
                 ):
+        useAllAbnormal = True
         self.__name__ = "HAM10000"
         self.isTrain = isTrain
         self.asImages = True
@@ -247,6 +248,7 @@ class IR_DISTRACTION(ImagesHandler, Attributes):
                  useAllAbnormal = True,
                  size = 100
                 ):
+        useAllAbnormal = True
         self.__name__ = "IR_DISTRACTION"
         self.isTrain = isTrain
         self.asImages = True
@@ -328,6 +330,7 @@ class MV_TEC(ImagesHandler, Attributes):
                  useAllAbnormal = True,
                  size = 100
                 ):
+        useAllAbnormal = True
         self.__name__ = "MV_TEC"
         self.isTrain = isTrain
         self.asImages = True
