@@ -193,9 +193,9 @@ class SoftMaxConvAttentionWrapper3(nn.Module):
         model_returns = list(self.model(x_a))
         return tuple(model_returns + [x_a])
 
-class SoftMaxConvAttentionWrapper(nn.Module):
+class SoftMaxConvAttentionWrapper4(nn.Module):
     def __init__(self, model, kernel_sizes = (3,5), projection = 64, channels = None):
-        super(SoftMaxConvAttentionWrapper, self).__init__()
+        super(SoftMaxConvAttentionWrapper4, self).__init__()
         self.model = model
         self.projection = projection
         self.kernel_sizes = kernel_sizes
@@ -208,7 +208,7 @@ class SoftMaxConvAttentionWrapper(nn.Module):
             nn.BatchNorm2d(self.out_channels),
 #             nn.Sigmoid()
         )
-        self.__name__ = self.model.__name__ + "_SOFTMAX_ATTENTION_P%s_C%s"%(self.projection, self.out_channels)
+        self.__name__ = self.model.__name__ + "_SOFTMAX_ATTENTION4_P%s_C%s"%(self.projection, self.out_channels)
         
     def normalize(self, x):
         return ((x - x.min())/(x.max() - x.min()))
