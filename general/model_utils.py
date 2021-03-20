@@ -293,20 +293,10 @@ class TimeDistributed(nn.Module):
             outputs += [self.module(x[:,i,...])]
         return torch.stack(outputs).transpose(0,1)
     
-class SE_Block(nn.Module):
-    "credits: https://github.com/moskomule/senet.pytorch/blob/master/senet/se_module.py#L4"
-    def __init__(self, c, r=16):
-        super(SE_Block, self).__init__()
-        self.squeeze = nn.AdaptiveAvgPool2d(1)
-        self.excitation = nn.Sequential(
-            nn.Linear(c, c // r, bias=False),
-            nn.ReLU(inplace=True),
-            nn.Linear(c // r, c, bias=False),
-            nn.Sigmoid()
-        )
-
-    def forward(self, x):
-        bs, c, _, _ = x.shape
-        y = self.squeeze(x).view(bs, c)
-        y = self.excitation(y).view(bs, c, 1, 1)
-        return x * y.expand_as(x)
+def moving_average_1d(window = 11):
+    mean_conv = nn.Conv1d(in_channels=1, out_channels=1, kernel_size=window, padding = window//2)
+    kernel_weights = np.array([1.0]*window)/window
+    mean_conv.weight.data = torch.FloatTensor(kernel_weights).view(1, 1, -1)
+    for p in mean_conv.parameters():
+        p.requires_grad = False
+    return mean_conv    

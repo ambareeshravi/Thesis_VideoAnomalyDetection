@@ -166,7 +166,7 @@ class HAM10000(ImagesHandler, Attributes):
                  useAllAbnormal = True,
                  size = 100
                 ):
-        useAllAbnormal = True
+        # useAllAbnormal = True
         self.__name__ = "HAM10000"
         self.isTrain = isTrain
         self.asImages = True
@@ -217,7 +217,7 @@ class HAM10000(ImagesHandler, Attributes):
             self.normal_files = files_in_dir
             normal_data = self.read_frames(files_in_dir)
             normal_labels = [NORMAL_LABEL] * len(normal_data)
-            
+            self.test_set = {"normal": normal_data}
             
             self.abnormal_files = dict()
             for abnormal_dir in read_directory_contents(join_paths([self.abnormal_test_directory, "*"])):
@@ -230,6 +230,7 @@ class HAM10000(ImagesHandler, Attributes):
                 
                 abnormal_data = self.read_frames(files_in_dir)
                 abnormal_labels = [ABNORMAL_LABEL] * len(abnormal_data)
+                self.test_set[abnormal_type] = abnormal_data
                 
                 self.data.append(normal_data + abnormal_data)
                 self.labels.append(normal_labels + abnormal_labels)
@@ -248,7 +249,7 @@ class IR_DISTRACTION(ImagesHandler, Attributes):
                  useAllAbnormal = True,
                  size = 100
                 ):
-        useAllAbnormal = True
+        # useAllAbnormal = True
         self.__name__ = "IR_DISTRACTION"
         self.isTrain = isTrain
         self.asImages = True
@@ -299,7 +300,7 @@ class IR_DISTRACTION(ImagesHandler, Attributes):
             self.normal_files = files_in_dir
             normal_data = self.read_frames(files_in_dir)
             normal_labels = [NORMAL_LABEL] * len(normal_data)
-            
+            self.test_set = {"normal": normal_data}
             
             self.abnormal_files = dict()
             for abnormal_dir in read_directory_contents(join_paths([self.abnormal_test_directory, "*"])):
@@ -312,6 +313,7 @@ class IR_DISTRACTION(ImagesHandler, Attributes):
                 
                 abnormal_data = self.read_frames(files_in_dir)
                 abnormal_labels = [ABNORMAL_LABEL] * len(abnormal_data)
+                self.test_set[abnormal_type] = abnormal_data
                 
                 self.data.append(normal_data + abnormal_data)
                 self.labels.append(normal_labels + abnormal_labels)
@@ -330,7 +332,7 @@ class MV_TEC(ImagesHandler, Attributes):
                  useAllAbnormal = True,
                  size = 100
                 ):
-        useAllAbnormal = True
+        # useAllAbnormal = True
         self.__name__ = "MV_TEC"
         self.isTrain = isTrain
         self.asImages = True

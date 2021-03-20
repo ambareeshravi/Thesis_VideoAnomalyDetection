@@ -334,3 +334,6 @@ class CustomLogger:
     
     def __del__(self):
         self.f.close()
+        
+def scale(x, t_min = 1e-1, t_max = 1):
+    return (((x - x.min())/(x.max()-x.min())) * (t_max - t_min)) + t_min

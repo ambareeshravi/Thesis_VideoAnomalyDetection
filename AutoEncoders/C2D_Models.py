@@ -1,368 +1,4 @@
-import sys
-sys.path.append("..")
-
-from general import *
-from general.all_imports import *
-from general.model_utils import *
-from general.losses import max_norm
-
-from attention_conv import AugmentedConv
-
-# Attention Modules
-
-class LinearAttentionLayer(nn.Module):
-    '''
-    ut = tanh(W ht + b)
-    alpha = softmax(v.T ut)
-    
-    s = sum(t = 1 -> M) alpha_t h_t
-    '''
-    def __init__(
-        self,
-        inp_dim
-    ):
-        super(LinearAttentionLayer, self).__init__()
-        self.inp_dim = inp_dim
-        self.Wb = nn.Linear(self.inp_dim, self.inp_dim)
-        self.v = torch.autograd.Variable(torch.rand(self.inp_dim, 1), requires_grad = True)
-        self.tanh = nn.Tanh()
-        self.softmax = nn.Softmax(dim = 1)
-        
-    def forward(self, x):
-        Wx = self.Wb(x)
-        v_t_repeat = (self.v.T.to(self.Wb.weight.device)).repeat(Wx.shape[0], 1)
-        u_t = torch.multiply(v_t_repeat, self.tanh(Wx))
-        alpha = self.softmax(u_t)
-        return torch.multiply(x, alpha)
-
-class AttentionWrapper(nn.Module):
-    def __init__(self, image_size, model, projection_ratio = 4):
-        super(AttentionWrapper, self).__init__()
-        self.image_size = image_size # w,h
-        self.model = model
-        self.projection_dim = (self.image_size[0] * projection_ratio, self.image_size[1] * projection_ratio)
-        self.__name__ = self.model.__name__ + "_ATTENTION"
-        
-        self.W_v = nn.Parameter(torch.randn((self.image_size[1], self.projection_dim[1]), requires_grad=True))
-        self.W_h = nn.Parameter(torch.randn((self.projection_dim[0], self.image_size[0]), requires_grad=True))
-        self.attention_activation = nn.Sigmoid()
-    
-    def attention_forward(self, x):
-        x_a = torch.matmul(torch.matmul(x, self.W_v), torch.matmul(self.W_h, x))
-        return self.attention_activation(torch.multiply(x, x_a))
-    
-    def attention_loss(self, x):
-        return torch.sum(x**2)
-        
-    def forward(self, x):
-        x_a = self.attention_forward(x)
-        encodings = self.model.encoder(x_a)
-        reconstructions = self.model.decoder(encodings)
-        return reconstructions, encodings, x_a
-
-class ConvAttentionWapper(nn.Module):
-    def __init__(self, model, kernel_sizes = (3,5), projection = 64, channels = None, lambda_ = 1e-6, max_norm_clip = 1):
-        super(ConvAttentionWapper, self).__init__()
-        self.model = model
-        self.projection = projection
-        self.kernel_sizes = kernel_sizes
-        self.lambda_ = lambda_
-        self.max_norm_clip = max_norm_clip
-        self.out_channels = self.model.channels
-        if channels != None: self.out_channels = channels
-        
-        self.attention_conv = nn.Sequential(
-            nn.Conv2d(self.model.channels, self.projection, self.kernel_sizes[0], 1, padding = self.kernel_sizes[0]//2),
-            nn.Conv2d(self.projection, self.out_channels, self.kernel_sizes[1], 1, padding = self.kernel_sizes[1]//2),
-        )
-        self.__name__ = self.model.__name__ + "_CONV_ATTENTION_P%s_L%s_C%s"%(self.projection, self.lambda_, self.out_channels)
-        self.act_block = nn.Sequential(
-            nn.BatchNorm2d(self.model.channels),
-            nn.Sigmoid()
-        )
-    
-    def attention_forward(self, x):
-#         x_a = self.attention_conv(x)
-#         return self.act_block(x_a)
-        x_a = self.attention_conv(x)
-        return self.act_block(torch.multiply(x, x_a))
-    
-    def attention_loss(self, w):
-        return self.lambda_ * torch.sqrt(torch.sum(w**2))
-#         return torch.sum(max_norm(self.attention_conv[0].weight.data, self.max_norm_clip)) + torch.sum(max_norm(self.attention_conv[1].weight.data, self.max_norm_clip))
-        
-    def forward(self, x):
-        x_a = self.attention_forward(x)
-        model_returns = list(self.model(x_a))
-#         encodings = self.model.encoder(x_a)
-#         reconstructions = self.model.decoder(encodings)
-        return tuple(model_returns + [x_a])
-
-class SoftMaxConvAttentionWrapper(nn.Module):
-    def __init__(self, model, kernel_sizes = (3,5), projection = 64, channels = None):
-        super(SoftMaxConvAttentionWrapper, self).__init__()
-        self.model = model
-        self.projection = projection
-        self.kernel_sizes = kernel_sizes
-        self.out_channels = self.model.channels
-        if channels != None: self.out_channels = channels
-        
-        self.attention_conv = nn.Sequential(
-            nn.Conv2d(self.model.channels, self.projection, self.kernel_sizes[0], 1, padding = self.kernel_sizes[0]//2),
-            nn.Conv2d(self.projection, self.out_channels, self.kernel_sizes[1], 1, padding = self.kernel_sizes[1]//2),
-            nn.BatchNorm2d(self.out_channels),
-#             nn.Sigmoid()
-        )
-        self.__name__ = self.model.__name__ + "_SOFTMAX_ATTENTION_P%s_C%s"%(self.projection, self.out_channels)
-        
-    def attention_forward(self, x):
-        attention_activations = self.attention_conv(x)
-        v = torch.sum(attention_activations, keepdim = True, axis = -2)
-        h = torch.sum(attention_activations, keepdim = True, axis = -1)
-        vs = F.softmax(v, dim = -1)
-        hs = F.softmax(h, dim = -2)
-        x_a = torch.matmul(hs, vs)
-        return torch.multiply(x, x_a)
-           
-    def forward(self, x):
-        x_a = self.attention_forward(x)
-        model_returns = list(self.model(x_a))
-        return tuple(model_returns + [x_a])
-    
-class SoftMaxConvAttentionWrapper2(nn.Module):
-    def __init__(self, model, kernel_sizes = (3,5), projection = 64, channels = None):
-        super(SoftMaxConvAttentionWrapper2, self).__init__()
-        self.model = model
-        self.projection = projection
-        self.kernel_sizes = kernel_sizes
-        self.out_channels = self.model.channels
-        if channels != None: self.out_channels = channels
-        
-        self.attention_conv = nn.Sequential(
-            nn.Conv2d(self.model.channels, self.projection, self.kernel_sizes[0], 1, padding = self.kernel_sizes[0]//2),
-            nn.Conv2d(self.projection, self.out_channels, self.kernel_sizes[1], 1, padding = self.kernel_sizes[1]//2),
-            nn.BatchNorm2d(self.out_channels),
-            nn.Sigmoid()
-        )
-        self.__name__ = self.model.__name__ + "_SOFTMAX_ATTENTION_2_P%s_C%s"%(self.projection, self.out_channels)
-        self.max_pool = nn.MaxPool2d((5,5), 1, padding = 2)
-    
-    def attention_forward(self, x):
-        attention_activations = self.attention_conv(x)
-        v = torch.sum(attention_activations, keepdim = True, axis = -2)
-        h = torch.sum(attention_activations, keepdim = True, axis = -1)
-        vs = F.softmax(v, dim = -1)
-        hs = F.softmax(h, dim = -2)
-        x_a = torch.matmul(hs, vs)
-        x_a = (x_a - x_a.min()) / (x_a.max() - x_a.min())
-        return torch.multiply(x, self.max_pool(x_a))
-           
-    def forward(self, x):
-        x_a = self.attention_forward(x)
-        model_returns = list(self.model(x_a))
-        return tuple(model_returns + [x_a])
-    
-class SoftMaxConvAttentionWrapper3(nn.Module):
-    def __init__(self, model, kernel_sizes = (3,5), projection = 64, channels = None):
-        super(SoftMaxConvAttentionWrapper3, self).__init__()
-        self.model = model
-        self.projection = projection
-        self.kernel_sizes = kernel_sizes
-        self.out_channels = self.model.channels
-        if channels != None: self.out_channels = channels
-        
-        self.attention_conv = nn.Sequential(
-            nn.Conv2d(self.model.channels, self.projection, self.kernel_sizes[0], 1, padding = self.kernel_sizes[0]//2),
-            nn.Conv2d(self.projection, self.out_channels, self.kernel_sizes[1], 1, padding = self.kernel_sizes[1]//2),
-            nn.BatchNorm2d(self.out_channels),
-#             nn.Sigmoid()
-        )
-        self.__name__ = self.model.__name__ + "_SOFTMAX_ATTENTION_3_P%s_C%s"%(self.projection, self.out_channels)
-        
-    def attention_forward(self, x):
-        attention_activations = self.attention_conv(x)
-        v = torch.mean(attention_activations, keepdim = True, axis = -2)
-        h = torch.mean(attention_activations, keepdim = True, axis = -1)
-        vs = F.softmax(v, dim = -1)
-        hs = F.softmax(h, dim = -2)
-        x_a = torch.matmul(hs, vs)
-        return torch.multiply(x, x_a)
-           
-    def forward(self, x):
-        x_a = self.attention_forward(x)
-        model_returns = list(self.model(x_a))
-        return tuple(model_returns + [x_a])
-
-class SoftMaxConvAttentionWrapper4(nn.Module):
-    def __init__(self, model, kernel_sizes = (3,5), projection = 64, channels = None):
-        super(SoftMaxConvAttentionWrapper4, self).__init__()
-        self.model = model
-        self.projection = projection
-        self.kernel_sizes = kernel_sizes
-        self.out_channels = self.model.channels
-        if channels != None: self.out_channels = channels
-        
-        self.attention_conv = nn.Sequential(
-            nn.Conv2d(self.model.channels, self.projection, self.kernel_sizes[0], 1, padding = self.kernel_sizes[0]//2),
-            nn.Conv2d(self.projection, self.out_channels, self.kernel_sizes[1], 1, padding = self.kernel_sizes[1]//2),
-            nn.BatchNorm2d(self.out_channels),
-#             nn.Sigmoid()
-        )
-        self.__name__ = self.model.__name__ + "_SOFTMAX_ATTENTION4_P%s_C%s"%(self.projection, self.out_channels)
-        
-    def normalize(self, x):
-        return ((x - x.min())/(x.max() - x.min()))
-    
-    def attention_forward(self, x):
-        attention_activations = self.attention_conv(x)
-        v = torch.sum(attention_activations, keepdim = True, axis = -2)
-        h = torch.sum(attention_activations, keepdim = True, axis = -1)
-        vs = F.softmax(v, dim = -1)
-        hs = F.softmax(h, dim = -2)
-        # Normalization to improve visualization
-        vs = self.normalize(vs)
-        hs = self.normalize(hs)
-        x_a = torch.matmul(hs, vs)
-        self.xam = x_a
-        return torch.multiply(x, x_a)
-           
-    def forward(self, x, returnMask = False):
-        x_a = self.attention_forward(x)
-        model_returns = list(self.model(x_a))
-        if returnMask: tuple(model_returns + [x_a, self.xam])
-        return tuple(model_returns + [x_a])
-    
-class RNN_ConvAttentionWrapper(nn.Module):
-    '''
-    Converts inputs to B,T,C,W,H for processing and returns original shape
-    '''
-    def __init__(self, model, kernel_sizes = (3,5), projection = 64, out_channels = None, lambda_ = 1e-6, max_norm_clip = 1):
-        super(RNN_ConvAttentionWrapper, self).__init__()
-        self.model = model
-        self.projection = projection
-        self.kernel_sizes = kernel_sizes
-        self.lambda_ = lambda_
-        self.max_norm_clip = max_norm_clip
-        self.out_channels = self.model.channels
-        if out_channels != None: self.out_channels = out_channels
-        
-        self.attention_conv = nn.Sequential(
-            nn.Conv2d(self.model.channels, self.projection, self.kernel_sizes[0], 1, padding = self.kernel_sizes[0]//2),
-            nn.Conv2d(self.projection, self.out_channels, self.kernel_sizes[1], 1, padding = self.kernel_sizes[1]//2),
-        )
-        self.__name__ = self.model.__name__ + "_RNN_CONV_ATTENTION_P%s_L%s_C%s"%(self.projection, self.lambda_, self.out_channels)
-        self.rnn_attention_conv = TimeDistributed(self.attention_conv)
-        self.act_block = nn.Sequential(
-            nn.BatchNorm2d(self.model.channels),
-            nn.Sigmoid()
-        )
-        self.rnn_act_block = TimeDistributed(self.act_block)
-    
-    def attention_forward(self, x):
-        # x -> bs,ts,c,w,h
-        x_a = self.rnn_attention_conv(x)
-        # x_a -> bs,ts,c,w,h
-        return self.rnn_act_block(torch.multiply(x, x_a)) # output -> bs,tc,c,w,h
-    
-    def attention_loss(self, w):
-        return self.lambda_ * torch.sqrt(torch.sum(w**2))
-        
-    def forward(self, x):
-        # original x -> bs,c,ts,w,h
-        x_a = self.attention_forward(x.permute(0,2,1,3,4))
-        x_a = x_a.permute(0,2,1,3,4) # bs,c,ts,w,h
-        model_returns = list(self.model(x_a))
-        return tuple(model_returns + [x_a])
-
-ConvAttentionWrapper = ConvAttentionWapper
-
-class ConvAttentionLayerWrapper(nn.Module):
-    def __init__(
-        self,
-        module,
-        in_channels:int,
-        out_channels:int,
-        compression:int = 16,
-        kernel_sizes:tuple = (3,5),
-        stride:int = 1,
-        padding = 0,
-        lambda_:float = 1e-4
-    ):
-        super(ConvAttentionLayerWrapper, self).__init__()
-        self.__name__ = "ConvAttentionLayerWrapper"
-        self.module = module
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.compression = compression
-        self.stride = stride
-        self.padding = padding
-        self.kernel_sizes = kernel_sizes
-        self.lambda_ = lambda_
-        
-        out_padding = (self.kernel_sizes[1]-1)//2 
-        if self.kernel_sizes[1] % 2 == 0: out_padding -= 1
-        
-        self.attention_conv = nn.Sequential(
-#             nn.Conv2d(self.in_channels, self.out_channels, self.kernel_sizes[0], stride, padding = self.padding),
-            nn.Conv2d(self.in_channels, self.out_channels//self.compression, self.kernel_sizes[0], stride, padding = self.padding),
-            nn.Conv2d(self.out_channels//self.compression, self.out_channels, self.kernel_sizes[1], 1, padding = out_padding),
-        )
-        self.act_block = nn.Sequential(
-            nn.BatchNorm2d(self.out_channels),
-            nn.Sigmoid()
-        )
-        
-    def attention_loss(self):
-        return self.lambda_ * torch.stack([torch.norm(layer.weight.data) for layer in self.attention_conv]).sum()
-    
-    def forward(self, x):
-        module_output = self.module(x)
-        attention_output = self.attention_conv(x)
-        return self.act_block(torch.multiply(module_output, attention_output))
-
-class ConvTransposeAttentionLayerWrapper(nn.Module):
-    def __init__(
-        self,
-        module,
-        in_channels:int,
-        out_channels:int,
-        compression:int = 16,
-        kernel_sizes:tuple = (3,5),
-        stride:int = 1,
-        padding = 0,
-        lambda_:float = 1e-6
-    ):
-        super(ConvTransposeAttentionLayerWrapper, self).__init__()
-        self.__name__ = "ConvTransposeAttentionLayerWrapper"
-        self.module = module
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.compression = compression
-        self.stride = stride
-        self.padding = padding
-        self.kernel_sizes = kernel_sizes
-        self.lambda_ = lambda_
-        
-        out_padding = (self.kernel_sizes[1]-1)//2 
-        if self.kernel_sizes[-1] % 2 == 0: out_padding -= 1
-            
-        self.attention_conv = nn.Sequential(
-#             nn.ConvTranspose2d(self.in_channels, self.out_channels, self.kernel_sizes[0], stride, padding = self.padding),
-            nn.ConvTranspose2d(self.in_channels, self.out_channels//self.compression, self.kernel_sizes[0], stride, padding = self.padding),
-            nn.ConvTranspose2d(self.out_channels//self.compression, self.out_channels, self.kernel_sizes[1], 1, padding = out_padding),
-        )
-        self.act_block = nn.Sequential(
-            nn.BatchNorm2d(self.out_channels),
-            nn.Sigmoid()
-        )
-        
-    def attention_loss(self):
-        return self.lambda_ * torch.stack([torch.norm(layer.weight.data) for layer in self.attention_conv]).sum()
-    
-    def forward(self, x):
-        module_output = self.module(x)
-        attention_output = self.attention_conv(x)
-        return self.act_block(torch.multiply(module_output, attention_output))
+from attention_conv import *
 
 # Models
 class Generic_C2D_AE(nn.Module):
@@ -1428,122 +1064,146 @@ class C2D_AE_224_5x5_ACB(nn.Module):
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
         
-class C2D_AE_BEST(nn.Module):
+class C2D_AE_COMBO(nn.Module):
     def __init__(
         self,
         image_size = 128,
         channels = 3,
-        filters_count = [64,64,96,96,128,128],
-        encoder_activation = "tanh",
-        conv_type = "conv2d",
         
-        kernel_size = 3,
-        stride = 2,
+        filter_sizes = [3] * 5,
+        filter_strides = [2] * 5,
+        filter_count = [64,64,64,96,96],
+        conv_layers = ["conv2d"] * 5,
+        convt_layers = ["conv2d_transpose"] * 5,
+        acb_layers = [False] * 5,
+        res_layers = [False] * 5,
+        sqzex_layers = [True] * 5,
+        dropouts = [0.10, 0.20, 0.20, 0.20, 0.10],
+        
+        encoder_activation = "relu",
+        decoder_activation = "leaky_relu",
+        encoding_activation = "tanh",
+        reconstruction_activation = "sigmoid",
         stop_size = None,
-        final_kernel_size = None,
-        
-        use_aug_conv = False,
-        use_input_attention = True,
-        add_sqzex = True,
-        add_dropouts = True,
-        add_res = False,
-        
-        dropout_rate = 0.2,
-        attention_lambda = 1e-6
+        extra_id = "",
+        useInputAttention = False,
+        useAAC_first = False,
+        isDecoderReplica = True,
+        addEndConv = True
     ):
-        super(C2D_AE_BEST, self).__init__()
-        self.__name__ = "C2D_AE_%d_%dx%d_COMBO"%(image_size, kernel_size, kernel_size)
+        super(C2D_AE_COMBO, self).__init__()
+        self.__name__ = "C2D_AE_%d_%dx%d_COMBO_%s"%(image_size, filter_sizes[0], filter_sizes[0], extra_id)
         self.image_size = image_size
         self.channels = channels
-        self.filters_count = filters_count
-        self.attention_lambda = attention_lambda
         
-        if final_kernel_size == None:
-            if kernel_size%2!=0: final_kernel_size = kernel_size + 1
-            else: final_kernel_size = kernel_size
-        if stop_size == None: stop_size = (kernel_size * 3) - (kernel_size // 2)
-        print(final_kernel_size, stop_size)
+        self.filter_sizes = filter_sizes
+        self.filter_strides = filter_strides
+        self.filter_count = filter_count
+        self.conv_layers = conv_layers
+        self.convt_layers = convt_layers
+        self.acb_layers = acb_layers
+        self.res_layers = res_layers
+        self.sqzex_layers = sqzex_layers
+        self.dropouts = dropouts
+        
+        self.encoder_activation = encoder_activation
+        self.decoder_activation = decoder_activation
+        self.encoding_activation = encoding_activation
+        self.stop_size = stop_size
+        self.useInputAttention = useInputAttention
+        self.useAAC_first = useAAC_first
+        self.isDecoderReplica = isDecoderReplica
+        self.addEndConv = addEndConv
+        
+        self.image_sizes = [self.image_size]
+        
+        if self.stop_size == None: self.stop_size = (self.filter_sizes[0] * 3) - (self.filter_sizes[0] // 2)
+        
+        encoder_layers, decoder_layers = list(), list()
+        
+        # Build Encoder
+        i_c = channels
+        i_size = self.image_size
+        endLoop = False
+        active_layer = 0
+        for idx, (k, s, o_c, c_layer, isACB, isRes, isSqzex, dp, ) in enumerate(zip(
+            self.filter_sizes,
+            self.filter_strides,
+            self.filter_count,
+            self.conv_layers,
+            self.acb_layers,
+            self.res_layers,
+            self.sqzex_layers,
+            self.dropouts,
+        )):
+            if endLoop: break
+            active_layer = idx
+            endLoop = (i_size <= self.stop_size) or (idx + 1) >= len(filter_count)
+            if endLoop and ~(k%2):
+                k += 1
+                s = 1
+            i_size = getConvOutputShape(i_size, k, s)
+            self.image_sizes.append([i_size,k,s])
             
-        assert (use_input_attention and use_aug_conv) != True, "Either Input Self attention Block or Attention Augmented Conv layer. Not both"
-        
-        s = lambda x: "Y" if x else "N"
-        self.__name__ += "_AAC_%s_ATTENTION_%s_SQZEX_%s_RES_%s_RP_%s_AttnLambda:%s"%(tuple(list(map(s, [use_aug_conv, use_input_attention, add_sqzex, add_res, add_dropouts])) + ["{:.0e}".format(self.attention_lambda)]))
-        self.__name__ += "-"
+            layer = None
+            if ~idx:
+                if self.useAAC_first and not self.useInputAttention:
+                    layer = get_AAC_BNA(in_channels = i_c, out_channels = o_c, kernel_size = k, stride = s, padding = 0, conv_type = c_layer, activation_type=self.encoder_activation)
+                    
+            if layer == None:
+                layer_variant = C2D_ACB if isACB else C2D_BN_A
+                layer = layer_variant(in_channels = i_c, out_channels = o_c, kernel_size = k, stride = s, padding = 0, activation_type = self.encoder_activation, conv_type = c_layer)
+                if (idx<1) and not self.useAAC_first and self.useInputAttention:
+                    layer.channels = i_c
+                    layer.__name__ = "ip_cov"
+                    layer = SoftMaxConvAttentionWrapper5(layer, layerWrapper=True)
+            encoder_layers.append(layer)
+            if isRes: encoder_layers.append(C2D_Res(channels = o_c, kernel_size = k, activation_type = self.encoder_activation, conv_type = c_layer))
+            if isSqzex: encoder_layers.append(SE_Block(o_c))
+            if dp: encoder_layers.append(nn.Dropout2d(dp))
 
-        # Build encoder
-        encoder_layers = list()
-        new_image_size = self.image_size
-        new_in_channels = self.channels
-        idx = 0
-        
-        while new_image_size > stop_size:
-            if idx == 0:
-                if use_aug_conv:
-                    input_layer = C2D_AE_224.get_AAC(self, new_in_channels, self.filters_count[idx], kernel_size, stride)
-                elif use_input_attention:
-                    input_layer = ConvAttentionLayerWrapper(
-                        C2D_BN_A(new_in_channels, self.filters_count[idx], kernel_size, stride),
-                        in_channels=new_in_channels,
-                        out_channels=self.filters_count[idx],
-                        stride = 2
-                    )
-                    self.attention_layer = input_layer
-                else:
-                    input_layer = C2D_BN_A(new_in_channels, self.filters_count[idx], kernel_size, stride)
-                encoder_layers.append(input_layer)
+            i_c = o_c
                 
-            else:
-                encoder_layers.append(
-                    C2D_BN_A(new_in_channels, self.filters_count[idx], kernel_size, stride)
-                )
-            
-            if add_sqzex: encoder_layers.append(SE_Block(self.filters_count[idx]))
-            if add_res: encoder_layers.append(C2D_Res(self.filters_count[idx], kernel_size))
-            if add_dropouts: encoder_layers.append(nn.Dropout2d(dropout_rate))
-            
-            new_image_size = getConvOutputShape(new_image_size, kernel_size, stride)
-            new_in_channels = self.filters_count[idx]
-            idx += 1
-            
-        encoder_layers.append(
-            C2D_BN_A(new_in_channels, self.filters_count[idx], kernel_size, 1, activation_type=encoder_activation)
-        )
-        new_in_channels = self.filters_count[idx]
-        new_image_size = getConvOutputShape(new_image_size, kernel_size, 1)
-        self.encoder = nn.Sequential(*encoder_layers)
-        
         # Build decoder
-        decoder_layers = list()
-        decoder_layers.append(
-            CT2D_BN_A(new_in_channels, self.filters_count[idx-1], kernel_size, 1)
-        )
-        if add_sqzex: decoder_layers.append(SE_Block(self.filters_count[idx-1]))
-        if add_res: decoder_layers.append(CT2D_Res(self.filters_count[idx-1], kernel_size))
-        if add_dropouts: decoder_layers.append(nn.Dropout2d(dropout_rate))
-
-        new_image_size = getConvTransposeOutputShape(new_image_size, kernel_size, stride)
-        new_in_channels = self.filters_count[idx-1]
-        idx -= 1
-        while idx > 0:
-            decoder_layers.append(
-                CT2D_BN_A(new_in_channels, self.filters_count[idx-1], kernel_size, stride)
-            )
-            
-            if add_sqzex: decoder_layers.append(SE_Block(self.filters_count[idx-1]))
-            if add_res: decoder_layers.append(CT2D_Res(self.filters_count[idx-1], kernel_size))
-            if add_dropouts: decoder_layers.append(nn.Dropout2d(dropout_rate))
+        for idx, (k, s, o_c, ct_layer, isACB, isRes, isSqzex, dp) in enumerate(zip(
+            self.filter_sizes[:len(encoder_layers)][::-1],
+            self.filter_strides[:len(encoder_layers)][::-1],
+            self.filter_count[:len(encoder_layers)][::-1],
+            self.convt_layers[:len(encoder_layers)][::-1],
+            self.acb_layers[:len(encoder_layers)][::-1],
+            self.res_layers[:len(encoder_layers)][::-1],
+            self.sqzex_layers[:len(encoder_layers)][::-1],
+            self.dropouts[:len(encoder_layers)][::-1],
+        )):
+            if (idx == 0) and ~(k%2): k += 1; s = 1
+            if (idx >= active_layer) and (k%2 != 0):
+                k += 1
+                if self.addEndConv:
+                    k += 2
+            i_size = getConvTransposeOutputShape(i_size, k, s)
+            self.image_sizes.append([i_size,k,s])
+            layer_variant = CT2D_ADB if isACB else CT2D_BN_A
+            layer = layer_variant(in_channels = i_c, out_channels = o_c, kernel_size = k, stride = s, padding = 0, activation_type = self.decoder_activation, conv_type = ct_layer)
                 
-            new_image_size = getConvTransposeOutputShape(new_image_size, kernel_size, stride)
-            new_in_channels = self.filters_count[idx-1]
-            idx -= 1
-        decoder_layers.append(
-            CT2D_BN_A(new_in_channels, self.channels, final_kernel_size, stride, activation_type="sigmoid")
-        )
+            decoder_layers.append(layer)
+            try:
+                if isRes and self.isDecoderReplica: decoder_layers.append(CT2D_Res(channels = o_c, kernel_size = k, activation_type = self.decoder_activation, conv_type = ct_layer))
+            except:
+                pass
+            if isSqzex and self.isDecoderReplica: decoder_layers.append(SE_Block(o_c))
+            if dp: decoder_layers.append(nn.Dropout2d(dp))
+
+            i_c = o_c
+            
+        if self.addEndConv:
+            k = self.filter_sizes[0]
+            decoder_layers.append(
+                C2D_BN_A(in_channels = o_c, out_channels = self.channels, kernel_size = k, stride = 1, activation_type=reconstruction_activation)
+            )
+            i_size = getConvOutputShape(i_size, k, 1)
+            self.image_sizes.append([i_size, k, 1])
+        self.encoder = nn.Sequential(*encoder_layers)
         self.decoder = nn.Sequential(*decoder_layers)
-    
-    def auxillary_loss(self,):
-        try: return self.attention_lambda * self.attention_layer.attention_loss()
-        except: return 0.0
     
     def forward(self, x):
         encodings = self.encoder(x)
@@ -1594,7 +1254,7 @@ C2D_MODELS_DICT = {
     },
     
     "multi_resolution": C2D_AE_Multi_3x3,
-    "best": C2D_AE_BEST
+    "best": C2D_AE_COMBO
 }
 
 
@@ -1702,3 +1362,122 @@ class UCSD1_AE(nn.Module):
         encodings = self.encoder(x)
         reconstructions = self.decoder(encodings)
         return reconstructions, encodings
+    
+    
+# Experimental
+
+def axis_normalize(x, axis):
+    x -= x.min(axis, keepdim = True)[0]
+    x /= x.max(axis, keepdim = True)[0]
+    return x
+
+class SMCAW5_layer(nn.Module):
+    def __init__(self, model, kernel_sizes = (3,5), projection = 64, channels = 64):
+        super(SMCAW5_layer, self).__init__()
+        self.model = model
+        self.projection = projection
+        self.kernel_sizes = kernel_sizes
+        self.channels = channels
+        
+        self.attention_conv = nn.Sequential(
+            nn.Conv2d(self.channels, self.projection, self.kernel_sizes[0], 1, padding = self.kernel_sizes[0]//2),
+            nn.Conv2d(self.projection, self.channels, self.kernel_sizes[1], 1, padding = self.kernel_sizes[1]//2),
+            nn.BatchNorm2d(self.channels),
+        )
+        self.max_pool = nn.MaxPool2d(9, stride = 1, padding = 4)
+        
+    def attention_forward(self, x):
+        attention_activations = self.attention_conv(x)
+        v = torch.sum(attention_activations, keepdim = True, axis = -2)
+        h = torch.sum(attention_activations, keepdim = True, axis = -1)
+        vs = axis_normalize(v, axis = -1)
+        hs = axis_normalize(h, axis = -2)
+
+        # Normalization to improve visualization
+        vs = scale(vs, t_min = 3e-1)
+        hs = scale(hs, t_min = 3e-1)
+        x_a = torch.matmul(hs, vs)
+        x_a = self.max_pool(x_a)
+        self.xam = x_a
+        return torch.multiply(x, x_a)
+        
+    def forward(self, x, returns = 1):
+        x_a = self.attention_forward(x)
+        model_returns = self.model(x_a)
+        if returns == 1: return model_returns
+        if returns == 2: return tuple(list(model_returns) + [x_a])
+        if returns == 3: return tuple(list(model_returns) + [x_a, self.xam])        
+        
+class C2D_AE_128_3x3_AATW(nn.Module):
+    def __init__(
+        self,
+        channels = 3,
+        filters_count = [64,64,64,96,96,128],
+        encoder_activation = "tanh",
+        conv_type = "conv2d"
+    ):
+        super(C2D_AE_128_3x3_AATW, self).__init__()
+        self.__name__ = "C2D_AE_128_3x3_AATW-"
+        self.channels = channels
+        self.filters_count = filters_count
+        self.embedding_dim = [1,self.filters_count[4],4,4]
+        
+        self.encoder = nn.Sequential(
+            SMCAW5_layer(
+                C2D_BN_A(self.channels, self.filters_count[0], 3, 2, conv_type = conv_type),
+                projection = min(64, self.filters_count[0]),
+                channels = self.channels,
+            ),
+            SMCAW5_layer(
+                C2D_BN_A(self.filters_count[0], self.filters_count[1], 3, 2, conv_type = conv_type),
+                projection = min(64, self.filters_count[1]),
+                channels = self.filters_count[0],
+            ),
+            SMCAW5_layer(
+                C2D_BN_A(self.filters_count[1], self.filters_count[2], 3, 2, conv_type = conv_type),
+                projection = min(64, self.filters_count[2]),
+                channels = self.filters_count[1],
+            ),
+            SMCAW5_layer(
+                C2D_BN_A(self.filters_count[2], self.filters_count[3], 3, 2, conv_type = conv_type),
+                projection = min(64, self.filters_count[3]),
+                channels = self.filters_count[2],
+            ),
+            C2D_BN_A(self.filters_count[3], self.filters_count[4], 4, 1, conv_type = conv_type, activation_type = encoder_activation),
+        )
+        
+        self.decoder = nn.Sequential(
+            CT2D_BN_A(self.filters_count[4], self.filters_count[3], 4, 1),
+            CT2D_BN_A(self.filters_count[3], self.filters_count[2], 3, 2),
+            CT2D_BN_A(self.filters_count[2], self.filters_count[1], 3, 2),
+            CT2D_BN_A(self.filters_count[1], self.filters_count[0], 4, 2),
+            CT2D_BN_A(self.filters_count[0], self.filters_count[0], 4, 2),
+            C2D_BN_A(self.filters_count[0], self.channels, 3, 1, activation_type = "sigmoid")
+        )
+        
+    def forward(self, x):
+        encodings = self.encoder(x)
+        reconstructions = self.decoder(encodings)
+        return reconstructions, encodings        
+
+
+# C2D_AE_BEST(
+#     image_size = 128,
+#     channels = 3,
+#     filters_count = [64,64,96,96,128],
+#     encoder_activation = "tanh",
+#     conv_type = "conv2d",
+    
+#     kernel_size = 3,
+#     stride = 2,
+#     stop_size = None,
+#     final_kernel_size = None,
+    
+#     use_aug_conv = False,
+#     use_input_attention = False,
+#     add_sqzex = False,
+#     add_dropouts = False,
+#     add_res = False,
+    
+#     dropout_rate = 0.2
+# )        
