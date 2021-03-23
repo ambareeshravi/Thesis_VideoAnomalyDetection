@@ -434,8 +434,8 @@ class SoftMaxConvAttentionWrapper5(nn.Module):
         vs = F.softmax(v, dim = -1)
         hs = F.softmax(h, dim = -2)
         # Axis-wise normalization
-        vs = self.normalize(vs, axis = -1)
-        hs = self.normalize(hs, axis = -2)
+#         vs = self.normalize(vs, axis = -1)
+#         hs = self.normalize(hs, axis = -2)
         # Axis-wise scaling
         vs = scale(vs, t_min = 3e-1)
         hs = scale(hs, t_min = 3e-1)
@@ -504,6 +504,59 @@ class SoftMaxConvAttentionWrapper6(nn.Module):
         if returnMask: return tuple(model_returns + [x_a, self.xam])
         return tuple(model_returns + [x_a])
 
+class SoftMaxConvAttentionRNNWrapper(nn.Module):
+    # Based on SoftMaxConvAttentionWrapper5
+    # V5 -> Summation, normalization, scaling, Tensor Multiplication
+    def __init__(self, channels, kernel_sizes = (3,5), projection = 64):
+        super(SoftMaxConvAttentionRNNWrapper, self).__init__()
+        self.channels = channels
+        self.projection = projection
+        self.kernel_sizes = kernel_sizes
+        
+        self.attention_conv = nn.Sequential(
+            nn.Conv2d(self.channels, self.projection, self.kernel_sizes[0], 1, padding = self.kernel_sizes[0]//2),
+            nn.Conv2d(self.projection, self.channels, self.kernel_sizes[1], 1, padding = self.kernel_sizes[1]//2),
+            nn.BatchNorm2d(self.channels),
+            nn.AvgPool2d(9, stride = 1, padding = 4)
+        )
+        
+        self.ma_conv = TimeDistributed(moving_average_1d(window = 9))
+        self.__name__ = "_SMCARnnW_P%s_C%s"%(self.projection, self.channels)
+        
+    def normalize(self, x, axis):
+        x -= x.min(axis, keepdim = True)[0]
+        x /= x.max(axis, keepdim = True)[0]
+        return x
+    
+    def attention_forward(self, x):
+        attention_activations = self.attention_conv(x)
+        # Axis-wise sumamtion
+        v = torch.mean(attention_activations, keepdim = True, axis = -2)
+        h = torch.mean(attention_activations, keepdim = True, axis = -1)
+        # Axis-wise Softmax
+        vs = F.softmax(v, dim = -1)
+        hs = F.softmax(h, dim = -2)
+        # Axis-wise normalization
+#         vs = self.normalize(vs, axis = -1)
+#         hs = self.normalize(hs, axis = -2)
+        # Axis-wise scaling
+        vs = scale(vs, t_min = 3e-1)
+        hs = scale(hs, t_min = 3e-1)
+        # Applying moving average
+        vs = self.ma_conv(vs)
+        hs = self.ma_conv(hs.transpose(-1,-2)).transpose(-1,-2)
+        # Axis-wise scaling
+        vs = scale(vs, t_min = 3e-1)
+        hs = scale(hs, t_min = 3e-1)
+        # Tensor Multiplication
+        x_a = torch.matmul(hs, vs)
+        self.xam = x_a
+        # Applying Hadamard product
+        return torch.multiply(x, x_a)
+        
+    def forward(self, x):
+        return self.attention_forward(x)
+    
 class RNN_ConvAttentionWrapper(nn.Module):
     '''
     Converts inputs to B,T,C,W,H for processing and returns original shape
