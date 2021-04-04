@@ -18,8 +18,12 @@ class ModelParser:
         
         if "C2D" in model_name: return "C2D"
         elif "C3D" in model_name: return "C3D"
+        elif "BiCLSTM" in model_name: return "BiCLSTM"
+        elif "BiCRNN" in model_name: return "BiCRNN"
+        elif "BiCGRU" in model_name: return "BiCGRU"
         elif "CLSTM" in model_name: return "CLSTM"
         elif "CRNN" in model_name: return "CRNN"
+        elif "CGRU" in model_name: return "CGRU"
         else: return False
     
     @staticmethod
@@ -79,6 +83,7 @@ class ModelParser:
     @staticmethod
     def getModelVariant(model_name):
         if "vae" in model_name.lower(): return "Variational"
+        elif "seq" in model_name.lower(): return "Seq2Seq"
         elif "res" in model_name.lower(): return "RESNet"
         elif "acb" in model_name.lower(): return "ACB"
         elif "dp" in model_name.lower(): return "Dropouts"
@@ -95,7 +100,7 @@ class ModelParser:
     def getConfig(model_name):
         return OrderedDict([
             ("Model", ModelParser.getModelCategory(model_name)),
-            ("Model_Path", model_name),
+            ("Model_Path", os.path.split(model_name)[-1]),
             ("Variant", ModelParser.getModelVariant(model_name)),
             ("Dataset", ModelParser.getDatasetType(model_name)),
             ("Image_Type", ModelParser.getImageType(model_name)),
