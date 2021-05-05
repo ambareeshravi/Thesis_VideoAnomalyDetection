@@ -84,6 +84,11 @@ def shrink_gray(image_array):
 def extend_gray(image_array):
     if len(image_array.shape) < 3: image_array = np.expand_dims(image_array, axis = -1)
     return image_array
+
+def save_img(image_array, file_name):
+    if image_array.shape[-1] == 1: image_array = np.squeeze(image_array, axis = -1)
+    im = Image.fromarray(image_255(image_array))
+    im.save(file_name)
     
 def array_3channels(image_array):
     image_array = extend_gray(image_array)
@@ -337,3 +342,15 @@ class CustomLogger:
         
 def scale(x, t_min = 1e-1, t_max = 1):
     return (((x - x.min())/(x.max()-x.min())) * (t_max - t_min)) + t_min
+
+def normalize(x):
+    return ((x - x.min())/(x.max()-x.min()))
+
+def normalize_channels(x):
+    # x.shape -> c,w,h
+    return torch.stack([normalize(xi) for xi in x])
+
+def get_random_index(max_index, size = 1, start = 0, interval = 1):
+    idx = np.random.choice(np.array(range(start, max_index, interval)), size = size, replace = False)
+    if size == 1: return idx[0]
+    return idx

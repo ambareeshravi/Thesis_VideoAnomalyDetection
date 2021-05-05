@@ -990,7 +990,100 @@ class ShangaiTech(ImagesHandler, VideosHandler, Attributes):
             else:
                 self.data.append(data)
                 self.labels.append(labels)
-                    
+                
+class MovingMNIST(VideosHandler, Attributes):
+    def __init__(self,
+                 parent_path = "/home/ambreesh/Documents/PROJECTS/datasets/MOVING_MNIST/",
+                 isTrain = True,
+                 n_frames = 20,
+                 train_split = 0.75
+                ):
+        self.__name__ = "MovingMNIST"
+        self.isTrain = isTrain
+        self.image_size = 64
+        self.n_frames = n_frames
+        
+        if isinstance(self.image_size, int): self.image_size = (self.image_size, self.image_size)
+        
+        data_transforms = transforms.Compose([transforms.ToTensor()])
+        
+        self.data_path = os.path.join(parent_path, "mnist_test_seq.npy")
+        data = np.load(self.data_path)
+        
+        if self.n_frames < 20:
+            interval = 20 // self.n_frames
+            idxs = list(range(0, 20, interval))
+            data = data[idxs]
+            
+        data = data.transpose((1,0,2,3)) # N, T, W. H
+        split_point = int(train_split * len(data))
+        
+        if self.isTrain:
+            train_data = data[:split_point]
+            train_labels = [NORMAL_LABEL] * len(train_data)
+            
+            train_data = (train_data/255.).astype(np.float32)
+            self.data = torch.Tensor(np.expand_dims(train_data, 1))
+            self.labels = train_labels
+        else: # folder x frames x 1,128,128
+            test_data = data[split_point:]
+            test_labels = [ABNORMAL_LABEL] * len(test_data)
+            
+            test_data = (test_data/255.).astype(np.float32)
+            
+            quarter = len(test_data) // 4
+            
+            self.data = list()
+            self.labels = list()
+            for (idx, anomaly_fn) in zip(
+                range(0, len(test_data), quarter),
+                [self.black_frames_anomaly, self.randomized_frames_anomaly, self.replaced_frames_anomaly, self.reversed_motion_anomaly]
+            ):
+                test_portion = test_data[idx:(idx+quarter)]
+                altered_data, altered_labels = anomaly_fn(test_portion)
+                self.data.append(torch.Tensor(np.expand_dims(altered_data, 1)))
+                self.labels.append(altered_labels)
+                
+        Attributes.__init__(self)
+    
+    def data_split(self, data):
+        sp = len(data)//2
+        return data[:sp], data[sp:]
+        
+    def black_frames_anomaly(self, data):
+        normal_data, anomalous_data = self.data_split(data)
+        
+        for clip in anomalous_data:
+            indices = np.random.choice(np.array(range(0, clip.shape[0])), size = np.random.choice(np.array(range(2, clip.shape[0]//2)), replace = False))
+            clip[indices] *= 0
+        
+        return np.concatenate((normal_data, anomalous_data)), np.array([NORMAL_LABEL]*len(normal_data) + [ABNORMAL_LABEL]*len(anomalous_data))
+                                           
+    def randomized_frames_anomaly(self, data):
+        normal_data, anomalous_data = self.data_split(data)
+        
+        for clip in anomalous_data:
+            np.random.shuffle(clip)
+            np.random.shuffle(clip)
+            
+        return np.concatenate((normal_data, anomalous_data)), np.array([NORMAL_LABEL]*len(normal_data) + [ABNORMAL_LABEL]*len(anomalous_data))
+    
+    def replaced_frames_anomaly(self, data):
+        normal_data, anomalous_data = self.data_split(data)
+        # anomalous_data N, T, W, H
+        for i in range(len(anomalous_data)):
+            clip = anomalous_data[i]
+            t_indices = get_random_index(max_index = clip.shape[0], size = get_random_index(max_index=len(clip)//2, start = len(clip)//4))
+            for ti in t_indices:
+                clip[ti] = anomalous_data[get_random_index(anomalous_data.shape[0])][get_random_index(anomalous_data.shape[1])]
+        return np.concatenate((normal_data, anomalous_data)), np.array([NORMAL_LABEL]*len(normal_data) + [ABNORMAL_LABEL]*len(anomalous_data))
+    
+    def reversed_motion_anomaly(self, data):
+        normal_data, anomalous_data = self.data_split(data)
+        return np.concatenate((normal_data, anomalous_data[:, ::-1, :, :])), np.array([NORMAL_LABEL]*len(normal_data) + [ABNORMAL_LABEL]*len(anomalous_data))
+    
+############################################################################
+
 def select_dataset(
     dataset,
     parent_path = "../../../datasets/VAD_Datasets/",
@@ -1022,7 +1115,9 @@ def select_dataset(
     dataset = dataset.lower()
     flow_channels = 0
     if image_type == "flow": flow_channels = 1
-    if "ucsd1" in dataset:
+    if "moving" in dataset:
+        return MovinMNIST(isTrain = isTrain, n_frames = n_frames)
+    elif "ucsd1" in dataset:
         return UCSD(dataset_type = 1, **kwargs), 1 if flow_channels == 0 else 1
     elif "ucsd2" in dataset:
         return UCSD(dataset_type = 2, **kwargs), 1 if flow_channels == 0 else 1
