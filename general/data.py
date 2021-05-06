@@ -1031,53 +1031,61 @@ class MovingMNIST(VideosHandler, Attributes):
             
             test_data = (test_data/255.).astype(np.float32)
             
-            quarter = len(test_data) // 4
+            part = len(test_data) // 3
             
             self.data = list()
             self.labels = list()
             for (idx, anomaly_fn) in zip(
-                range(0, len(test_data), quarter),
-                [self.black_frames_anomaly, self.randomized_frames_anomaly, self.replaced_frames_anomaly, self.reversed_motion_anomaly]
+                range(0, len(test_data), part),
+                [self.black_frames_anomaly, self.randomized_frames_anomaly, self.replaced_frames_anomaly]
             ):
-                test_portion = test_data[idx:(idx+quarter)]
+                test_portion = test_data[idx:(idx+part)]
                 altered_data, altered_labels = anomaly_fn(test_portion)
-                self.data.append(torch.Tensor(np.expand_dims(altered_data, 1)))
+                self.data.append(altered_data)
                 self.labels.append(altered_labels)
                 
         Attributes.__init__(self)
-    
-    def data_split(self, data):
-        sp = len(data)//2
-        return data[:sp], data[sp:]
-        
+            
     def black_frames_anomaly(self, data):
-        normal_data, anomalous_data = self.data_split(data)
-        
-        for clip in anomalous_data:
-            indices = np.random.choice(np.array(range(0, clip.shape[0])), size = np.random.choice(np.array(range(2, clip.shape[0]//2)), replace = False))
-            clip[indices] *= 0
-        
-        return np.concatenate((normal_data, anomalous_data)), np.array([NORMAL_LABEL]*len(normal_data) + [ABNORMAL_LABEL]*len(anomalous_data))
+        new_data, labels = list(), list()
+        for (clip_idx, clip) in enumerate(data):
+            l = np.ones(len(clip), dtype = np.uint8)
+            if clip_idx % 2:
+                indices = np.random.choice(np.array(range(0, clip.shape[0])), size = np.random.choice(np.array(range(2, clip.shape[0]//2)), replace = False))
+                clip[indices] = get_random_index(2)
+                l[indices] = 0
+                
+            new_data += [torch.Tensor(np.expand_dims(c, axis = 0)) for c in clip]
+            labels += l.tolist()
+        return new_data, labels
                                            
     def randomized_frames_anomaly(self, data):
-        normal_data, anomalous_data = self.data_split(data)
-        
-        for clip in anomalous_data:
-            np.random.shuffle(clip)
-            np.random.shuffle(clip)
-            
-        return np.concatenate((normal_data, anomalous_data)), np.array([NORMAL_LABEL]*len(normal_data) + [ABNORMAL_LABEL]*len(anomalous_data))
+        new_data, labels = list(), list()
+        for (clip_idx, clip) in enumerate(data):
+            l = np.ones(len(clip), dtype = np.uint8)
+            if clip_idx % 2:
+                idx = get_random_index(len(clip)-4, start = 4)
+                interval = get_random_index(6, start = 2)
+                np.random.shuffle(a[idx:(idx+interval)])
+                l[idx:(idx+interval)] = 0                
+            new_data += [torch.Tensor(np.expand_dims(c, axis = 0)) for c in clip]
+            labels += l.tolist()
+        return new_data, labels
     
     def replaced_frames_anomaly(self, data):
-        normal_data, anomalous_data = self.data_split(data)
-        # anomalous_data N, T, W, H
-        for i in range(len(anomalous_data)):
-            clip = anomalous_data[i]
-            t_indices = get_random_index(max_index = clip.shape[0], size = get_random_index(max_index=len(clip)//2, start = len(clip)//4))
-            for ti in t_indices:
-                clip[ti] = anomalous_data[get_random_index(anomalous_data.shape[0])][get_random_index(anomalous_data.shape[1])]
-        return np.concatenate((normal_data, anomalous_data)), np.array([NORMAL_LABEL]*len(normal_data) + [ABNORMAL_LABEL]*len(anomalous_data))
-    
+        new_data, labels = list(), list()
+        for (clip_idx, clip) in enumerate(data):
+            l = np.ones(len(clip), dtype = np.uint8)
+            if clip_idx % 2:
+                replace_count = get_random_index(len(clip)//2, start = len(clip)//4)
+                replace_indices = get_random_index(len(clip), size = replace_count)
+                for ri in replace_indices:
+                    clip[ri] = data[get_random_index(len(data))][get_random_index(len(clip))]
+                l[replace_indices] = 0                
+            new_data += [torch.Tensor(np.expand_dims(c, axis = 0)) for c in clip]
+            labels += l.tolist()
+        return new_data, labels
+            
     def reversed_motion_anomaly(self, data):
         normal_data, anomalous_data = self.data_split(data)
         return np.concatenate((normal_data, anomalous_data[:, ::-1, :, :])), np.array([NORMAL_LABEL]*len(normal_data) + [ABNORMAL_LABEL]*len(anomalous_data))
