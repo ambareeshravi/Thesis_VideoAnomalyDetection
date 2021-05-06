@@ -1066,7 +1066,7 @@ class MovingMNIST(VideosHandler, Attributes):
             if clip_idx % 2:
                 idx = get_random_index(len(clip)-4, start = 4)
                 interval = get_random_index(6, start = 2)
-                np.random.shuffle(a[idx:(idx+interval)])
+                np.random.shuffle(clip[idx:(idx+interval)])
                 l[idx:(idx+interval)] = 0                
             new_data += [torch.Tensor(np.expand_dims(c, axis = 0)) for c in clip]
             labels += l.tolist()
