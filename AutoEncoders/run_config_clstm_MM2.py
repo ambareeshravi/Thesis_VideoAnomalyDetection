@@ -20,7 +20,7 @@ if __name__ == '__main__':
     # Editable
     IMAGE_SIZE = 64
     EPOCHS = 50
-    BATCH_SIZE = 32
+    BATCH_SIZE = 64
     IMAGE_TYPE = "grayscale"
     MODEL_PATH = args.model_path
     if not os.path.exists(MODEL_PATH): os.mkdir(MODEL_PATH)
@@ -61,7 +61,7 @@ if __name__ == '__main__':
                 kwargs['n_r_layers'] = n_r_layers
                 kwargs['disableRecDeConv'] = disableRecDecConv
                 COMPLETE_MODELS_LIST.append(model_variant(**kwargs))
-    MODELS_LIST = COMPLETE_MODELS_LIST[80:85] # 25-30, 55-60, 85-90
+    MODELS_LIST = COMPLETE_MODELS_LIST[75:80] # 25-30, 55-60, 85-90
     
     LOSS_TYPES = [LOSS_TYPE] * len(MODELS_LIST)
     OPTIMIZERS_TYPES = [OPTIMIZER_TYPE] * len(MODELS_LIST)
