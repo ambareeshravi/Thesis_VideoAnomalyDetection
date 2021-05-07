@@ -1051,7 +1051,7 @@ class MovingMNIST(VideosHandler, Attributes):
         for (clip_idx, clip) in enumerate(data):
             l = np.ones(len(clip), dtype = np.uint8)
             if clip_idx % 2:
-                indices = np.random.choice(np.array(range(0, clip.shape[0])), size = np.random.choice(np.array(range(2, clip.shape[0]//2)), replace = False))
+                indices = np.random.choice(np.array(range(0, clip.shape[0])), size = np.random.choice(np.array(range(clip.shape[0]//4, clip.shape[0]//2)), replace = False))
                 clip[indices] = get_random_index(2)
                 l[indices] = 0
                 
@@ -1065,7 +1065,7 @@ class MovingMNIST(VideosHandler, Attributes):
             l = np.ones(len(clip), dtype = np.uint8)
             if clip_idx % 2:
                 idx = get_random_index(len(clip)-4, start = 4)
-                interval = get_random_index(6, start = 2)
+                interval = get_random_index((len(clip)*3)//4, start = len(clip)//4)
                 np.random.shuffle(clip[idx:(idx+interval)])
                 l[idx:(idx+interval)] = 0                
             new_data += [torch.Tensor(np.expand_dims(c, axis = 0)) for c in clip]
