@@ -19,8 +19,8 @@ if __name__ == '__main__':
     
     # Editable
     IMAGE_SIZE = 64
-    EPOCHS = 50
-    BATCH_SIZE = 32
+    EPOCHS = 300
+    BATCH_SIZE = 64
     IMAGE_TYPE = "grayscale"
     MODEL_PATH = args.model_path
     if not os.path.exists(MODEL_PATH): os.mkdir(MODEL_PATH)
@@ -30,14 +30,14 @@ if __name__ == '__main__':
     DENOISING = False
     
     isVideo = True
-    stackFrames = 20
+    stackFrames = 10
     asImages = False
         
     # Manual
     DATA_TYPE = "MovingMNIST" 
     
     # 1. Training
-    train_data = MovingMNIST(parent_path = DATA_PATH)
+    train_data = MovingMNIST(parent_path = DATA_PATH, n_frames = stackFrames)
     CHANNELS = 1
     channels = CHANNELS
 
@@ -47,7 +47,7 @@ if __name__ == '__main__':
     kwargs = {
         "image_size": IMAGE_SIZE,
         "channels": channels,
-        "filter_count": [64, 64, 64, 128, 128],
+        "filter_count": [64, 64, 64, 64, 64],
         "filter_sizes": [3, 3, 3, 3, 3], 
         "filter_strides": [2, 2, 2, 2, 2],
         "n_r_layers": 5,
@@ -60,8 +60,12 @@ if __name__ == '__main__':
             for n_r_layers in range(1, len(kwargs["filter_sizes"]) + 1):
                 kwargs['n_r_layers'] = n_r_layers
                 kwargs['disableRecDeConv'] = disableRecDecConv
-                COMPLETE_MODELS_LIST.append(model_variant(**kwargs))
-    MODELS_LIST = COMPLETE_MODELS_LIST[80:85] # 25-30, 55-60, 85-90
+                crnn = model_variant(**kwargs)
+                if "seq2seq" in crnn.__name__.lower() and disableRecDecConv: continue
+                COMPLETE_MODELS_LIST.append(crnn)
+                del crnn
+
+    MODELS_LIST = COMPLETE_MODELS_LIST[0:5]
     
     LOSS_TYPES = [LOSS_TYPE] * len(MODELS_LIST)
     OPTIMIZERS_TYPES = [OPTIMIZER_TYPE] * len(MODELS_LIST)
@@ -107,7 +111,7 @@ if __name__ == '__main__':
     trainer.train()
 
     # 2. Testing
-    test_data = MovingMNIST(parent_path = DATA_PATH, isTrain = False)
+    test_data = MovingMNIST(parent_path = DATA_PATH, isTrain = False, n_frames = stackFrames)
     INFO("TESTING DATA READY")
 
     for ae_model in trainer.autoencoder_models:
