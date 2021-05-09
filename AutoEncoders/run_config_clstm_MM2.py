@@ -65,7 +65,7 @@ if __name__ == '__main__':
                 COMPLETE_MODELS_LIST.append(crnn)
                 del crnn
 
-    MODELS_LIST = COMPLETE_MODELS_LIST[0:5]
+    MODELS_LIST = COMPLETE_MODELS_LIST[5:10]
     
     LOSS_TYPES = [LOSS_TYPE] * len(MODELS_LIST)
     OPTIMIZERS_TYPES = [OPTIMIZER_TYPE] * len(MODELS_LIST)
