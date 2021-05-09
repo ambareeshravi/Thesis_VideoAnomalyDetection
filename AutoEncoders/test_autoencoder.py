@@ -187,8 +187,13 @@ class AutoEncoder_Tester(AE_PredictFunctions, ReconstructionsMetrics):
             
         self.stackFrames = stackFrames
         self.save_vis = save_vis
+
         self.n_seed = n_seed
         self.n_future_steps = n_future_steps
+        
+        if n_seed = None:
+            self.n_seed = stackFrames // 2
+            self.n_future_steps = stackFrames // 2
         self.calcOC_SVM = calcOC_SVM
         self.metric_names = ["absolute", "squared", "ssim", "psnr"]
         self.recordResults = recordResults

@@ -76,15 +76,15 @@ class AutoEncoderHelper:
             self.step = self.attention_step
         
         # Future prediction step
-        if "clstm" in self.model_file.lower() and "future" in self.model_file.lower():
-            self.step = self.future_step
+#         if "clstm" in self.model_file.lower() and "future" in self.model_file.lower():
+#             self.step = self.future_step
+                        
+#         if "rnn" in self.model_file.lower() or "lstm" in self.model_file.lower() or "gru" in self.model_file.lower():
+#             self.step = self.masked_step
             
-        if "clstm" in self.model_file.lower() and "seq2seq" in self.model_file.lower():
+        if "seq2seq" in self.model_file.lower():
             self.step = self.sequence_step
             
-        if "rnn" in self.model_file.lower() or "lstm" in self.model_file.lower() or "gru" in self.model_file.lower():
-            self.step = self.masked_step
-        
         self.isSVDD_enabled = False
         if "svdd" in self.model_file.lower():
             self.isSVDD_enabled = True
@@ -227,7 +227,7 @@ class AutoEncoderHelper:
     def sequence_step(self, images):
         video_chunks = self.get_inputs(images) # bs,c,ts,w,h
         bs,c,ts,w,h = video_chunks.shape
-        current_steps = np.random.choice(list(range(ts//3, ts-2)))
+        current_steps = np.random.choice(list(range(ts//2, ts-2)))
         future_steps = ts - current_steps
         predictions, encodings = self.model(video_chunks[:,:,:current_steps,:,:], future_steps = future_steps)
         return self.loss_criterion(video_chunks[:,:,current_steps:,:,:], predictions)

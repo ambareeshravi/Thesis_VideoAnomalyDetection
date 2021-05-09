@@ -991,6 +991,14 @@ class ShangaiTech(ImagesHandler, VideosHandler, Attributes):
                 self.data.append(data)
                 self.labels.append(labels)
                 
+def draw_random(x, size = 8, value = 1, w_idx = 0, h_idx = 1):
+    xc,yc = get_random_index((x.shape[w_idx] * 3)//4, start = x.shape[w_idx]//4), get_random_index((x.shape[h_idx] * 3)//4, start = x.shape[h_idx]//4)
+    x[xc:(xc+size), yc:(yc+size)] = value
+    
+def draw_random_array(x, size = 8, value = 1):
+    for xi in x:
+        draw_random(xi)
+        
 class MovingMNIST(VideosHandler, Attributes):
     def __init__(self,
                  parent_path = "/home/ambreesh/Documents/PROJECTS/datasets/MOVING_MNIST/",
@@ -1031,13 +1039,14 @@ class MovingMNIST(VideosHandler, Attributes):
             
             test_data = (test_data/255.).astype(np.float32)
             
-            part = len(test_data) // 3
+            anomaly_functions = [self.random_rectangles_anomaly, self.temporal_anomaly]
+            part = len(test_data) // len(anomaly_functions)
             
             self.data = list()
             self.labels = list()
             for (idx, anomaly_fn) in zip(
                 range(0, len(test_data), part),
-                [self.black_frames_anomaly, self.randomized_frames_anomaly, self.replaced_frames_anomaly]
+                anomaly_functions
             ):
                 test_portion = test_data[idx:(idx+part)]
                 altered_data, altered_labels = anomaly_fn(test_portion)
@@ -1045,29 +1054,46 @@ class MovingMNIST(VideosHandler, Attributes):
                 self.labels.append(altered_labels)
                 
         Attributes.__init__(self)
-            
-    def black_frames_anomaly(self, data):
+    
+    def dummy(self, data):
+        new_data, labels = list(), list()
+        for (clip_idx, clip) in enumerate(data):
+            l = np.ones(len(clip), dtype = np.uint8)
+            new_data += [torch.Tensor(np.expand_dims(c, axis = 0)) for c in clip]
+            labels += l.tolist()
+        return new_data, labels       
+    
+    def random_rectangles_anomaly(self, data):
         new_data, labels = list(), list()
         for (clip_idx, clip) in enumerate(data):
             l = np.ones(len(clip), dtype = np.uint8)
             if clip_idx % 2:
-                indices = np.random.choice(np.array(range(0, clip.shape[0])), size = np.random.choice(np.array(range(clip.shape[0]//4, clip.shape[0]//2)), replace = False))
-                clip[indices] = get_random_index(2)
-                l[indices] = 0
-                
+                idx = get_random_index(len(clip)-5)
+                draw_random_array(clip[idx:(idx+5)], size = 8, value = 1)
+                l[idx:(idx+5)] = 0
+            new_data += [torch.Tensor(np.expand_dims(c, axis = 0)) for c in clip]
+            labels += l.tolist()
+        return new_data, labels       
+        
+    def half_shuffle_anomaly(self, data):
+        new_data, labels = list(), list()
+        for (clip_idx, clip) in enumerate(data):
+            l = np.ones(len(clip), dtype = np.uint8)
+            if clip_idx % 2:
+                np.random.shuffle(clip[-3:])
+                l[-3:] = 0                
             new_data += [torch.Tensor(np.expand_dims(c, axis = 0)) for c in clip]
             labels += l.tolist()
         return new_data, labels
-                                           
-    def randomized_frames_anomaly(self, data):
+    
+    def filled_frames_anomaly(self, data):
         new_data, labels = list(), list()
         for (clip_idx, clip) in enumerate(data):
             l = np.ones(len(clip), dtype = np.uint8)
             if clip_idx % 2:
-                idx = get_random_index(len(clip)-4, start = 4)
-                interval = get_random_index((len(clip)*3)//4, start = len(clip)//4)
-                np.random.shuffle(clip[idx:(idx+interval)])
-                l[idx:(idx+interval)] = 0                
+                indices = get_random_index(len(clip), size = 5, start = len(clip)//2)
+                clip[indices] = get_random_index(2)
+                l[indices] = 0
             new_data += [torch.Tensor(np.expand_dims(c, axis = 0)) for c in clip]
             labels += l.tolist()
         return new_data, labels
@@ -1077,8 +1103,7 @@ class MovingMNIST(VideosHandler, Attributes):
         for (clip_idx, clip) in enumerate(data):
             l = np.ones(len(clip), dtype = np.uint8)
             if clip_idx % 2:
-                replace_count = get_random_index(len(clip)//2, start = len(clip)//4)
-                replace_indices = get_random_index(len(clip), size = replace_count)
+                replace_indices = get_random_index(len(clip), size = 5, start = len(clip)//2)
                 for ri in replace_indices:
                     clip[ri] = data[get_random_index(len(data))][get_random_index(len(clip))]
                 l[replace_indices] = 0                
@@ -1086,9 +1111,17 @@ class MovingMNIST(VideosHandler, Attributes):
             labels += l.tolist()
         return new_data, labels
             
-    def reversed_motion_anomaly(self, data):
-        normal_data, anomalous_data = self.data_split(data)
-        return np.concatenate((normal_data, anomalous_data[:, ::-1, :, :])), np.array([NORMAL_LABEL]*len(normal_data) + [ABNORMAL_LABEL]*len(anomalous_data))
+    def temporal_anomaly(self, data):
+        new_data, labels = list(), list()
+        for (clip_idx, clip) in enumerate(data):
+            l = np.ones(len(clip), dtype = np.uint8)
+            if clip_idx % 2:
+                idx = get_random_index(len(clip), start = len(clip)//2)
+                clip[idx:(idx+2)] = clip[idx:(idx+2)][::-1, ::-1]
+                l[idx:(idx+2)] = 0                
+            new_data += [torch.Tensor(np.expand_dims(c, axis = 0)) for c in clip]
+            labels += l.tolist()
+        return new_data, labels
     
 ############################################################################
 
