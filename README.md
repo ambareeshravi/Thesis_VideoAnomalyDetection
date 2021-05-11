@@ -9,7 +9,7 @@ This repo contains the experiments for the following papers:
 
 3. "AutoEncoder regularization using Support Vector Data Description for Anomaly Detection", Ambareesh Ravi, Fakhri Karray, _IEEE SMC2021 [Submitted]_
 
-4. "Exploring Convolutional Recurrent Architectures for anomaly detection in videos", Ambareesh Ravi, Fakhri Karray,_ Discover Artificial Intelligence, Springer [Submitted]_
+4. "Exploring Convolutional Recurrent Architectures for anomaly detection in videos", Ambareesh Ravi, Fakhri Karray, _Discover Artificial Intelligence, Springer [Submitted]_
 
 
 Notes:
