@@ -5,7 +5,7 @@ This repo contains the experiments for the following papers:
 
 1. "Kernel Strengthening and Structural Similarity for Improving Unsupervised Anomaly Detection in Images", Ambareesh Ravi, Qiang Zhao, Fakhri Karray, _Pattern Recognition, Elsevier. **[Under review]**_
 
-2. "ATTENTIVE AUTOENCODERS FOR IMPROVING VISUAL ANOMALY DETECTION", Ambareesh Ravi, Fakhri Karray, _IEEE ICAS2021 [Submitted]_
+2. "ATTENTIVE AUTOENCODERS FOR IMPROVING VISUAL ANOMALY DETECTION", Ambareesh Ravi, Fakhri Karray, _IEEE ICAS2021 [Accepted]_
 
 3. "AutoEncoder regularization using Support Vector Data Description for Anomaly Detection", Ambareesh Ravi, Fakhri Karray, _IEEE SMC2021 [Submitted]_
 
