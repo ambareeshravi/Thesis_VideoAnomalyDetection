@@ -13,7 +13,7 @@ This repo contains the experiments for the following papers:
 
 
 Notes:
-1. The repo is not documented. But most coding standards are followed to some extent [will document the code soon]
+1. The repo is not documented since it was originally written for research and rapid experimenation [will document the code soon]. But most coding standards are followed
 2. Repo is not continuously maintained and will remain frozen
 3. There are a few "ambitious" experiments that might not work
 4. Use any code starting with "run_" in AutoEncoders/ to run experiments
