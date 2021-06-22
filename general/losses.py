@@ -72,8 +72,8 @@ class WEIGHTED_SIMILARITY:
         # transpose n_frame and channels for video
         else: return x.transpose(1,2).flatten(start_dim = 0, end_dim = 1)
     
-    def __call__(self, original, reconstructions):
-        return (self.weights[0] * self.main_loss(original, reconstructions)) + (self.weights[1] * 100 * (1 - self.ssim_loss.forward(self.transform(original), self.transform(reconstructions))))
+    def __call__(self, original, reconstructions, lambda_ = 1): # lambda_ [1,100] pick for training
+        return (self.weights[0] * self.main_loss(original, reconstructions)) + (self.weights[1] * lambda_ * (1 - self.ssim_loss.forward(self.transform(original), self.transform(reconstructions))))
     
 class QUALITY_LOSS(WEIGHTED_SIMILARITY):
     def __init__(self):
