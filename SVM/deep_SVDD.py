@@ -4,6 +4,10 @@ from general.all_imports import *
 
 '''
 https://github.com/lukasruff/Deep-SVDD-PyTorch/blob/master/src/optim/deepSVDD_trainer.py
+
+Soft-boundary SVDD is used from the above repo [original paper] for my experiments.
+
+lambda value is 0 (weights (learnable parameters) regularization is not taken into account)
 '''
 
 class DeepSVDD(nn.Module):
