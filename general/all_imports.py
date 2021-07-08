@@ -1,3 +1,9 @@
+'''
+Contains all the imports for quick experimentation
+
+Also sets manual seeds for repeatability of results
+'''
+
 import matplotlib
 matplotlib.use('Agg')
 import os
@@ -34,9 +40,9 @@ import random
 
 MANUAL_SEED = 42
 np.random.seed(MANUAL_SEED)
+random.seed(MANUAL_SEED)
 torch.manual_seed(MANUAL_SEED)
 torch.cuda.manual_seed(MANUAL_SEED)
 torch.cuda.manual_seed_all(MANUAL_SEED)
-random.seed(MANUAL_SEED)
 torch.backends.cudnn.deterministic=True
 torch.backends.cudnn.benchmark = False
