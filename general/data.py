@@ -1,19 +1,52 @@
+# Module contains functionalities and helpers for loading different image and video datasets
+
+# imports
 from .all_imports import *
 from .utils import *
 from .cv2_processing import OpticalFlow, BackgroundSubtraction
 
 from skimage import filters
 
+# Global variables
 NORMAL_LABEL = 1
 ABNORMAL_LABEL = 0
 
 # Handles Image data
 class ImagesHandler:
     def __init__(self, data_transforms):
+        '''
+        Description:
+            Initiates the class
+        
+        Args:
+            data_transforms - <list> of image transforms to be applied to the input images/frames
+        Returns:
+            -
+        Exception:
+            -
+        '''
         self.data_transform = data_transforms
         self.select_image_type()
         
     def select_image_type(self,):
+        '''
+        Description:
+            Function to select and set the type of image input
+            "flow_mask": Optical Flow masks
+            "flow": Optical Flow
+            "differnce": Image difference
+            "mask": Threshold based mask
+            "background": background subtracted
+            "grayscale": Grayscale
+            "normal": inputs as such
+        
+        Args:
+            -
+        Returns:
+            -
+        Exception:
+            -
+        '''
         image_type = self.image_type.lower()
         if "flow_mask" in image_type:
             self.image_type = "flow_mask"
@@ -46,17 +79,61 @@ class ImagesHandler:
             self.read_frames = self.read_normal
             
     def stride_through_frames(self, files):
+        '''
+        Description:
+            Given a list of files, returns a sample of the files with predefined stride (skips files)
+        
+        Args:
+            files- <list> frames/images
+        Returns:
+            sampled files as <list> and indices as <list>
+        Exception:
+            -
+        '''
         files = np.asarray(files)
         indices = np.array(range(0, len(files), self.sample_stride))
         return files[indices], indices
         
     def read_normal(self, files):
+        '''
+        Description:
+            reads the input frames normally with data transforms applied
+        
+        Args:
+            files - <list> of images
+        Returns:
+            <list> of output frames
+        Exception:
+            -
+        '''
         return [self.data_transform(read_image(image_path)) for image_path in files]
     
     def read_gray(self, files):
+        '''
+        Description:
+            reads the input frames in grayscale with data transforms applied
+        
+        Args:
+            files - <list> of images
+        Returns:
+            <list> of output frames
+        Exception:
+            -
+        '''
         return [self.data_transform(read_image(image_path, asGray = True)) for image_path in files]
         
     def read_flow(self, files):
+        '''
+        Description:
+            reads the optical flow of the input frames with data transforms applied
+        
+        Args:
+            files - <list> of images
+        Returns:
+            <list> of output frames
+        Exception:
+            -
+        '''
         frames = [read_image(image_path) for image_path in files]
         frame_arrays = [np.array(frame) for frame in frames]
         frame_flows = [self.opt_flow.get_optical_flow(frame_array, frame_arrays[idx+1]) for idx, frame_array in enumerate(frame_arrays[:-1])]
@@ -67,6 +144,18 @@ class ImagesHandler:
 #         return flow_combined
     
     def get_flow_mask(self, frame, flow):
+        '''
+        Description:
+            calculates and returns the optical flow mask for a frame
+        
+        Args:
+            frame - input frame as <np.array>
+            flow - optical flow as <np.array>
+        Returns:
+            image with mask applied as <np.array>
+        Exception:
+            -
+        '''
         flow_binary_mask = np.uint8((flow > flow.mean()) * 1)
 #         flow_binary_mask = cv2.threshold(flow, 25, 255, cv2.THRESH_BINARY)[-1]//255
         flow_binary_mask = cv2.dilate(flow_binary_mask, kernel = np.ones((5,5),np.uint8), iterations = 1)
@@ -74,6 +163,17 @@ class ImagesHandler:
         return Image.fromarray(image_255(flow_binary_mask * frame))
 
     def read_optical_flow_mask(self, files):
+        '''
+        Description:
+            reads the input frames with optical flow mask with data transforms applied
+        
+        Args:
+            files - <list> of images
+        Returns:
+            <list> of output frames
+        Exception:
+            -
+        '''
         frames = [read_image(image_path) for image_path in files]
         frame_arrays = [np.array(frame) for frame in frames]
         frame_flows = [self.opt_flow.get_optical_flow(frame_array, frame_arrays[idx+1]) for idx, frame_array in enumerate(frame_arrays[:-1])]
@@ -83,15 +183,49 @@ class ImagesHandler:
 
     # difference is useless
     def get_difference(self, frame1, frame2):
+        '''
+        Description:
+            calculates the difference between two input iamges/frames
+        
+        Args:
+            frame1 - input frame 1 as <np.array>
+            frame2 - input frame 2 as <np.array>
+        Returns:
+            output frame <np.array>
+        Exception:
+            -
+        '''
         difference = image_255(np.asarray(frame2.convert('L')) - np.asarray(frame1.convert('L')))
         return Image.fromarray(np.concatenate((extend_gray(frame1), extend_gray(difference)), axis = -1))
 
     def read_difference(self, files):
+        '''
+        Description:
+            reads the frame differences between the input frames with data transforms applied
+        
+        Args:
+            files - <list> of images
+        Returns:
+            <list> of output frames
+        Exception:
+            -
+        '''
         frames = [read_image(image_path) for image_path in files]
         return [self.data_transform(self.get_difference(frames[idx-1], frames[idx])) for idx in range(1, len(frames))]
     
     # thresholds only white colors -> useless too
     def add_mask(self, original_frame):
+        '''
+        Description:
+            Adds otsu threshold based mask on an input frame
+        
+        Args:
+            original frame - input frame as <np.array>
+        Returns:
+            output frame <np.array>
+        Exception:
+            -
+        '''
         gray = np.asarray(original_frame.convert('L'))
         original_frame = extend_gray(np.asarray(original_frame, dtype = np.float32)/255.)
         threshold = filters.threshold_otsu(gray, nbins=256)
@@ -102,9 +236,31 @@ class ImagesHandler:
         return Image.fromarray(combined.squeeze())
     
     def read_mask(self, files):
+        '''
+        Description:
+            reads the frame masks of the input frames with data transforms applied
+        
+        Args:
+            files - <list> of images
+        Returns:
+            <list> of output frames
+        Exception:
+            -
+        '''
         return [self.data_transform(self.add_mask(read_image(image_path))) for image_path in files]
     
     def read_background(self, files):
+        '''
+        Description:
+            reads the the input frames with background subtracted and data transforms applied
+        
+        Args:
+            files - <list> of images
+        Returns:
+            <list> of output frames
+        Exception:
+            -
+        '''
         bs = BackgroundSubtraction()
         frames = [read_image(image_path) for image_path in files]
         frames_arrays = [np.array(frame) for frame in frames]
