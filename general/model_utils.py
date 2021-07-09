@@ -1,3 +1,5 @@
+# Module contains utility functions for the deep learning models for the experiments
+
 from .all_imports import *
 
 '''
@@ -12,6 +14,7 @@ Conv3D types:
     3. Conv3d_Depthwise
 '''
 
+# Dict that returns activation functions as torch.nn objects
 activations_dict = {
     "relu": nn.ReLU(),
     "leaky_relu": nn.LeakyReLU(),
@@ -21,12 +24,35 @@ activations_dict = {
 
 # ------------------------------------------------------- #
 def count_parameters(model, onlyTrainable = True):
+    '''
+    Description:
+        Counts the number of parameters in a model
+        
+    Args:
+        model - torch.nn.Model
+        onlyTrainable - <bool> counts only trainable parameters if true or all otherwise
+    Returns:
+        Number of parameters as <int>
+    Exception:
+        -
+    '''
     if onlyTrainable:
         return sum([p.numel() for p in model.parameters() if p.requires_grad])
     else:
         return sum([p.numel() for p in model.parameters()])
 
 def HalfPrecision(model, first = True):
+    '''
+    Description:
+        Converts the input model into half precision model
+        
+    Args:
+        model - <torch.nn.Model>
+    Returns:
+        half precision model - <torch.nn.Model>
+    Exception:
+        -
+    '''
     if first: model.half()
     
     if isinstance(model, torch.nn.modules.batchnorm._BatchNorm):
@@ -36,6 +62,17 @@ def HalfPrecision(model, first = True):
     return model
     
 def DataParallel(model):
+    '''
+    Description:
+        Implements data parallelism at the module level.
+        
+    Args:
+        model - <torch.nn.Model>
+    Returns:
+        parallelised model - <torch.nn.Model>
+    Exception:
+        -
+    '''
     if torch.cuda.device_count() > 1:
 #         INFO("Using %d GPUs"%(torch.cuda.device_count()))
         return nn.DataParallel(model)
@@ -43,12 +80,54 @@ def DataParallel(model):
 
 # util functions
 def getConvOutputShape(input_size, kernel_size, stride = 1, padding = 0):
+    '''
+    Description:
+        Calculates the convolution output size
+        
+    Args:
+        input_size - size of the square input as <int>
+        kernel_size - size of the square kernel as <int>
+        stride - strides for kernel operation as <int>
+        padding - padding size for the input <int>
+    Returns:
+        output size as <int>
+    Exception:
+        -
+    '''
     return ((input_size - kernel_size + (2 * padding)) // stride) + 1
 
 def getConvTransposeOutputShape(input_size, kernel_size, stride = 1, padding = 0, output_padding = 0):
+    '''
+    Description:
+        Calculates the transpose convolution output size
+        
+    Args:
+        input_size - size of the square input as <int>
+        kernel_size - size of the square kernel as <int>
+        stride - strides for kernel operation as <int>
+        padding - padding size for the input as <int>
+        output_padding - padding size for the output as <int>
+    Returns:
+        output size as <int>
+    Exception:
+        -
+    '''
     return ((input_size - 1)*stride - (2 * padding) + kernel_size + output_padding)
 
 def BN_A(n, activation_type = "leaky_relu", is3d = True):
+    '''
+    Description:
+        Sequential layers of batch normalization and activation function
+        
+    Args:
+        n - number of channels as <int>
+        activation_type - activation function name as <str>
+        is3d - <bool> uses 3D layers if true and 2D layers otherwise
+    Returns:
+        <nn.Sequential> layers
+    Exception:
+        -
+    '''
     layers = list()
     if is3d: layers.append(nn.BatchNorm3d(n))
     else: layers.append(nn.BatchNorm2d(n))
